@@ -1,0 +1,21 @@
+#### ignore folder
+bin/
+out/
+lib/
+target/
+## ignore junit test output
+test-output/
+
+.recommenders/
+.metadata
+
+#### ignore some type of files
+*.log
+*.class
+*.exe
+*.dll
+*.bat
+*~
+*.[oa]
+
+

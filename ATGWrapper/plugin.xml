@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+   <extension
+         point="org.eclipse.ui.commands">
+      <command
+            categoryId="org.eclipse.cdt.codan.ui.commands.category"
+            id="nju.seg.zhangyf.AtgWrapper.commands.batchFile"
+            name="Batch File">
+      </command>
+      <command
+            categoryId="org.eclipse.cdt.codan.ui.commands.category"
+            id="nju.seg.zhangyf.AtgWrapper.commands.batchFolder"
+            name="Batch Folder">
+      </command>
+      <command
+            categoryId="org.eclipse.cdt.codan.ui.commands.category"
+            id="nju.seg.zhangyf.AtgWrapper.commands.printAllCfgPath"
+            name="Print All Cfg Path">
+      </command>
+      <command
+            categoryId="org.eclipse.cdt.codan.ui.commands.category"
+            id="nju.seg.zhangyf.AtgWrapper.commands.batchBranchCoverageFile"
+            name="Batch Branch Coverage File">
+      </command>
+   </extension>
+   <extension
+         point="org.eclipse.ui.handlers">
+      <handler
+            class="nju.seg.zhangyf.atgwrapper.batch.BatchFileHandler"
+            commandId="nju.seg.zhangyf.AtgWrapper.commands.batchFile">
+      </handler>
+      <handler
+            class="nju.seg.zhangyf.atgwrapper.batch.BatchFolderHandler"
+            commandId="nju.seg.zhangyf.AtgWrapper.commands.batchFolder">
+      </handler>
+      <handler
+            class="nju.seg.zhangyf.atgwrapper.cfg.PrintAllCfgPathHandler"
+            commandId="nju.seg.zhangyf.AtgWrapper.commands.printAllCfgPath">
+      </handler>
+      <handler
+            class="nju.seg.zhangyf.atgwrapper.batch.BatchBranchCoverageFileHandler"
+            commandId="nju.seg.zhangyf.AtgWrapper.commands.batchBranchCoverageFile">
+      </handler>
+   </extension>
+<extension
+         point="org.eclipse.ui.menus">
+      <menuContribution
+            allPopups="false"
+            locationURI="popup:org.eclipse.ui.navigator.ProjectExplorer#PopupMenu">
+         <command
+               commandId="nju.seg.zhangyf.AtgWrapper.commands.batchFile"
+               id="nju.seg.zhangyf.AtgWrapper.menus.batchFile"
+               label="Batch File"
+               mnemonic="B"
+               style="push">
+            <visibleWhen
+                  checkEnabled="false">
+               <iterate>
+                  <instanceof
+                        value="org.eclipse.core.resources.IFile">
+                  </instanceof>
+               </iterate>
+            </visibleWhen>
+         </command>
+         <command
+               commandId="nju.seg.zhangyf.AtgWrapper.commands.batchBranchCoverageFile"
+               id="nju.seg.zhangyf.AtgWrapper.menus.batchBranchCoverageFile"
+               label="Batch Branch Coverage File"
+               style="push">
+            <visibleWhen
+                  checkEnabled="false">
+               <iterate>
+                  <instanceof
+                        value="org.eclipse.core.resources.IFile">
+                  </instanceof>
+               </iterate>
+            </visibleWhen>
+         </command>
+         <command
+               commandId="nju.seg.zhangyf.AtgWrapper.commands.batchFolder"
+               id="nju.seg.zhangyf.AtgWrapper.menus.batchFolder"
+               label="Batch Folder"
+               mnemonic="B"
+               style="push">
+            <visibleWhen
+                  checkEnabled="false">
+               <iterate>
+                  <or>
+                     <instanceof
+                           value="org.eclipse.core.resources.IFolder">
+                     </instanceof>
+                     <instanceof
+                           value="org.eclipse.cdt.internal.core.model.CContainer">
+                     </instanceof>
+                  </or>
+               </iterate>
+            </visibleWhen>
+         </command>
+         <command
+               commandId="nju.seg.zhangyf.AtgWrapper.commands.printAllCfgPath"
+               id="nju.seg.zhangyf.AtgWrapper.menus.printAllCfgPath"
+               label="Print All Cfg Path"
+               style="push">
+            <visibleWhen
+                  checkEnabled="false">
+               <iterate>
+                  <instanceof
+                        value="org.eclipse.cdt.core.model.IFunction">
+                  </instanceof>
+               </iterate>
+            </visibleWhen>
+         </command>
+      </menuContribution>
+   </extension>
+
+</plugin>
