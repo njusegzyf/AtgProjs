@@ -16,14 +16,9 @@ import cn.nju.seg.atg.parse.TestBuilder;
  * @see cn.nju.seg.atg.util.ATG
  * @author Zhang Yifan
  */
-public final class AtgConfig {
+public final class AtgConfig extends StorageConfig {
 
   public final Optional<String> action;
-
-  /**
-   * @see cn.nju.seg.atg.util.ATG#resultFolder
-   */
-  public final Optional<String> resultFolder;
 
   /**
    * @see cn.nju.seg.atg.parse.TestBuilder#repetitionNum
@@ -50,8 +45,13 @@ public final class AtgConfig {
    */
   public final Optional<Double> maxStep;
 
+  /**
+   * @see cn.nju.seg.atg.util.ATG#START_POINT
+   */
+  public final Optional<Double> startPoint;
+
   // TODO handle other settings
-  
+
   // /**
   // * 变量搜索方式
   // * <p>SEARCH_STRATEGY_ALL = 0,<p>SEARCH_STRATEGY_ONE_BY_ONE = 1
@@ -76,62 +76,52 @@ public final class AtgConfig {
   // public static final double ADUJST_RATIO_DOUBLE = 1e-15;
   // public static final int ADJUST_GRANULARITY_INTEGER = 1;
 
-  private AtgConfig(final Optional<String> action,
-                    final Optional<String> resultFolder,
+  private AtgConfig(final Optional<String> resultFolder,
+                    final boolean isCopyConfigToResultFolder,
+                    final Optional<String> action,
                     final Optional<Integer> countOfRepeation,
                     final Optional<Integer> maxNumOfPredictParam,
                     final Optional<Integer> maxNumOfGenerateCycle,
                     final Optional<Double> predictBoundary,
-                    final Optional<Double> maxStep) {
+                    final Optional<Double> maxStep,
+                    final Optional<Double> startPoint) {
+    super(resultFolder, isCopyConfigToResultFolder);
+
     assert action != null;
-    assert resultFolder != null;
     assert countOfRepeation != null;
     assert maxNumOfPredictParam != null;
     assert maxNumOfGenerateCycle != null;
     assert predictBoundary != null;
     assert maxStep != null;
+    assert startPoint != null;
 
     this.action = action;
-    this.resultFolder = resultFolder;
     this.countOfRepeation = countOfRepeation;
     this.maxNumOfPredictParam = maxNumOfPredictParam;
     this.maxNumOfGenerateCycle = maxNumOfGenerateCycle;
     this.predictBoundary = predictBoundary;
     this.maxStep = maxStep;
+    this.startPoint = startPoint;
   }
 
-  public static AtgConfig parse(final Config rawConfig) {
-    Preconditions.checkNotNull(rawConfig);
-
-    final AtgConfigBuilder builder = new AtgConfigBuilder();
-
-    // TODO parse `rawConfig`
-    builder.action = ConfigUtil2.getOptionalString(rawConfig, AtgConfig.ACTION_TAG);
-    builder.resultFolder = ConfigUtil2.getOptionalString(rawConfig, AtgConfig.RESULT_FOLDER_TAG);
-    builder.countOfRepeation = ConfigUtil2.getOptionalInteger(rawConfig, AtgConfig.COUNT_OF_REPEATION_TAG);
-    builder.maxNumOfPredictParam = ConfigUtil2.getOptionalInteger(rawConfig, AtgConfig.MAX_NUM_OF_PREDICT_PARAM_TAG);
-    builder.maxNumOfGenerateCycle = ConfigUtil2.getOptionalInteger(rawConfig, AtgConfig.MAX_NUM_OF_GENERATE_CYCLE_TAG);
-    builder.predictBoundary = ConfigUtil2.getOptionalDouble(rawConfig, AtgConfig.PREDICT_BOUNDARY_TAG);
-    builder.maxStep = ConfigUtil2.getOptionalDouble(rawConfig, AtgConfig.MAX_STEP_TAG);
-
-    return builder.build();
-  }
-
-  public static class AtgConfigBuilder {
+  public static class AtgConfigBuilder extends StorageConfig.StrorageConfigBuilder {
 
     public Optional<String> action;
-    public Optional<String> resultFolder;
     public Optional<Integer> countOfRepeation;
     public Optional<Integer> maxNumOfPredictParam;
     public Optional<Integer> maxNumOfGenerateCycle;
     public Optional<Double> predictBoundary;
     public Optional<Double> maxStep;
+    public Optional<Double> startPoint;
 
     public AtgConfigBuilder() {
       this.clear();
     }
 
+    @Override
     public void clear() {
+      super.clear();
+
       this.action = Optional.empty();
       this.resultFolder = Optional.empty();
       this.countOfRepeation = Optional.empty();
@@ -139,9 +129,13 @@ public final class AtgConfig {
       this.maxNumOfGenerateCycle = Optional.empty();
       this.predictBoundary = Optional.empty();
       this.maxStep = Optional.empty();
+      this.startPoint = Optional.empty();
     }
 
+    @Override
     public void checkVaild() {
+      super.checkVaild();
+
       Preconditions.checkState(this.action != null);
       Preconditions.checkState(this.resultFolder != null);
       Preconditions.checkState(this.countOfRepeation != null);
@@ -154,29 +148,42 @@ public final class AtgConfig {
       this.predictBoundary.ifPresent(i -> Preconditions.checkState(i > 0.0));
       Preconditions.checkState(this.maxStep != null);
       this.maxStep.ifPresent(i -> Preconditions.checkState(i > 0.0));
+      Preconditions.checkState(this.startPoint != null);
     }
 
     public AtgConfig build() {
       this.checkVaild();
 
-      return new AtgConfig(this.action,
-                           this.resultFolder,
+      return new AtgConfig(this.resultFolder,
+                           this.isCopyConfigToResultFolder,
+                           this.action,
                            this.countOfRepeation,
                            this.maxNumOfPredictParam,
                            this.maxNumOfGenerateCycle,
                            this.predictBoundary,
-                           this.maxStep);
+                           this.maxStep,
+                           this.startPoint);
     }
   }
 
-  public static final String ATG_CONFIG_TAG = "ATG";
-  public static final String ACTION_TAG = "Action";
-  public static final String RESULT_FOLDER_TAG = "ResultFolder";
-  public static final String COUNT_OF_REPEATION_TAG = "CountOfRepeation";
-  public static final String MAX_NUM_OF_PREDICT_PARAM_TAG = "MaxNumOfPredictParam";
-  public static final String MAX_NUM_OF_GENERATE_CYCLE_TAG = "MaxNumOfGenerateCycle";
-  public static final String PREDICT_BOUNDARY_TAG = "PredictBoundary";
-  public static final String MAX_STEP_TAG = "MaxStep";
+  public static AtgConfig parse(final Config rawConfig) {
+    Preconditions.checkNotNull(rawConfig);
+
+    final AtgConfigBuilder builder = new AtgConfigBuilder();
+
+    builder.resultFolder = ConfigUtil2.getOptionalString(rawConfig, BatchTags.RESULT_FOLDER_TAG);
+    builder.isCopyConfigToResultFolder = ConfigUtil2.getOptionalBoolean(rawConfig, BatchTags.IS_COPY_CONFIG_TO_RESULT_FOLDER_TAG).orElse(Boolean.FALSE).booleanValue();
+
+    builder.action = ConfigUtil2.getOptionalString(rawConfig, BatchTags.ACTION_TAG);
+    builder.countOfRepeation = ConfigUtil2.getOptionalInteger(rawConfig, BatchTags.COUNT_OF_REPEATION_TAG);
+    builder.maxNumOfPredictParam = ConfigUtil2.getOptionalInteger(rawConfig, BatchTags.MAX_NUM_OF_PREDICT_PARAM_TAG);
+    builder.maxNumOfGenerateCycle = ConfigUtil2.getOptionalInteger(rawConfig, BatchTags.MAX_NUM_OF_GENERATE_CYCLE_TAG);
+    builder.predictBoundary = ConfigUtil2.getOptionalDouble(rawConfig, BatchTags.PREDICT_BOUNDARY_TAG);
+    builder.maxStep = ConfigUtil2.getOptionalDouble(rawConfig, BatchTags.MAX_STEP_TAG);
+    builder.startPoint = ConfigUtil2.getOptionalDouble(rawConfig, BatchTags.START_POINT_TAG);
+
+    return builder.build();
+  }
 
   public static void enableAtgConfig(final AtgConfig atgConfig) {
     Preconditions.checkNotNull(atgConfig);
@@ -185,6 +192,7 @@ public final class AtgConfig {
       ATG.resultFolder = resFolder;
       AtgWrapperPluginSettings.doIfDebug(() -> System.out.println("Set ATG result folder to : " + resFolder));
     });
+
     atgConfig.countOfRepeation.ifPresent(v -> {
       TestBuilder.repetitionNum = v;
     });
@@ -199,6 +207,9 @@ public final class AtgConfig {
     });
     atgConfig.maxStep.ifPresent(v -> {
       ATG.MAX_STEP = v;
+    });
+    atgConfig.startPoint.ifPresent(v -> {
+      ATG.START_POINT = v;
     });
   }
 }

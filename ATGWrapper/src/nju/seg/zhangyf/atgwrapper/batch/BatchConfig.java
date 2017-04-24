@@ -208,10 +208,10 @@ public final class BatchConfig extends BatchConfigBase<BatchConfig.BatchItem> {
     Preconditions.checkArgument(config.hasPath(BatchTags.LIBRARIES_TAG), "Illegal config file.");
     final List<String> libraries = config.getStringList(BatchTags.LIBRARIES_TAG);
 
-    final Optional<AtgConfig> atgConfig = ConfigUtil2.getOptionalConfig(config, AtgConfig.ATG_CONFIG_TAG)
+    final Optional<AtgConfig> atgConfig = ConfigUtil2.getOptionalConfig(config, BatchTags.ATG_CONFIG_TAG)
                                                      .map(AtgConfig::parse);
 
-    final Optional<ExecutorConfig> executorConfig = ConfigUtil2.getOptionalConfig(config, ExecutorConfig.EXECUTOR_CONFIG_TAG)
+    final Optional<ExecutorConfig> executorConfig = ConfigUtil2.getOptionalConfig(config, BatchTags.EXECUTOR_TAG)
                                                                .map(ExecutorConfig::parse);
 
     final List<? extends Config> rawBatchItemConfigs = config.getConfigList(BatchTags.BATCH_ITEMS_TAG);

@@ -102,7 +102,7 @@ public final class ExecutorConfig {
       Preconditions.checkArgument(!arg.isPresent() || arg.get() > 0);
     }
 
-    final Optional<Duration> timeout = ConfigUtil2.getOptionalDuration(rawConfig, ExecutorConfig.SINGLE_FUNCTION_TIMEOUT_TAG);
+    final Optional<Duration> timeout = ConfigUtil2.getOptionalDuration(rawConfig, BatchTags.SINGLE_FUNCTION_TIMEOUT_TAG);
     timeout.ifPresent(t -> {
       assert !t.isNegative() && !t.isZero();
     });
@@ -118,15 +118,4 @@ public final class ExecutorConfig {
     SCHEDULED_THREAD_POOL,
     WORK_STEALING_POOL;
   }
-
-  public static final String EXECUTOR_CONFIG_TAG = "ExecutorConfig";
-
-  public static final String SINGLE_THREAD_EXECUTOR_TAG = "SingleThreadExecutor";
-  public static final String FIXED_THREAD_POOL_TAG = "FixedThreadPool";
-  public static final String CACHED_THREAD_POOL_TAG = "CachedThreadPool";
-  public static final String SINGLE_THREAD_SCHEDULED_EXECUTOR_TAG = "SingleThreadScheduledExecutor";
-  public static final String SCHEDULED_THREAD_POOL_TAG = "ScheduledThreadPool";
-  public static final String WORK_STEALING_POOL_TAG = "WorkStealingPool";
-
-  public static final String SINGLE_FUNCTION_TIMEOUT_TAG = "SingleFunctionTimeout";
 }

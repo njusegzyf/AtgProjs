@@ -86,10 +86,7 @@ public final class BatchBranchCoverageFileHandler extends BatchFileHandlerBase<B
       // The `run` method and underlying methods are fixed to make the work cancelable.
       // They will check whether the thread is interrupted which means the task is cancelled, and throw `CancellationException` if interrupted.
       branchCoverage.run(function, targetNodesProvider, Optional.empty(), targetPathsProvider, Optional.empty());
-      
-      // the following `run` method will 
-      // branchCoverage.run(function);
-      
+
       // build a outcome for the single test, which is a snapshot of current `TestBuilder`.
       return SingleTestOutcome.buildFromTestBuilder(functionSignature);
     } catch (final CancellationException ce) {

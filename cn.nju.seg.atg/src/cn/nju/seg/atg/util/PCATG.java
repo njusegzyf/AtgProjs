@@ -115,12 +115,16 @@ public class PCATG extends ATG {
         }
       }
     }
+    
+    // @since 0.1 extra local var
+    final CFGPath testPath = TestBuilder.allPaths.get(pathIndex);
+    
     // 返回结果
     if (isCoveredTargetPath) {
-      TestBuilder.allPaths.get(pathIndex).setCovered(true);
-      TestBuilder.allPaths.get(pathIndex).setOptimalParams(maxPath.getOptimalParams());
-      TestBuilder.allPaths.get(pathIndex).setNumOfCoveredNodes(maxPath.coveredPathLength());
-      TestBuilder.allPaths.get(pathIndex).setEndCoveredNodeName(maxPath.getEndNodeName());
+      testPath.setCovered(true);
+      testPath.setOptimalParams(maxPath.getOptimalParams());
+      testPath.setNumOfCoveredNodes(maxPath.coveredPathLength());
+      testPath.setEndCoveredNodeName(maxPath.getEndNodeName());
 
       /***************************************
        * 显示当前路径上所有分支节点上的线性拟合函数 *
@@ -141,11 +145,11 @@ public class PCATG extends ATG {
         optimalInput[paramIndex] = maxPath.getDivergenceNode().getOptimal();
       }
 
-      TestBuilder.allPaths.get(pathIndex).setCovered(false);
-      if (TestBuilder.allPaths.get(pathIndex).getNumOfCoveredNodes() < maxPath.getPath().size()) {
-        TestBuilder.allPaths.get(pathIndex).setOptimalParams(optimalInput);
-        TestBuilder.allPaths.get(pathIndex).setNumOfCoveredNodes(maxPath.coveredPathLength());
-        TestBuilder.allPaths.get(pathIndex).setEndCoveredNodeName(maxPath.getEndNodeName());
+      testPath.setCovered(false);
+      if (testPath.getNumOfCoveredNodes() < maxPath.getPath().size()) {
+        testPath.setOptimalParams(optimalInput);
+        testPath.setNumOfCoveredNodes(maxPath.coveredPathLength());
+        testPath.setEndCoveredNodeName(maxPath.getEndNodeName());
       }
       if (round == -1) {
         seedArray = optimalInput;

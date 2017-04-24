@@ -1,5 +1,6 @@
 package nju.seg.zhangyf.util;
 
+import java.io.File;
 import java.nio.file.Path;
 import java.util.Optional;
 
@@ -92,10 +93,18 @@ public final class ResourceAndUiUtil {
     return ResourceAndUiUtil.getProject(projectName).getFolder(folderPath);
   }
 
+  /** Converts a {@link IFile} to a {@link File} using its absolute path in the local file system. */
+  public static File eclipseFileToJavaFile(final IFile file) {
+    Preconditions.checkNotNull(file);
+
+    return file.getLocation().toFile();
+  }
+
+  /** Converts a {@link IFile} to a {@link Path} using its absolute path in the local file system */
   public static Path eclipseFileToPath(final IFile file) {
     Preconditions.checkNotNull(file);
-    
-    return file.getLocation().toFile().toPath();
+
+    return ResourceAndUiUtil.eclipseFileToJavaFile(file).toPath();
   }
 
   @Deprecated

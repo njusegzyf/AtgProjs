@@ -28,7 +28,7 @@ public abstract class ATG {
   /**
    * 生成随机初始值的取值点
    */
-  private static double START_POINT = 0;
+  public static double START_POINT = 0.0;
   // public static double[] LEFT_BOUNDARY = {-Double.MAX_VALUE, 14, -Double.MAX_VALUE, -Double.MAX_VALUE, -Double.MAX_VALUE, -Double.MAX_VALUE};
   // public static double[] RIGHT_BOUNDARY = {Double.MAX_VALUE, 16, Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE};
   /**
@@ -38,7 +38,7 @@ public abstract class ATG {
    * <p>
    * 向外扩展的步长为(0,MAX_STEP)内的随机值
    */
-  public static double MAX_STEP = 5;
+  public static double MAX_STEP = 5.0;
   /**
    * 用户定制的输入参数值
    */
@@ -78,11 +78,11 @@ public abstract class ATG {
   /**
    * 结束一次查找前，预测出的参数个数的上限(100,200,400) --- T
    */
-  public static int MAX_NUM_OF_PREDICT_PARAM = 4000;
+  public static int MAX_NUM_OF_PREDICT_PARAM = 400; // 4000;
   /**
    * 预测的轮数上限(1,2,4) --- N
    */
-  public static int MAX_NUM_OF_GENERATE_CYCLE = 12;
+  public static int MAX_NUM_OF_GENERATE_CYCLE = 4; // 12;
   /**
    * 生成预测值的小区间大小(2,5,10)) --- I
    */

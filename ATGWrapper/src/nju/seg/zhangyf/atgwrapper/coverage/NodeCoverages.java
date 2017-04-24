@@ -1,8 +1,10 @@
 package nju.seg.zhangyf.atgwrapper.coverage;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -20,6 +22,8 @@ import cn.nju.seg.atg.util.CFGPath;
 import cn.nju.seg.atg.util.PCATG;
 
 /**
+ * Use {@link PCATG} to run node coverage.
+ * 
  * @see cn.nju.seg.atg.parse.PathCoverage
  * @see cn.nju.seg.atg.util.PCATG
  * @author Zhang Yifan
@@ -58,19 +62,25 @@ public final class NodeCoverages {
    * Note: This method does not build CFG and paths like {@link cn.nju.seg.atg.parse.PathCoverage#run(IFunctionDeclaration)} method,
    * so the CFG and paths should be built before run this method.
    * 
-   * @param nodeId
-   *          The id of the node to be covered.
+   * @param targetNodeName
+   *          The name of the node to be covered.
+   * @param completedPaths
+   *          The paths that have been run node coverage.
+   * @param coveredPathHandler
+   *          The handler that will be called when a new path that covers the target is find.
    */
   static NodeCoverageOutcome runNodeCoverageInAtg(final String targetNodeName,
                                                   final Function<String, List<CFGPath>> targetPathsProvider,
-                                                  final Optional<Function<List<CFGPath>, List<CFGPath>>> pathSortFunc) {
+                                                  final Optional<Function<List<CFGPath>, List<CFGPath>>> pathSortFunc,
+                                                  final HashSet<CFGPath> completedPaths,
+                                                  final Consumer<CFGPath> newCoveredPathHandler) {
     Preconditions.checkArgument(!Strings.isNullOrEmpty(targetNodeName));
     Preconditions.checkNotNull(targetPathsProvider);
     Preconditions.checkNotNull(pathSortFunc);
 
-    // Note: We do not use `TestBuilder.targetNode` like `atg-tsc` in `PathCoverage`. 
+    // Note: We do not use `TestBuilder.targetNode` like `atg-tsc` in `PathCoverage`.
     // TestBuilder.targetNode = targetNodeName;
-    
+
     // filter paths that contains the target node
     final List<CFGPath> filteredPaths = targetPathsProvider.apply(targetNodeName);
 
@@ -83,33 +93,43 @@ public final class NodeCoverages {
     for (final CFGPath targetPath : orderedTargetPaths) {
       assert targetPath != null;
 
-      
       // 获取目标路径编号
-      int pathIndex = PathCoverage.getPathNum(targetPath);
+      final int pathIndex = PathCoverage.getPathNum(targetPath);
       // Note: `PCATG` gets the target path from static field `CoverageCriteria`,
       // so we must set the target path here.
       CoverageCriteria.targetPath = targetPath;
-      // 执行ATG过程
-      final int isCovered = new PCATG().generateTestData(pathIndex - 1);
 
-      if (isCovered > -1) {
-        // the path covered target node
+      final boolean isCovered;
+      if (!completedPaths.contains(targetPath)) { // if we have not run the path, run the paths
+        // 执行ATG过程
+        isCovered = new PCATG().generateTestData(pathIndex - 1) > -1;
+        // mark the path as has been run 
+        completedPaths.add(targetPath);
+        if (isCovered) { // if we find a new path that covers the target node
+          newCoveredPathHandler.accept(targetPath);
+        }
+      } else { // if the path has been run, just get the covered result from the path
+        isCovered = targetPath.isCovered();
+      }
+
+      if (isCovered) {
+        // find the path covered target node
         return new NodeCoverageOutcome(ATG.callFunctionName, targetNodeName, Optional.of(targetPath), failedPaths);
       } else {
         failedPaths.add(targetPath);
       }
     }
 
-    // not find a path that can cover the target node
+    // after run all paths, we still can not find a path that can cover the target node
     return new NodeCoverageOutcome(ATG.callFunctionName, targetNodeName, Optional.empty(), failedPaths);
   }
-  
+
   public static final List<CFGPath> getAllCoveredPaths(final String targetNodeName) {
     // filter paths that contains the target node
     final List<CFGPath> filteredPaths = TestBuilder.allPaths.stream()
                                                             .filter(cfgPath -> cfgPath.getPath().stream().anyMatch(node -> targetNodeName.equals(node.getName())))
                                                             .collect(Collectors.toList());
-    
+
     return filteredPaths;
   }
 

@@ -26,9 +26,18 @@ public final class SwtUtil {
   public static MessageBox createErrorMessageBox(final Shell shell, final String message, final String text) {
     return SwtUtil.createMessageBox(shell, SWT.ERROR, message, text);
   }
+  
+  public static MessageBox createErrorMessageBoxWithActiveShell(final String message, final String text) {
+    return SwtUtil.createErrorMessageBox(ResourceAndUiUtil.getActiveShell().get(), message, text);
+  }
+
 
   public static MessageBox createErrorMessageBox(final Shell shell, final String message) {
     return SwtUtil.createErrorMessageBox(shell, message, "Error");
+  }
+
+  public static MessageBox createErrorMessageBoxWithActiveShell(final String message) {
+    return SwtUtil.createErrorMessageBox(ResourceAndUiUtil.getActiveShell().get(), message);
   }
 
   @Deprecated

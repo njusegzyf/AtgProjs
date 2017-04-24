@@ -84,6 +84,10 @@ public final class ConfigUtil2 {
   public static Optional<Duration> getOptionalDuration(final Config config, final String path) {
     return ConfigUtil2.getOptional(config, path, Config::getDuration);
   }
+  
+  public static Optional<Boolean> getOptionalBoolean(final Config config, final String path) {
+    return ConfigUtil2.getOptional(config, path, Config::getBoolean);
+  }
 
   @Deprecated
   private ConfigUtil2() {}

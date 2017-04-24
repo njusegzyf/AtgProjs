@@ -1,5 +1,7 @@
 package nju.seg.zhangyf.atgwrapper.batch;
 
+import java.io.IOException;
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -35,6 +37,9 @@ import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import com.google.common.io.Files;
+import com.google.common.io.ByteSink;
+import com.google.common.io.ByteSource;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -43,6 +48,7 @@ import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.SettableFuture;
 
 import cn.nju.seg.atg.parse.TestBuilder;
+import cn.nju.seg.atg.util.ATG;
 import nju.seg.zhangyf.atgwrapper.AtgWrapperPluginSettings;
 import nju.seg.zhangyf.atgwrapper.outcome.SingleTestOutcome;
 import nju.seg.zhangyf.util.ResourceAndUiUtil;
@@ -96,11 +102,11 @@ public abstract class BatchFileHandlerBase<TBatchItem extends BatchItemBase, TBa
       batchConfig = this.parseConfig(configFile);
     } catch (final Exception e) {
       // handle failed to parse config
-      SwtUtil.createErrorMessageBox(ResourceAndUiUtil.getActiveShell().get(),
-                                    "Failed to parse the config file: \n"
-                                     + configFile.getLocation().toString()
-                                     + "with exception: \n"
-                                     + e.toString())
+      SwtUtil.createErrorMessageBoxWithActiveShell(
+                                                   "Failed to parse the config file: \n"
+                                                       + configFile.getLocation().toString()
+                                                       + "with exception: \n"
+                                                       + e.toString())
              .open();
       return false;
     }
@@ -129,6 +135,20 @@ public abstract class BatchFileHandlerBase<TBatchItem extends BatchItemBase, TBa
     // enable atg settings if present
     batchConfig.atgConfig.ifPresent(atgConfig -> {
       AtgConfig.enableAtgConfig(atgConfig);
+      if (atgConfig.isCopyConfigToResultFolder) {
+        final ByteSource source = Files.asByteSource(ResourceAndUiUtil.eclipseFileToJavaFile(configFile));
+        final ByteSink sink = Files.asByteSink(Paths.get(ATG.resultFolder).resolve(configFile.getName()).toFile());
+        try {
+          // copy config file to result folder
+          source.copyTo(sink);
+        } catch (final IOException ex) {
+          SwtUtil.createErrorMessageBoxWithActiveShell(
+                                                       "Failed to copy config file from: " + ResourceAndUiUtil.eclipseFileToJavaFile(configFile).toString()
+                                                           + "\nto folder: " + ATG.resultFolder
+                                                           + "\nwith exception: " + ex.toString())
+          .open();
+        }
+      }
     });
 
     for (final TBatchItem batchItem : batchConfig.getBatchItems()) {
@@ -363,9 +383,7 @@ public abstract class BatchFileHandlerBase<TBatchItem extends BatchItemBase, TBa
 
   protected abstract TBatchConfig parseConfig(final IFile configFile) throws Exception;
 
-
   protected abstract Predicate<IFunctionDeclaration> getFunctionFilter(final TBatchItem batchItem);
-
 
   protected abstract TSingleTestOutcome runTest(final IFunctionDeclaration function,
                                                 final TBatchConfig batchConfig,

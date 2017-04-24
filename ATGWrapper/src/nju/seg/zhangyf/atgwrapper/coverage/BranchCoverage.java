@@ -29,7 +29,6 @@ import cn.nju.seg.atg.parse.PathCoverage;
 import cn.nju.seg.atg.parse.TestBuilder;
 import cn.nju.seg.atg.util.ATG;
 import cn.nju.seg.atg.util.CFGPath;
-import cn.nju.seg.atg.util.MathFunc;
 import nju.seg.zhangyf.atgwrapper.cfg.CfgPathUtil;
 import nju.seg.zhangyf.atgwrapper.coverage.NodeCoverages.NodeCoverageOutcome;
 
@@ -92,6 +91,7 @@ public final class BranchCoverage extends CoverageCriteria {
     final String functionName = function.getElementName();
 
     // create the folder to store result files
+    // if failed to create, `folderPath` will be null and results will not be written to files
     Path folderPath = null;
     try {
       folderPath = Files.createDirectories(Paths.get(ATG.resultFolder).resolve(functionName).toAbsolutePath());
@@ -109,10 +109,12 @@ public final class BranchCoverage extends CoverageCriteria {
     for (int indexOfRun = 1; indexOfRun <= TestBuilder.repetitionNum; indexOfRun++) {
       // record a map of target node -> covered paths
       final ArrayListMultimap<String, CFGPath> coveredTargetNodesMap = ArrayListMultimap.create();
+      // record all paths that have run
+      final HashSet<CFGPath> completedPaths = Sets.newHashSetWithExpectedSize(TestBuilder.allPaths.size());
 
       // 获取当前微秒时间，为计算插件运行时间做准备
-      final long start_time = System.currentTimeMillis();
       TestBuilder.resetForNewTestRepeation();
+      final long start_time = System.currentTimeMillis();
 
       for (final String targetNodeName : sortedTargetNodeNames) {
         assert !Strings.isNullOrEmpty(targetNodeName);
@@ -123,20 +125,24 @@ public final class BranchCoverage extends CoverageCriteria {
         }
 
         // run node coverage
-        final NodeCoverageOutcome targetNodeCoverage = NodeCoverages.runNodeCoverageInAtg(targetNodeName,
-                                                                                          nodeName -> targetPathsProvider.apply(function, nodeName),
-                                                                                          pathSortFunc);
+        final NodeCoverageOutcome targetNodeCoverage =
+            NodeCoverages.runNodeCoverageInAtg(targetNodeName,
+                                               nodeName -> targetPathsProvider.apply(function, nodeName),
+                                               pathSortFunc,
+                                               completedPaths,
+                                               cfgPath -> { // when a new path is covered, mark all its nodes as covered
+                                                 for (final SimpleCFGNode coveredNode : cfgPath.getPath()) {
+                                                   final String coveredNodeName = coveredNode.getName();
+                                                   if (targetNodeNamesSet.contains(coveredNodeName)) {
+                                                     coveredTargetNodesMap.put(coveredNodeName, cfgPath);
+                                                   }
+                                                 }
+                                               });
 
-        // if we covered the target node
+        // since the target node may be a virtual node that does not exist in code, we must add it by hand
         if (targetNodeCoverage.isTargetNodeCovered()) {
-          // add all nodes in the covered path to `coveredTargetNodesMap` accordingly
           final CFGPath cfgPath = targetNodeCoverage.optionalCoveredPath.get();
-          for (final SimpleCFGNode coveredNode : cfgPath.getPath()) {
-            final String coveredNodeName = coveredNode.getName();
-            if (targetNodeNamesSet.contains(coveredNodeName)) {
-              coveredTargetNodesMap.put(coveredNodeName, cfgPath);
-            }
-          }
+          coveredTargetNodesMap.put(targetNodeName, cfgPath);
         }
       }
 
@@ -148,50 +154,49 @@ public final class BranchCoverage extends CoverageCriteria {
       TestBuilder.totalFrequency[indexOfRun - 1] = TestBuilder.function_frequency;
 
       // 输出结果
-
-      // clear result buffer
-      result.delete(0, result.length());
-      
-      result.append("----------------------------run" + indexOfRun + "----------------------------\n");
-
-      result.append("target branch nodes: ");
-      joiner.appendTo(result, targetNodeNames);
-      result.append('\n');
-
-      result.append("covered target branch nodes: ");
-      // Joiner.on(',').appendTo(result, coveredTargetNodesMap.keySet());
-      // do follow to make the output nodes in order
-      final Set<String> coveredNodeNamesSet = coveredTargetNodesMap.keySet();
-      final List<String> coverdNodeNamesList = targetNodeNames.stream().filter(nodeName -> coveredNodeNamesSet.contains(nodeName))
-                                                              .collect(Collectors.toList());
-      joiner.appendTo(result, coverdNodeNamesList);
-      result.append('\n');
-
-      result.append("branch node coverage: ");
-      final double branchCoverage = (double) coverdNodeNamesList.size() / targetNodeNames.size();
-      branchCoverages[indexOfRun - 1] = branchCoverage;
-      result.append(branchCoverage);
-      result.append('\n');
-
-      for (final String coveredNodeName : coverdNodeNamesList) {
-        result.append("\ncovered target branch node: ");
-        result.append(coveredNodeName);
-        result.append(" with paths:\n");
-
-        for (final CFGPath cfgPath : coveredTargetNodesMap.get(coveredNodeName)) {
-          joiner.appendTo(result, CfgPathUtil.cfgPathNodeNames(cfgPath).collect(Collectors.toList()));
-          result.append('\n');
-        }
-      }
-
-      result.append("\ntotal time:" + (execute_time + TestBuilder.function_time) / 1000.0 + " sec\n");
-      result.append("function time:" + TestBuilder.function_time / 1000.0 + " sec (" + TestBuilder.function_frequency + " times) \n");
-      result.append("algorithm time:" + execute_time / 1000.0 + " sec\n");
-
-      // @since 0.1
-      result.append("io time: " + TestBuilder.totalIoTime / 1000.0 + " sec\n");
-
       if (folderPath != null) {
+        // clear result buffer
+        result.delete(0, result.length());
+
+        result.append("----------------------------run" + indexOfRun + "----------------------------\n");
+
+        result.append("target branch nodes: ");
+        joiner.appendTo(result, targetNodeNames);
+        result.append('\n');
+
+        result.append("covered target branch nodes: ");
+        // Joiner.on(',').appendTo(result, coveredTargetNodesMap.keySet());
+        // do follow to make the output nodes in order
+        final Set<String> coveredNodeNamesSet = coveredTargetNodesMap.keySet();
+        final List<String> coverdNodeNamesList = targetNodeNames.stream().filter(nodeName -> coveredNodeNamesSet.contains(nodeName))
+                                                                .collect(Collectors.toList());
+        joiner.appendTo(result, coverdNodeNamesList);
+        result.append('\n');
+
+        result.append("branch node coverage: ");
+        final double branchCoverage = (double) coverdNodeNamesList.size() / targetNodeNames.size();
+        branchCoverages[indexOfRun - 1] = branchCoverage;
+        result.append(branchCoverage);
+        result.append('\n');
+
+        for (final String coveredNodeName : coverdNodeNamesList) {
+          result.append("\ncovered target branch node: ");
+          result.append(coveredNodeName);
+          result.append(" with paths:\n");
+
+          for (final CFGPath cfgPath : coveredTargetNodesMap.get(coveredNodeName)) {
+            joiner.appendTo(result, CfgPathUtil.cfgPathNodeNames(cfgPath).collect(Collectors.toList()));
+            result.append('\n');
+          }
+        }
+
+        result.append("\ntotal time:" + (execute_time + TestBuilder.function_time) / 1000.0 + " sec\n");
+        result.append("function time:" + TestBuilder.function_time / 1000.0 + " sec (" + TestBuilder.function_frequency + " times) \n");
+        result.append("algorithm time:" + execute_time / 1000.0 + " sec\n");
+
+        // @since 0.1
+        result.append("io time: " + TestBuilder.totalIoTime / 1000.0 + " sec\n");
+
         final Path resultFilePath = folderPath.resolve(functionName + ".result(" + indexOfRun + ").txt");
         try {
           com.google.common.io.Files.asCharSink(resultFilePath.toFile(), Charsets.US_ASCII)
@@ -201,10 +206,10 @@ public final class BranchCoverage extends CoverageCriteria {
     }
 
     // handle all runs' result
-    
+
     // clear result buffer
     result.delete(0, result.length());
-    
+
     final DecimalFormat df = new DecimalFormat("0.000");
     // prints each run's info
     for (int i = 0; i < TestBuilder.repetitionNum; i++) {
@@ -216,13 +221,17 @@ public final class BranchCoverage extends CoverageCriteria {
                                TestBuilder.totalTime[i]);
       result.append('\n');
     }
-    
+
     result.append("best coverage:\t" + Arrays.stream(branchCoverages).max().getAsDouble() + "\n");
     result.append("average coverage:\t" + Arrays.stream(branchCoverages).average().getAsDouble() + "\n");
 
     this.printTotalResult(result);
   }
 
+  /**
+   * @deprecated Use {@link #run(IFunctionDeclaration, Function, Optional, BiFunction, Optional)} instead.
+   */
+  @Deprecated
   @Override
   public void run(final IFunctionDeclaration ifd) {
     Preconditions.checkNotNull(ifd);
