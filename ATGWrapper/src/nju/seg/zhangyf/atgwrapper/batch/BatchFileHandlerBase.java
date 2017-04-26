@@ -1,12 +1,11 @@
 package nju.seg.zhangyf.atgwrapper.batch;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CancellationException;
@@ -32,15 +31,15 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.MessageBox;
 
+import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.io.Files;
 import com.google.common.io.ByteSink;
 import com.google.common.io.ByteSource;
-import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.io.CharSink;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
@@ -50,7 +49,8 @@ import com.google.common.util.concurrent.SettableFuture;
 import cn.nju.seg.atg.parse.TestBuilder;
 import cn.nju.seg.atg.util.ATG;
 import nju.seg.zhangyf.atgwrapper.AtgWrapperPluginSettings;
-import nju.seg.zhangyf.atgwrapper.outcome.SingleTestOutcome;
+import nju.seg.zhangyf.atgwrapper.outcome.BatchFileOutcome;
+import nju.seg.zhangyf.atgwrapper.outcome.TestOutcome;
 import nju.seg.zhangyf.util.ResourceAndUiUtil;
 import nju.seg.zhangyf.util.SwtUtil;
 import nju.seg.zhangyf.util.Util;
@@ -58,7 +58,7 @@ import nju.seg.zhangyf.util.Util;
 /**
  * @author Zhang Yifan
  */
-public abstract class BatchFileHandlerBase<TBatchItem extends BatchItemBase, TBatchConfig extends BatchConfigBase<TBatchItem>, TSingleTestOutcome extends SingleTestOutcome>
+public abstract class BatchFileHandlerBase<TBatchItem extends BatchItemBase, TBatchConfig extends BatchConfigBase<TBatchItem>, TTestOutcome extends TestOutcome>
     extends AbstractHandler {
 
   /* (non-Javadoc)
@@ -75,7 +75,10 @@ public abstract class BatchFileHandlerBase<TBatchItem extends BatchItemBase, TBa
       return null;
     }
 
-    this.processBatchItem(selectedFile.get());
+    try {
+      this.processBatchItemAsync(selectedFile.get());
+    } catch (final Throwable ignored) {}
+
     return null;
   }
 
@@ -85,7 +88,10 @@ public abstract class BatchFileHandlerBase<TBatchItem extends BatchItemBase, TBa
     return true;
   }
 
-  public boolean processBatchItem(final IFile configFile) {
+  /**
+   * Processes the batch file asynchronously.
+   */
+  public ListenableFuture<List<TaskOutcome<TTestOutcome>>> processBatchItemAsync(final IFile configFile) {
     Preconditions.checkNotNull(configFile);
 
     if (!(configFile.isAccessible() && configFile.getName().endsWith(".conf"))) {
@@ -93,7 +99,8 @@ public abstract class BatchFileHandlerBase<TBatchItem extends BatchItemBase, TBa
       SwtUtil.createErrorMessageBox(ResourceAndUiUtil.getActiveShell().get(),
                                     configFile.getFullPath().toString() + " is not an accessible config file.")
              .open();
-      return false;
+
+      throw new IllegalArgumentException();
     }
 
     // read the config file
@@ -108,7 +115,7 @@ public abstract class BatchFileHandlerBase<TBatchItem extends BatchItemBase, TBa
                                                        + "with exception: \n"
                                                        + e.toString())
              .open();
-      return false;
+      throw new IllegalArgumentException();
     }
 
     AtgWrapperPluginSettings.doIfDebug(() -> BatchFileHandlerBase.printProcessConfigFile(configFile.getName()));
@@ -118,35 +125,36 @@ public abstract class BatchFileHandlerBase<TBatchItem extends BatchItemBase, TBa
 
     for (final String library : batchConfig.libraries) {
       if (!BatchFileHandlerBase.loadLibrary(library)) { // if we failed to load library
-        return false;
+        throw new IllegalArgumentException();
       }
     }
 
     // create an executor to run tests
     final ListeningExecutorService executor = MoreExecutors.listeningDecorator(batchConfig.createExecutorService());
     // collect the tasks that run works
-    final ArrayList<ListenableFuture<TSingleTestOutcome>> workTaskList = Lists.newArrayList();
+    final ArrayList<ListenableFuture<TTestOutcome>> workTaskList = Lists.newArrayList();
 
     // create an executor that run tasks to handle work timeout and collect results
     final ListeningExecutorService collectExecutor = MoreExecutors.listeningDecorator(Executors.newFixedThreadPool(2));
     final Optional<Duration> singleFunctionTimeout = batchConfig.executorConfig.flatMap(e -> e.singleFunctionTimeout);
-    final ArrayList<ListenableFuture<Map.Entry<String, Boolean>>> resultTaskList = Lists.newArrayList();
+    final ArrayList<ListenableFuture<TaskOutcome<TTestOutcome>>> collectTaskOutcomeList = Lists.newArrayList();
 
     // enable atg settings if present
     batchConfig.atgConfig.ifPresent(atgConfig -> {
       AtgConfig.enableAtgConfig(atgConfig);
       if (atgConfig.isCopyConfigToResultFolder) {
-        final ByteSource source = Files.asByteSource(ResourceAndUiUtil.eclipseFileToJavaFile(configFile));
+        File configFileAsSource = ResourceAndUiUtil.eclipseFileToJavaFile(configFile);
+        final ByteSource source = Files.asByteSource(configFileAsSource);
         final ByteSink sink = Files.asByteSink(Paths.get(ATG.resultFolder).resolve(configFile.getName()).toFile());
         try {
           // copy config file to result folder
           source.copyTo(sink);
         } catch (final IOException ex) {
           SwtUtil.createErrorMessageBoxWithActiveShell(
-                                                       "Failed to copy config file from: " + ResourceAndUiUtil.eclipseFileToJavaFile(configFile).toString()
+                                                       "Failed to copy config file from: " + configFileAsSource.toString()
                                                            + "\nto folder: " + ATG.resultFolder
                                                            + "\nwith exception: " + ex.toString())
-          .open();
+                 .open();
         }
       }
     });
@@ -187,29 +195,30 @@ public abstract class BatchFileHandlerBase<TBatchItem extends BatchItemBase, TBa
                 AtgWrapperPluginSettings.doIfDebug(() -> BatchFileHandlerBase.printProcessFunction(function.get()));
 
                 // used to record the `workTask`
-                final SettableFuture<ListenableFuture<TSingleTestOutcome>> workTaskFuture = SettableFuture.create();
+                final SettableFuture<ListenableFuture<TTestOutcome>> workTaskFuture = SettableFuture.create();
 
                 // submit a task to run the work, this task returns a SingleTestOutcome and may be canceled
-                final ListenableFuture<TSingleTestOutcome> workTask = executor.submit(() -> {
+                final ListenableFuture<TTestOutcome> workTask = executor.submit(() -> {
                   // submit a task to handle timeout and collect result
                   // Note: This task should be submitted in the work task instead of after submitting the work task,
                   // which enables that the timing begins just before the work is going to run.
-                  final ListenableFuture<Map.Entry<String, Boolean>> resultTask = collectExecutor.submit(() -> {
+                  final ListenableFuture<TaskOutcome<TTestOutcome>> resultTask = collectExecutor.submit(() -> {
                     // get the `workTask`
-                    final ListenableFuture<TSingleTestOutcome> workTaskRef = workTaskFuture.get();
+                    final ListenableFuture<TTestOutcome> workTaskRef = workTaskFuture.get();
 
                     try {
+                      final TTestOutcome workTaskRes;
                       if (singleFunctionTimeout.isPresent()) { // try to get the result in timeout if defined
                         // the actual timeout is timeout for single function multiply repeat count
                         final Duration singleTimeout = singleFunctionTimeout.get();
                         final Duration totalTimeout = singleTimeout.multipliedBy(TestBuilder.repetitionNum);
 
                         // FIXME use scheduled executor instead of busy waiting
-                        workTaskRef.get(totalTimeout.getSeconds(), TimeUnit.SECONDS);
+                        workTaskRes = workTaskRef.get(totalTimeout.getSeconds(), TimeUnit.SECONDS);
                       } else { // wait without timeout
-                        workTaskRef.get();
+                        workTaskRes = workTaskRef.get();
                       }
-                      return Maps.immutableEntry(function.get().getSignature(), true);
+                      return TaskOutcome.create(function.get().getSignature(), workTaskRes);
                     } catch (final TimeoutException e) {
                       // handle timeout, cancel the work
                       // Note: Calling `cancel` do not force the executor to stop the work,
@@ -219,13 +228,13 @@ public abstract class BatchFileHandlerBase<TBatchItem extends BatchItemBase, TBa
                       AtgWrapperPluginSettings.doIfDebug(() -> {
                         System.out.println("Cancel processing function: " + function.get().getSignature() + " for timeout, result: " + cancelResult + ".\n");
                       });
-                      return Maps.immutableEntry(function.get().getSignature(), false);
+                      return TaskOutcome.create(function.get().getSignature());
                     } catch (final CancellationException | java.util.concurrent.ExecutionException e) {
                       // TODO handle for execution exception
-                      return Maps.immutableEntry(function.get().getSignature(), false);
+                      return TaskOutcome.create(function.get().getSignature());
                     }
                   });
-                  resultTaskList.add(resultTask);
+                  collectTaskOutcomeList.add(resultTask);
 
                   return BatchFileHandlerBase.this.runTest(function.get(), batchConfig, batchItem);
 
@@ -239,11 +248,9 @@ public abstract class BatchFileHandlerBase<TBatchItem extends BatchItemBase, TBa
             }
 
             // handle other sub types of `ICElement`
-            if (element instanceof IType) {
-              // not visit children of an `IType`
+            if (element instanceof IType) { // not visit children of an `IType`
               return false;
-            } else {
-              // for other sub types of `ICElement`, visit their children
+            } else { // for other sub types of `ICElement`, visit their children
               return true;
             }
           }
@@ -259,37 +266,32 @@ public abstract class BatchFileHandlerBase<TBatchItem extends BatchItemBase, TBa
     }
 
     // submit a task to print results when all the result tasks are done
-    final ListenableFuture<List<Entry<String, Boolean>>> resultListFuture = Futures.whenAllComplete(workTaskList) // wait all work done
-                                                                                   .callAsync(() -> { // collect results
-                                                                                     return Futures.allAsList(resultTaskList);
-                                                                                   }, collectExecutor);
-    Futures.addCallback(resultListFuture, new FutureCallback<List<Entry<String, Boolean>>>() {
+    final ListenableFuture<List<TaskOutcome<TTestOutcome>>> resultListFuture = Futures.whenAllComplete(workTaskList) // wait all work done
+                                                                                      .callAsync(() -> { // collect results
+                                                                                        return Futures.allAsList(collectTaskOutcomeList);
+                                                                                      }, collectExecutor);
 
-      @Override
-      public void onSuccess(final List<Entry<String, Boolean>> result) {
-        final List<String> succeedResults = result.stream()
-                                                  .filter(v -> v.getValue())
-                                                  .map(entry -> entry.getKey())
-                                                  .collect(Collectors.toList());
-        final List<String> failedResults = result.stream()
-                                                 .filter(v -> !v.getValue())
-                                                 .map(entry -> entry.getKey())
-                                                 .collect(Collectors.toList());
+    // Instead of use `Futures.addCallback` to attach the result processing, 
+    // we should use `Futures.transform` to append the work and returns the transformed future,
+    // which ensures that the returned future is done until the result processing is done.
+    return Futures.transform(resultListFuture, result -> {
+      final List<TaskOutcome<TTestOutcome>> succeedResults = result.stream()
+                                                                   .filter(v -> v.isTestSucceed())
+                                                                   .collect(Collectors.toList());
+      final List<TaskOutcome<TTestOutcome>> failedResults = result.stream()
+                                                                  .filter(v -> !v.isTestSucceed())
+                                                                  .collect(Collectors.toList());
 
-        final BatchFileOutcome batchFileOutcome = new BatchFileOutcome(succeedResults, failedResults);
-        // if we are debug, print the outcome to `System.out`
-        AtgWrapperPluginSettings.doIfDebug(() -> {
-          batchFileOutcome.printOutcome(System.out);
-        });
+      final BatchFileOutcome<TTestOutcome> batchFileOutcome =
+          new BatchFileOutcome<TTestOutcome>(succeedResults, failedResults);
+      // if we are debug, print the overview to `System.out`
+      AtgWrapperPluginSettings.doIfDebug(() -> {
+        batchFileOutcome.appendOverview(System.out);
+      });
 
-      }
-
-      @Override
-      public void onFailure(Throwable t) {}
-
+      BatchFileHandlerBase.this.processBatchResult(batchConfig, batchFileOutcome);
+      return result;
     });
-
-    return true;
   }
 
   /** Handles the error occurred in processing a batch item, returns whether it should stop processing remaining batch items. */
@@ -385,7 +387,64 @@ public abstract class BatchFileHandlerBase<TBatchItem extends BatchItemBase, TBa
 
   protected abstract Predicate<IFunctionDeclaration> getFunctionFilter(final TBatchItem batchItem);
 
-  protected abstract TSingleTestOutcome runTest(final IFunctionDeclaration function,
-                                                final TBatchConfig batchConfig,
-                                                final TBatchItem batchItem);
+  protected abstract TTestOutcome runTest(final IFunctionDeclaration function,
+                                          final TBatchConfig batchConfig,
+                                          final TBatchItem batchItem);
+
+  /**
+   * Sub classes can override this method to perform extra work on the batch results.
+   */
+  @SuppressWarnings("unused")
+  protected void processBatchResult(final TBatchConfig batchConfig, final BatchFileOutcome<TTestOutcome> batchFileOutcome) {
+    assert batchConfig != null;
+    assert batchFileOutcome != null;
+
+    final StringBuilder result = new StringBuilder();
+    try {
+      batchFileOutcome.appendOverview(result);
+      Util.appendNewLine(result);
+      batchFileOutcome.appendSucceedTaskOutcomes(result);
+    } catch (final IOException ignored) {}
+
+    final File resultFile = Paths.get(ATG.resultFolder).resolve("batchResult.txt").toFile();
+    try {
+      // write result to file
+      final CharSink sink = Files.asCharSink(resultFile, Charsets.US_ASCII);
+      sink.write(result);
+    } catch (final IOException ex) {
+      SwtUtil.createErrorMessageBoxWithActiveShell(
+                                                   "Failed to write batch result to: " + resultFile.toString()
+                                                       + "\nwith exception: " + ex.toString())
+             .open();
+    }
+  }
+
+  public static class TaskOutcome<TSingleTestOutcome extends TestOutcome> {
+    public final String testFunctionSignuature;
+    public final Optional<TSingleTestOutcome> optioanlTestOutcome;
+
+    public boolean isTestSucceed() {
+      return this.optioanlTestOutcome.isPresent();
+    }
+
+    private TaskOutcome(final String testFunctionSignuature, final Optional<TSingleTestOutcome> optioanlTestOutcome) {
+      assert testFunctionSignuature != null;
+      assert optioanlTestOutcome != null;
+
+      this.testFunctionSignuature = testFunctionSignuature;
+      this.optioanlTestOutcome = optioanlTestOutcome;
+    }
+
+    private static <T extends TestOutcome> TaskOutcome<T> create(final String testFunctionSignuature) {
+      assert !Strings.isNullOrEmpty(testFunctionSignuature);
+
+      return new TaskOutcome<>(testFunctionSignuature, Optional.empty());
+    }
+
+    public static <T extends TestOutcome> TaskOutcome<T> create(final String testFunctionSignuature, final T result) {
+      Preconditions.checkArgument(!Strings.isNullOrEmpty(testFunctionSignuature));
+
+      return new TaskOutcome<>(testFunctionSignuature, Optional.of(result));
+    }
+  }
 }

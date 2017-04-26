@@ -8,15 +8,14 @@ import java.io.OutputStreamWriter;
 import java.nio.file.Paths;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
-
 import org.eclipse.cdt.core.model.IFunctionDeclaration;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
-
 import cn.nju.seg.atg.model.Condition;
 import cn.nju.seg.atg.model.Constraint;
 import cn.nju.seg.atg.model.SimpleCFGNode;
@@ -78,6 +77,7 @@ public class PathCoverage extends CoverageCriteria {
     TestBuilder.allPaths.clear(); // = new ArrayList<CFGPath>();
 
     final int pathsSize = TestBuilder.uncheckedPaths.size();
+    TestBuilder.pathsSize = pathsSize;
 
     // @since 0.1
     TestBuilder.uncheckedPaths.stream().map(path -> path.clonePath())
@@ -96,9 +96,9 @@ public class PathCoverage extends CoverageCriteria {
   public void run(IFunctionDeclaration ifd) {
     // 构建被测程序的CFG
     this.buildCFG(ifd);
-    
+
     final StringBuilder resultStr = new StringBuilder();
-    
+
     for (int indexOfRun = 1; indexOfRun <= TestBuilder.repetitionNum; indexOfRun++) {
       // 获取当前微秒时间，为计算插件运行时间做准备
       long start_time = System.currentTimeMillis();
@@ -149,13 +149,14 @@ public class PathCoverage extends CoverageCriteria {
         // 执行ATG过程
         isCovered = new PCATG().generateTestData(pathIndex - 1);
 
-        final double execute_time = System.currentTimeMillis() - start_time - TestBuilder.function_time;
+        final long execute_time = System.currentTimeMillis() - start_time - TestBuilder.function_time;
         TestBuilder.totalTime[indexOfRun - 1] = (execute_time + TestBuilder.function_time) / 1000.0;
         TestBuilder.algorithmTime[indexOfRun - 1] = execute_time / 1000.0;
+        TestBuilder.totalUncoverdPathsTime[indexOfRun - 1] = TestBuilder.uncoverdPathsTime;
         TestBuilder.totalFrequency[indexOfRun - 1] = TestBuilder.function_frequency;
         TestBuilder.findResult[indexOfRun - 1] = isCovered > -1 ? "Y" : "N";
-        
-        // @since 0.1, Remove `result`, use `resultStr` directly 
+
+        // @since 0.1, Remove `result`, use `resultStr` directly
         // 输出结果
         // final StringBuilder result = new StringBuilder();
         resultStr.append("----------------------------run" + indexOfRun + "----------------------------\n");
@@ -200,7 +201,7 @@ public class PathCoverage extends CoverageCriteria {
         resultStr.append("algorithm time: " + execute_time / 1000.0 + " sec\n");
 
         // @since 0.1
-        resultStr.append("io time:\t" + TestBuilder.totalIoTime / 1000.0 + " sec\n");
+        resultStr.append("io time:\t" + TestBuilder.ioTime / 1000.0 + " sec\n");
 
         resultStr.append("\n");
       } else if (this.actionName.equals("atg-pc")) {
@@ -232,10 +233,10 @@ public class PathCoverage extends CoverageCriteria {
           System.out.println(((countOfCheckedPath * 100) / pathsSize) + "%,");
         }
 
-        final double execute_time = System.currentTimeMillis() - start_time - TestBuilder.function_time;
-
+        final long execute_time = System.currentTimeMillis() - start_time - TestBuilder.function_time;
         TestBuilder.totalTime[indexOfRun - 1] = (execute_time + TestBuilder.function_time) / 1000;
         TestBuilder.algorithmTime[indexOfRun - 1] = execute_time / 1000;
+        TestBuilder.totalUncoverdPathsTime[indexOfRun - 1] = TestBuilder.uncoverdPathsTime;
         TestBuilder.coveredRatio[indexOfRun - 1] = countOfCoveredPath;
         TestBuilder.totalFrequency[indexOfRun - 1] = TestBuilder.function_frequency;
 
@@ -256,13 +257,27 @@ public class PathCoverage extends CoverageCriteria {
 
     // @since 0.1, move these output out of the inner loop, which should be printed once at the end
     final DecimalFormat df = new DecimalFormat("0.000");
+    // @since 0.1, use joiner to join strings
+    Joiner joinerOnTab = Joiner.on('\t');
     for (int i = 0; i < TestBuilder.repetitionNum; i++) {
-      resultStr.append(TestBuilder.allPaths.size() + "\t" + TestBuilder.coveredRatio[i] + "\t"
-          + TestBuilder.algorithmTime[i] + "\t" + df.format(TestBuilder.totalTime[i] - TestBuilder.algorithmTime[i]) + "\t"
-          + TestBuilder.totalTime[i] + "\t" + TestBuilder.everyCoveredPaths[i] + "\n");
+      joinerOnTab.appendTo(resultStr,
+                           TestBuilder.allPaths.size(),
+                           TestBuilder.coveredRatio[i],
+                           TestBuilder.algorithmTime[i],
+                           df.format(TestBuilder.totalTime[i] - TestBuilder.algorithmTime[i]),
+                           TestBuilder.totalTime[i],
+                           TestBuilder.everyCoveredPaths[i]);
+      resultStr.append('\n');
+      // resultStr.append(TestBuilder.allPaths.size() + "\t" + TestBuilder.coveredRatio[i] + "\t"
+      // + TestBuilder.algorithmTime[i] + "\t" + df.format(TestBuilder.totalTime[i] - TestBuilder.algorithmTime[i]) + "\t"
+      // + TestBuilder.totalTime[i] + "\t" + TestBuilder.everyCoveredPaths[i] + "\n");
     }
     resultStr.append("best coverage:\t" + MathFunc.getMax(TestBuilder.coveredRatio) + " / " + TestBuilder.allPaths.size() + "\n");
     resultStr.append("average coverage:\t" + MathFunc.getAverage(TestBuilder.coveredRatio) + " / " + TestBuilder.allPaths.size() + "\n");
+
+    // @since 0.1
+    resultStr.append("Detail coverage:\n");
+    joinerOnTab.appendTo(resultStr, Arrays.asList(TestBuilder.coveredRatio));
 
     printTotalResult(resultStr);
   }
@@ -359,7 +374,7 @@ public class PathCoverage extends CoverageCriteria {
     result.append("algorithm time:" + execute_time / 1000.0 + " sec\n");
 
     // @since 0.1
-    result.append("io time: " + TestBuilder.totalIoTime / 1000.0 + " sec\n");
+    result.append("io time: " + TestBuilder.ioTime / 1000.0 + " sec\n");
 
     // @since 0.1
     // String folderPath = "/home/zy/Desktop/" + ATG.resultFolder + "/result/" + ATG.callFunctionName;

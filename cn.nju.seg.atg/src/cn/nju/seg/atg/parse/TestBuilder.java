@@ -45,7 +45,16 @@ public final class TestBuilder {
    * @see cn.nju.seg.atg.pathParse
    * @since 0.1
    */
-  public static long totalIoTime;
+  public static long ioTime;
+
+  /**
+   * The total time in milliseconds that are used to process that are failed to cover.
+   * Note: This is only used for {@link cn.nju.seg.atg.util.PCATG}.
+   *
+   * @see {@link cn.nju.seg.atg.util.PCATG#generateTestData(int)}
+   * @since 0.1
+   */
+  public static long uncoverdPathsTime;
 
   /**
    * 单次覆盖率（覆盖路径的条数）
@@ -75,9 +84,9 @@ public final class TestBuilder {
   public static double algorithmTime[] = new double[repetitionNum];
 
   /**
-   * Records covered branch number.
+   * @since 0.1
    */
-  public static int coveredBranchNUmber[] = new int[repetitionNum];
+  public static long[] totalUncoverdPathsTime = new long[TestBuilder.repetitionNum];
 
   public static String findResult[] = new String[TestBuilder.repetitionNum];
   /**
@@ -105,6 +114,8 @@ public final class TestBuilder {
    * 带测程序的所有路径
    */
   public static List<CFGPath> allPaths = Lists.newArrayList();
+
+  public static int pathsSize = 0;
 
   /////////////////////////// value space ///////////////////////////
   /**
@@ -171,10 +182,11 @@ public final class TestBuilder {
     // 初始化目标程序执行次数为0
     TestBuilder.function_frequency = 0;
 
-    TestBuilder.totalIoTime = 0L;
+    TestBuilder.ioTime = 0L;
+    TestBuilder.uncoverdPathsTime = 0L;
 
     TestBuilder.targetNode = null;
 
-    // TODO clear other dataTestBuilder.reset(TestBuilder.countOfRepeation);
+    // TODO clear other data
   }
 }

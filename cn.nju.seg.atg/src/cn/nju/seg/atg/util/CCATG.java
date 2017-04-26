@@ -124,7 +124,7 @@ public class CCATG extends ATG {
     final long startTime = System.currentTimeMillis();
     // 读取路径
     CFGPath excutedPath = PathFragmentUtil.readPathFragment(paramIndex, parameters, pathFile);
-    TestBuilder.totalIoTime += System.currentTimeMillis() - startTime;
+    TestBuilder.ioTime += System.currentTimeMillis() - startTime;
 
     // 计算目标路径被当前输入向量覆盖到的部分
     CFGPath coveredPath = excutedPath.getCoveredPathFragment(CoverageCriteria.targetPath);

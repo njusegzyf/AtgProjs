@@ -55,6 +55,9 @@ public final class BatchTags {
   public static final String WORK_STEALING_POOL_TAG = "WorkStealingPool";
   public static final String SINGLE_FUNCTION_TIMEOUT_TAG = "SingleFunctionTimeout";
 
+  // paths
+  public static final String ATG_ACTION_PATH = "ATG.Action";
+  
   @Deprecated
   private BatchTags() {}
 }

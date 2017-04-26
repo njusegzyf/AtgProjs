@@ -1,8 +1,11 @@
 package nju.seg.zhangyf.atgwrapper.batch;
 
+import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.Optional;
 
 import com.google.common.base.Preconditions;
+import com.google.common.base.Strings;
 import com.typesafe.config.Config;
 
 import nju.seg.zhangyf.atgwrapper.AtgWrapperPluginSettings;
@@ -115,21 +118,23 @@ public final class AtgConfig extends StorageConfig {
     public Optional<Double> startPoint;
 
     public AtgConfigBuilder() {
-      this.clear();
+      this.reset();
     }
 
-    @Override
-    public void clear() {
-      super.clear();
+    public AtgConfig build() {
+      this.checkVaild();
 
-      this.action = Optional.empty();
-      this.resultFolder = Optional.empty();
-      this.countOfRepeation = Optional.empty();
-      this.maxNumOfPredictParam = Optional.empty();
-      this.maxNumOfGenerateCycle = Optional.empty();
-      this.predictBoundary = Optional.empty();
-      this.maxStep = Optional.empty();
-      this.startPoint = Optional.empty();
+      final AtgConfig result = new AtgConfig(this.resultFolder,
+                                             this.isCopyConfigToResultFolder,
+                                             this.action,
+                                             this.countOfRepeation,
+                                             this.maxNumOfPredictParam,
+                                             this.maxNumOfGenerateCycle,
+                                             this.predictBoundary,
+                                             this.maxStep,
+                                             this.startPoint);
+      this.reset();
+      return result;
     }
 
     @Override
@@ -151,18 +156,18 @@ public final class AtgConfig extends StorageConfig {
       Preconditions.checkState(this.startPoint != null);
     }
 
-    public AtgConfig build() {
-      this.checkVaild();
+    @Override
+    public void reset() {
+      super.reset();
 
-      return new AtgConfig(this.resultFolder,
-                           this.isCopyConfigToResultFolder,
-                           this.action,
-                           this.countOfRepeation,
-                           this.maxNumOfPredictParam,
-                           this.maxNumOfGenerateCycle,
-                           this.predictBoundary,
-                           this.maxStep,
-                           this.startPoint);
+      this.action = Optional.empty();
+      this.resultFolder = Optional.empty();
+      this.countOfRepeation = Optional.empty();
+      this.maxNumOfPredictParam = Optional.empty();
+      this.maxNumOfGenerateCycle = Optional.empty();
+      this.predictBoundary = Optional.empty();
+      this.maxStep = Optional.empty();
+      this.startPoint = Optional.empty();
     }
   }
 
@@ -189,8 +194,14 @@ public final class AtgConfig extends StorageConfig {
     Preconditions.checkNotNull(atgConfig);
 
     atgConfig.resultFolder.ifPresent(resFolder -> {
+      assert !Strings.isNullOrEmpty(resFolder);
+
       ATG.resultFolder = resFolder;
       AtgWrapperPluginSettings.doIfDebug(() -> System.out.println("Set ATG result folder to : " + resFolder));
+      // create the folder
+      try {
+        java.nio.file.Files.createDirectories(Paths.get(resFolder));
+      } catch (final IOException ignored) {}
     });
 
     atgConfig.countOfRepeation.ifPresent(v -> {

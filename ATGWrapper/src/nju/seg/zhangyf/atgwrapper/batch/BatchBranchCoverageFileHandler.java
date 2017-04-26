@@ -19,14 +19,14 @@ import nju.seg.zhangyf.atgwrapper.batch.BatchBranchCoverageConfig.BatchBranchCov
 import nju.seg.zhangyf.atgwrapper.batch.BatchBranchCoverageConfig.TargetNodeConfig;
 import nju.seg.zhangyf.atgwrapper.cfg.CfgPathUtil;
 import nju.seg.zhangyf.atgwrapper.coverage.BranchCoverage;
-import nju.seg.zhangyf.atgwrapper.outcome.SingleTestOutcome;
+import nju.seg.zhangyf.atgwrapper.outcome.BranchCoverageTestOutcome;
 import nju.seg.zhangyf.util.CdtUtil;
 import nju.seg.zhangyf.util.ResourceAndUiUtil;
 
 /**
  * @author Zhang Yifan
  */
-public final class BatchBranchCoverageFileHandler extends BatchFileHandlerBase<BatchBranchCoverageItemConfig, BatchBranchCoverageConfig, SingleTestOutcome> {
+public final class BatchBranchCoverageFileHandler extends BatchFileHandlerBase<BatchBranchCoverageItemConfig, BatchBranchCoverageConfig, BranchCoverageTestOutcome> {
 
   @Override
   protected BatchBranchCoverageConfig parseConfig(final IFile configFile) throws Exception {
@@ -43,9 +43,9 @@ public final class BatchBranchCoverageFileHandler extends BatchFileHandlerBase<B
   }
 
   @Override
-  protected SingleTestOutcome runTest(final IFunctionDeclaration function,
-                                      final BatchBranchCoverageConfig batchConfig,
-                                      final BatchBranchCoverageItemConfig batchItem) {
+  protected BranchCoverageTestOutcome runTest(final IFunctionDeclaration function,
+                                              final BatchBranchCoverageConfig batchConfig,
+                                              final BatchBranchCoverageItemConfig batchItem) {
     assert function != null && batchConfig != null && batchItem != null;
 
     final String functionSignature = CdtUtil.getFunctionSinguatureOrName(function);
@@ -81,14 +81,14 @@ public final class BatchBranchCoverageFileHandler extends BatchFileHandlerBase<B
 
     final BranchCoverage branchCoverage = new BranchCoverage();
     branchCoverage.buildCfgAndPaths(function);
-    
+
     try {
       // The `run` method and underlying methods are fixed to make the work cancelable.
       // They will check whether the thread is interrupted which means the task is cancelled, and throw `CancellationException` if interrupted.
-      branchCoverage.run(function, targetNodesProvider, Optional.empty(), targetPathsProvider, Optional.empty());
+      final double[] branchCoverages = branchCoverage.run(function, targetNodesProvider, Optional.empty(), targetPathsProvider, Optional.empty());
 
       // build a outcome for the single test, which is a snapshot of current `TestBuilder`.
-      return SingleTestOutcome.buildFromTestBuilder(functionSignature);
+      return new BranchCoverageTestOutcome(functionSignature, branchCoverages);
     } catch (final CancellationException ce) {
       // FIXME instead of rethrow, we may gather some info from the canceled work.
       throw ce;

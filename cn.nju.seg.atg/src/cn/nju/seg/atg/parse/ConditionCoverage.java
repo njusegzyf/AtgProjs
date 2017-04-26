@@ -147,7 +147,7 @@ public class ConditionCoverage extends CoverageCriteria {
       result.append("function time:\t" + TestBuilder.function_time / 1000.0 + " sec\n");
 
       // @since 0.1
-      result.append("io time:\t" + TestBuilder.totalIoTime / 1000.0 + " sec\n");
+      result.append("io time:\t" + TestBuilder.ioTime / 1000.0 + " sec\n");
 
       result.append("function execution frequency:\t" + TestBuilder.function_frequency + " times\n");
       result.append("algorithm tiem:\t" + execute_time / 1000.0 + " sec\n");

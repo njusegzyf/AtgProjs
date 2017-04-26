@@ -64,12 +64,84 @@ public final class Util {
 
     return Arrays.copyOf(original, original.length);
   }
-  
+
   public static long[] sameLengthCopyOfArray(final long[] original) {
     Preconditions.checkNotNull(original);
 
     return Arrays.copyOf(original, original.length);
   }
+
+  // append methods
+  
+  public static void appendAll(final Appendable output,
+                               final CharSequence... contents)
+      throws IOException {
+    assert output != null;
+    assert contents != null;
+
+    for (final CharSequence content : contents) {
+      output.append(content);
+    }
+  }
+
+  /** Note: This overload for {@link StringBuilder} differs from the one for {@link Appendable} that it does not throws {@link IOException}. */
+  public static void appendAll(final StringBuilder output,
+                               final CharSequence... contents) {
+    assert output != null;
+    assert contents != null;
+
+    for (final CharSequence content : contents) {
+      output.append(content);
+    }
+  }
+
+  public static void appendAllWithNewLine(final Appendable output,
+                                          final CharSequence... contents)
+      throws IOException {
+    assert output != null;
+    assert contents != null;
+
+    Util.appendAll(output, contents);
+    Util.appendNewLine(output);
+  }
+
+  public static void appendAllWithNewLine(final StringBuilder output,
+                                          final CharSequence... contents) {
+    assert output != null;
+    assert contents != null;
+
+    Util.appendAll(output, contents);
+    Util.appendNewLine(output);
+  }
+
+  public static void appendWithNewLine(final Appendable output,
+                                       final CharSequence content)
+      throws IOException {
+    assert output != null;
+    assert content != null;
+
+    output.append(content);
+    Util.appendNewLine(output);
+  }
+
+  public static void appendWithNewLine(final StringBuilder output,
+                                       final CharSequence content) {
+    assert output != null;
+    assert content != null;
+
+    output.append(content);
+    Util.appendNewLine(output);
+  }
+
+  public static void appendNewLine(final Appendable output) throws IOException {
+    output.append(Util.LINE_SEPATATOR);
+  }
+
+  public static void appendNewLine(final StringBuilder output) {
+    output.append(Util.LINE_SEPATATOR);
+  }
+
+  public static final String LINE_SEPATATOR = System.getProperty("line.separator");
 
   @Deprecated
   private Util() {}

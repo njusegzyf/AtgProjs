@@ -11,10 +11,9 @@ import cn.nju.seg.atg.parse.TestBuilder;
 import cn.nju.seg.atg.relevant.TableData;
 
 /**
- * Since 0.1, change some static final fields to be non-final, which allows to set them on the fly. 
- *   
- * @version 0.1
+ * Since 0.1, change some static final fields to be non-final, which allows to set them on the fly.
  * 
+ * @version 0.1
  * @author zy
  * @author Zhang Yifan
  */
@@ -172,6 +171,10 @@ public abstract class ATG {
    * @return isCovered
    */
   public int generateTestData(int pathIndex) {
+    // @since 0.1 record time used for uncovered paths
+    final long startTime = System.currentTimeMillis();
+    // final long startFunctionTime = TestBuilder.function_time;
+
     try {
       c = Class.forName("cn.nju.seg.atg.callCPP.CallCPP");
       callCPP = (CallCPP) c.newInstance();
@@ -279,6 +282,12 @@ public abstract class ATG {
         round++;
       }
     }
+
+    if (isCovered < 0) {
+      // final long endFunctionTime = TestBuilder.function_time;
+      TestBuilder.uncoverdPathsTime += System.currentTimeMillis() - startTime /* - (endFunctionTime - startFunctionTime) */ ;
+    }
+
     return isCovered;
   }
 

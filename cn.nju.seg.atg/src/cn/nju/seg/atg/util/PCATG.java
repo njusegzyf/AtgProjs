@@ -204,7 +204,7 @@ public class PCATG extends ATG {
     final long startTime = System.currentTimeMillis();
     // 读取路径
     CFGPath excutedPath = ZpathUtil.readPath_Z(parameters[paramIndex], pathFile);
-    TestBuilder.totalIoTime += System.currentTimeMillis() - startTime;
+    TestBuilder.ioTime += System.currentTimeMillis() - startTime;
 
     // 计算目标路径被当前输入向量覆盖到的部分
     CFGPath coveredPath = excutedPath.getCoveredPath(CoverageCriteria.targetPath, parameters);
@@ -270,10 +270,11 @@ public class PCATG extends ATG {
       int pathIndex = PathCoverage.getPathNum(TestBuilder.uncheckedPaths.get(i));
       PathCoverage.strCoveredPath += pathIndex + ",";
 
-      TestBuilder.allPaths.get(pathIndex - 1).setCovered(true);
-      TestBuilder.allPaths.get(pathIndex - 1).setOptimalParams(parameters);
-      TestBuilder.allPaths.get(pathIndex - 1).setEndCoveredNodeName(TestBuilder.allPaths.get(pathIndex - 1).getEndNodeName());
-      TestBuilder.allPaths.get(pathIndex - 1).setNumOfCoveredNodes(TestBuilder.allPaths.get(pathIndex - 1).coveredPathLength());
+      final CFGPath cfgPath = TestBuilder.allPaths.get(pathIndex - 1);
+      cfgPath.setCovered(true);
+      cfgPath.setOptimalParams(parameters);
+      cfgPath.setEndCoveredNodeName(cfgPath.getEndNodeName());
+      cfgPath.setNumOfCoveredNodes(cfgPath.coveredPathLength());
 
       // 添加已覆盖路径到coveredPaths
       TestBuilder.coveredPaths.add(TestBuilder.uncheckedPaths.get(i).clonePath());
@@ -307,10 +308,11 @@ public class PCATG extends ATG {
       int pathIndex = PathCoverage.getPathNum(TestBuilder.uncoveredPaths.get(i));
       PathCoverage.strCoveredPath += pathIndex + ",";
 
-      TestBuilder.allPaths.get(pathIndex - 1).setCovered(true);
-      TestBuilder.allPaths.get(pathIndex - 1).setOptimalParams(parameters);
-      TestBuilder.allPaths.get(pathIndex - 1).setEndCoveredNodeName(TestBuilder.allPaths.get(pathIndex - 1).getEndNodeName());
-      TestBuilder.allPaths.get(pathIndex - 1).setNumOfCoveredNodes(TestBuilder.allPaths.get(pathIndex - 1).coveredPathLength());
+      final CFGPath cfgPath = TestBuilder.allPaths.get(pathIndex - 1);
+      cfgPath.setCovered(true);
+      cfgPath.setOptimalParams(parameters);
+      cfgPath.setEndCoveredNodeName(cfgPath.getEndNodeName());
+      cfgPath.setNumOfCoveredNodes(cfgPath.coveredPathLength());
 
       // 添加已覆盖路径到coveredPaths
       TestBuilder.coveredPaths.add(TestBuilder.uncoveredPaths.get(i).clonePath());

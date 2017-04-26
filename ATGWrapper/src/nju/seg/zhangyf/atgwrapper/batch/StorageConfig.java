@@ -24,18 +24,18 @@ public abstract class StorageConfig {
     boolean isCopyConfigToResultFolder;
 
     protected StrorageConfigBuilder() {
-      this.clear();
-    }
-
-    // @OverridingMethodsMustInvokeSuper
-    protected void clear() {
-      this.resultFolder = Optional.empty();
-      this.isCopyConfigToResultFolder = false;
+      this.reset();
     }
 
     // @OverridingMethodsMustInvokeSuper
     protected void checkVaild() {
       assert this.resultFolder != null;
+    }
+
+    // @OverridingMethodsMustInvokeSuper
+    protected void reset() {
+      this.resultFolder = Optional.empty();
+      this.isCopyConfigToResultFolder = false;
     }
   }
 }

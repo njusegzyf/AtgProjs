@@ -31,6 +31,7 @@ import cn.nju.seg.atg.util.ATG;
 import cn.nju.seg.atg.util.CFGPath;
 import nju.seg.zhangyf.atgwrapper.cfg.CfgPathUtil;
 import nju.seg.zhangyf.atgwrapper.coverage.NodeCoverages.NodeCoverageOutcome;
+import nju.seg.zhangyf.util.Util;
 
 /**
  * Use {@link nju.seg.zhangyf.atgwrapper.coverage.NodeCoverages#runNodeCoverageInAtg(int, java.util.Optional)} to perform branch coverage.
@@ -72,8 +73,9 @@ public final class BranchCoverage extends CoverageCriteria {
 
   /**
    * Note: The framework of this function refers to {@link cn.nju.seg.atg.parse.PathCoverage#run(IFunctionDeclaration)}
+   * @return 
    */
-  public void run(final IFunctionDeclaration function,
+  public double[] run(final IFunctionDeclaration function,
                   final Function<IFunctionDeclaration, List<String>> targetNodesProvider,
                   final Optional<Function<List<String>, List<String>>> targetNodeSorter,
                   final BiFunction<IFunctionDeclaration, String, List<CFGPath>> targetPathsProvider,
@@ -103,7 +105,7 @@ public final class BranchCoverage extends CoverageCriteria {
     // reused result string builder
     final StringBuilder result = new StringBuilder();
     // reused string joiner
-    final Joiner joiner = Joiner.on(", ");
+    final Joiner joinerOnComma = Joiner.on(", ");
 
     // Note: `indexOfRun` starts from 1
     for (int indexOfRun = 1; indexOfRun <= TestBuilder.repetitionNum; indexOfRun++) {
@@ -148,9 +150,12 @@ public final class BranchCoverage extends CoverageCriteria {
 
       // handle one run result
       // Note: the output refers to `PathCoverage`
-      final double execute_time = System.currentTimeMillis() - start_time - TestBuilder.function_time;
-      TestBuilder.totalTime[indexOfRun - 1] = (execute_time + TestBuilder.function_time) / 1000.0;
+      final long execute_time = System.currentTimeMillis() - start_time - TestBuilder.function_time;
+      final long totalTimeInMs = execute_time + TestBuilder.function_time;
+      double totalTime = totalTimeInMs / 1000.0;
+      TestBuilder.totalTime[indexOfRun - 1] = totalTime;
       TestBuilder.algorithmTime[indexOfRun - 1] = execute_time / 1000.0;
+      TestBuilder.totalUncoverdPathsTime[indexOfRun - 1] = TestBuilder.uncoverdPathsTime;
       TestBuilder.totalFrequency[indexOfRun - 1] = TestBuilder.function_frequency;
 
       // 输出结果
@@ -161,7 +166,7 @@ public final class BranchCoverage extends CoverageCriteria {
         result.append("----------------------------run" + indexOfRun + "----------------------------\n");
 
         result.append("target branch nodes: ");
-        joiner.appendTo(result, targetNodeNames);
+        joinerOnComma.appendTo(result, targetNodeNames);
         result.append('\n');
 
         result.append("covered target branch nodes: ");
@@ -170,7 +175,7 @@ public final class BranchCoverage extends CoverageCriteria {
         final Set<String> coveredNodeNamesSet = coveredTargetNodesMap.keySet();
         final List<String> coverdNodeNamesList = targetNodeNames.stream().filter(nodeName -> coveredNodeNamesSet.contains(nodeName))
                                                                 .collect(Collectors.toList());
-        joiner.appendTo(result, coverdNodeNamesList);
+        joinerOnComma.appendTo(result, coverdNodeNamesList);
         result.append('\n');
 
         result.append("branch node coverage: ");
@@ -178,24 +183,27 @@ public final class BranchCoverage extends CoverageCriteria {
         branchCoverages[indexOfRun - 1] = branchCoverage;
         result.append(branchCoverage);
         result.append('\n');
-
+        
+        result.append("\ntotal time:" + totalTime + " sec\n");
+        result.append("function time:" + TestBuilder.function_time / 1000.0 + " sec (" + TestBuilder.function_frequency + " times) \n");
+        result.append("algorithm time:" + execute_time / 1000.0 + " sec\n");
+        
+        final long uncoverdPathsTimeInMs = TestBuilder.uncoverdPathsTime;
+        Util.appendAllWithNewLine(result, "total time for uncovered paths:", String.valueOf(uncoverdPathsTimeInMs / 1000.0), " sec");
+        Util.appendAllWithNewLine(result, "total time for covered paths:", String.valueOf((totalTimeInMs - uncoverdPathsTimeInMs) / 1000.0), " sec");
+        Util.appendAllWithNewLine(result, "io time: ", String.valueOf(TestBuilder.ioTime / 1000.0), " sec");
+        
+        // print each node's coverage
         for (final String coveredNodeName : coverdNodeNamesList) {
           result.append("\ncovered target branch node: ");
           result.append(coveredNodeName);
           result.append(" with paths:\n");
 
           for (final CFGPath cfgPath : coveredTargetNodesMap.get(coveredNodeName)) {
-            joiner.appendTo(result, CfgPathUtil.cfgPathNodeNames(cfgPath).collect(Collectors.toList()));
+            joinerOnComma.appendTo(result, CfgPathUtil.cfgPathNodeNames(cfgPath).collect(Collectors.toList()));
             result.append('\n');
           }
         }
-
-        result.append("\ntotal time:" + (execute_time + TestBuilder.function_time) / 1000.0 + " sec\n");
-        result.append("function time:" + TestBuilder.function_time / 1000.0 + " sec (" + TestBuilder.function_frequency + " times) \n");
-        result.append("algorithm time:" + execute_time / 1000.0 + " sec\n");
-
-        // @since 0.1
-        result.append("io time: " + TestBuilder.totalIoTime / 1000.0 + " sec\n");
 
         final Path resultFilePath = folderPath.resolve(functionName + ".result(" + indexOfRun + ").txt");
         try {
@@ -211,9 +219,10 @@ public final class BranchCoverage extends CoverageCriteria {
     result.delete(0, result.length());
 
     final DecimalFormat df = new DecimalFormat("0.000");
+    Joiner joinerOnTab = Joiner.on('\t');
     // prints each run's info
     for (int i = 0; i < TestBuilder.repetitionNum; i++) {
-      Joiner.on('\t').appendTo(result,
+      joinerOnTab.appendTo(result,
                                "Run " + (i + 1) + ":",
                                branchCoverages[i],
                                TestBuilder.algorithmTime[i],
@@ -222,10 +231,14 @@ public final class BranchCoverage extends CoverageCriteria {
       result.append('\n');
     }
 
-    result.append("best coverage:\t" + Arrays.stream(branchCoverages).max().getAsDouble() + "\n");
-    result.append("average coverage:\t" + Arrays.stream(branchCoverages).average().getAsDouble() + "\n");
-
+    Util.appendAllWithNewLine(result, "Best coverage: ", String.valueOf(Arrays.stream(branchCoverages).max().getAsDouble()));
+    Util.appendAllWithNewLine(result, "Average coverage: ", String.valueOf(Arrays.stream(branchCoverages).average().getAsDouble()));
+    result.append("Detail coverage:\n");
+    joinerOnTab.appendTo(result, Arrays.asList(TestBuilder.coveredRatio));
+    
     this.printTotalResult(result);
+    
+    return branchCoverages;
   }
 
   /**

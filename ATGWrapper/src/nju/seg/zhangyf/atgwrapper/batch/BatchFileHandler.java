@@ -5,19 +5,20 @@ import java.util.concurrent.CancellationException;
 import java.util.function.Predicate;
 import org.eclipse.cdt.core.model.IFunctionDeclaration;
 import org.eclipse.core.resources.IFile;
+
 import cn.nju.seg.atg.parse.ConditionCoverage;
 import cn.nju.seg.atg.parse.CoverageCriteria;
 import cn.nju.seg.atg.parse.PathCoverage;
 import nju.seg.zhangyf.atgwrapper.AtgWrapperPluginSettings;
 import nju.seg.zhangyf.atgwrapper.batch.BatchConfig.BatchItem;
-import nju.seg.zhangyf.atgwrapper.outcome.SingleTestOutcome;
+import nju.seg.zhangyf.atgwrapper.outcome.TestOutcome;
 import nju.seg.zhangyf.util.CdtUtil;
 import nju.seg.zhangyf.util.ResourceAndUiUtil;
 
 /**
  * @author Zhang Yifan
  */
-public final class BatchFileHandler extends BatchFileHandlerBase<BatchItem, BatchConfig, SingleTestOutcome> {
+public final class BatchFileHandler extends BatchFileHandlerBase<BatchItem, BatchConfig, TestOutcome> {
 
   @Override
   protected BatchConfig parseConfig(IFile configFile) throws Exception {
@@ -47,9 +48,9 @@ public final class BatchFileHandler extends BatchFileHandlerBase<BatchItem, Batc
   }
 
   @Override
-  protected SingleTestOutcome runTest(final IFunctionDeclaration function, final BatchConfig batchConfig, final BatchItem batchItem) {
+  protected TestOutcome runTest(final IFunctionDeclaration function, final BatchConfig batchConfig, final BatchItem batchItem) {
     assert function != null && batchConfig != null && batchItem != null;
-    
+
     final String action = batchConfig.atgConfig.flatMap(v -> v.action)
                                                .orElse("atg-pc");
     final String functionSignature = CdtUtil.getFunctionSinguatureOrName(function);
@@ -72,10 +73,13 @@ public final class BatchFileHandler extends BatchFileHandlerBase<BatchItem, Batc
     try {
       cc.run(function);
       // build a outcome for the single test, which is a snapshot of current `TestBuilder`.
-      return SingleTestOutcome.buildFromTestBuilder(functionSignature);
+      return new TestOutcome(functionSignature);
     } catch (final CancellationException ce) {
       // FIXME instead of rethrow, we may gather some info from the canceled work.
       throw ce;
     }
   }
+
+  // @Override
+  // protected void processBatchResult(final BatchConfig batchConfig, final BatchFileOutcome<TestOutcome> batchFileOutcome) {}
 }

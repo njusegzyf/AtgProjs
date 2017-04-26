@@ -9,6 +9,7 @@ import java.util.Arrays;
 import org.eclipse.cdt.core.model.IFunctionDeclaration;
 
 import com.google.common.base.Charsets;
+import com.google.common.base.Joiner;
 
 import cn.nju.seg.atg.gui.AtgConsole;
 import cn.nju.seg.atg.model.SimpleCFGNode;
@@ -75,6 +76,11 @@ public abstract class CoverageCriteria extends AbstractAST {
 
     resultStr.append("average time:\t" + MathFunc.getAverage(TestBuilder.totalTime) + "\n");
     resultStr.append("best time:\t" + MathFunc.getMin(TestBuilder.totalTime) + "\n");
+    
+    // @since 0.1
+    resultStr.append("detail time:\n");
+    Joiner.on('\t').appendTo(resultStr, Arrays.asList(TestBuilder.totalTime));
+    
     resultStr.append("average frequency:\t" + MathFunc.getAverage(TestBuilder.totalFrequency) + "\n");
     resultStr.append("coverage result:\t" + Arrays.toString(TestBuilder.findResult) + "\n");
     resultStr.append("parameter setting: " + "MAX_NUM_OF_PREDICT_PARAM=" + ATG.MAX_NUM_OF_PREDICT_PARAM
@@ -110,8 +116,9 @@ public abstract class CoverageCriteria extends AbstractAST {
     // e.printStackTrace();
     // }
 
-    System.out.println(CFGBuilder.funcName + "finished");
-    AtgConsole.consoleStream.println(CFGBuilder.funcName + "finished");
+    final String message = CFGBuilder.funcName + "finished";
+    System.out.println(message);
+    AtgConsole.consoleStream.println(message);
   }
 
   /**
