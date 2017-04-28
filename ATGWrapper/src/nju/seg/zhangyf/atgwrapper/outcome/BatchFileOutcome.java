@@ -8,13 +8,13 @@ import java.util.stream.LongStream;
 import com.google.common.base.Preconditions;
 
 import cn.nju.seg.atg.util.ATG;
-import nju.seg.zhangyf.atgwrapper.batch.BatchFileHandlerBase.TaskOutcome;
+import nju.seg.zhangyf.atgwrapper.batch.BatchFileRunnerBase.TaskOutcome;
 import nju.seg.zhangyf.util.Util;
 
 /**
  * Stores results of processing a batch file.
  * 
- * @see nju.seg.zhangyf.atgwrapper.batch.BatchFileHandler
+ * @see nju.seg.zhangyf.atgwrapper.batch.BatchPathCoverageFileRunner
  * @author Zhang Yifan
  */
 public final class BatchFileOutcome<TTestOutcome extends TestOutcome> {

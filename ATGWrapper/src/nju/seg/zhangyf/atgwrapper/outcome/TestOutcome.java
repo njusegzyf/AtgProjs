@@ -10,7 +10,7 @@ import com.google.common.base.Strings;
 import com.typesafe.config.ConfigException.Null;
 
 import cn.nju.seg.atg.parse.TestBuilder;
-import nju.seg.zhangyf.atgwrapper.batch.BatchFileHandlerBase.TaskOutcome;
+import nju.seg.zhangyf.atgwrapper.batch.BatchFileRunnerBase.TaskOutcome;
 import nju.seg.zhangyf.util.Util;
 
 /**

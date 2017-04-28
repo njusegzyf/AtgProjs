@@ -1,18 +1,21 @@
-package nju.seg.zhangyf.atgwrapper.batch;
+package nju.seg.zhangyf.atgwrapper.config.batch;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import nju.seg.zhangyf.atgwrapper.config.AtgConfig;
+import nju.seg.zhangyf.atgwrapper.config.ExecutorConfig;
+
 /**
  * @author Zhang Yifan
  */
-public abstract class BatchConfigBase<TBatchItem extends BatchItemBase> {
+public abstract class BatchConfigBase<TBatchItem extends BatchItemConfigBase> {
 
-  final List<String> libraries;
-  final Optional<AtgConfig> atgConfig;
-  final Optional<ExecutorConfig> executorConfig;
+  public final List<String> libraries;
+  public final Optional<AtgConfig> atgConfig;
+  public final Optional<ExecutorConfig> executorConfig;
 
   protected BatchConfigBase(final List<String> libraries,
                             final Optional<AtgConfig> atgConfig,

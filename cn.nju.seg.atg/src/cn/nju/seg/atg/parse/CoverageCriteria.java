@@ -5,6 +5,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.stream.Collectors;
+import java.util.stream.DoubleStream;
 
 import org.eclipse.cdt.core.model.IFunctionDeclaration;
 
@@ -19,7 +21,6 @@ import cn.nju.seg.atg.util.MathFunc;
 
 /**
  * @version 0.1
- * 
  * @author zy
  * @author Zhang Yifan
  */
@@ -76,11 +77,14 @@ public abstract class CoverageCriteria extends AbstractAST {
 
     resultStr.append("average time:\t" + MathFunc.getAverage(TestBuilder.totalTime) + "\n");
     resultStr.append("best time:\t" + MathFunc.getMin(TestBuilder.totalTime) + "\n");
-    
+
     // @since 0.1
-    resultStr.append("detail time:\n");
-    Joiner.on('\t').appendTo(resultStr, Arrays.asList(TestBuilder.totalTime));
-    
+    resultStr.append("Detail time:\n");
+    Joiner.on('\t').appendTo(resultStr, DoubleStream.of(TestBuilder.totalTime)
+                                                    .boxed()
+                                                    .collect(Collectors.toList()));
+    resultStr.append('\n');
+
     resultStr.append("average frequency:\t" + MathFunc.getAverage(TestBuilder.totalFrequency) + "\n");
     resultStr.append("coverage result:\t" + Arrays.toString(TestBuilder.findResult) + "\n");
     resultStr.append("parameter setting: " + "MAX_NUM_OF_PREDICT_PARAM=" + ATG.MAX_NUM_OF_PREDICT_PARAM

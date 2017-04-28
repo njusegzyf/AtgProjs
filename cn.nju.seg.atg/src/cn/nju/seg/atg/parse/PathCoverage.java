@@ -8,14 +8,17 @@ import java.io.OutputStreamWriter;
 import java.nio.file.Paths;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
 import org.eclipse.cdt.core.model.IFunctionDeclaration;
+
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
+
 import cn.nju.seg.atg.model.Condition;
 import cn.nju.seg.atg.model.Constraint;
 import cn.nju.seg.atg.model.SimpleCFGNode;
@@ -277,9 +280,14 @@ public class PathCoverage extends CoverageCriteria {
 
     // @since 0.1
     resultStr.append("Detail coverage:\n");
-    joinerOnTab.appendTo(resultStr, Arrays.asList(TestBuilder.coveredRatio));
+    // Note: `Arrays.asList(TestBuilder.coveredRatio)` will returns a list that contains one element which is the int array,
+    // as it accepts `Object...` but not `int...`.
+    joinerOnTab.appendTo(resultStr, IntStream.of(TestBuilder.coveredRatio)
+                                             .boxed()
+                                             .collect(Collectors.toList()));
+    resultStr.append('\n');
 
-    printTotalResult(resultStr);
+    this.printTotalResult(resultStr);
   }
 
   /**
@@ -420,4 +428,14 @@ public class PathCoverage extends CoverageCriteria {
 
     return -1;
   }
+
+  /**
+   * @since 0.1
+   */
+  public static final String TARGET_NODE_COVERAGE_ACTION_NAME = "atg-tsc";
+
+  /**
+   * @since 0.1
+   */
+  public static final String PATH_COVERAGE_ACTION_NAME = "atg-pc";
 }

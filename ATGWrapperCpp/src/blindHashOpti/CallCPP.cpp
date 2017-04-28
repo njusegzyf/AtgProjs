@@ -233,7 +233,7 @@ JNIEXPORT void JNICALL Java_cn_nju_seg_atg_callCPP_CallCPP_callHelicalValley
     if (bFile<<"node1@helicalValley "<<10.0*(x3-10.0*theta(x1,x2))-0<<" expression@2\n",(10.0 * (x3 - 10.0 * theta(x1, x2)) == 0) &&
     		(bFile<<"node1@helicalValley "<<(10.0*(sqrt(x1*x1+x2*x2)-1))-0.0<<" expression@3\n",(10.0 * (sqrt(x1 * x1 + x2 * x2) - 1)) == 0.0) &&
     		(bFile<<"node1@helicalValley "<<x3-0.0<<" expression@4\n",x3 == 0.0)) {
-    	bFile<<"node1@helicalValley\n";
+    	bFile<<"node2@helicalValley\n";
     	printf("Solved Helical Valley constraint");
     }
     bFile<<"exit@helicalValley\n";

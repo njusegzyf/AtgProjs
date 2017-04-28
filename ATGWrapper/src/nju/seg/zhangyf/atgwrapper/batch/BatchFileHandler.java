@@ -1,85 +1,75 @@
 package nju.seg.zhangyf.atgwrapper.batch;
 
-import java.nio.channels.IllegalSelectorException;
-import java.util.concurrent.CancellationException;
-import java.util.function.Predicate;
-import org.eclipse.cdt.core.model.IFunctionDeclaration;
+import java.util.Optional;
+
+import org.eclipse.core.commands.AbstractHandler;
+import org.eclipse.core.commands.ExecutionEvent;
+import org.eclipse.core.commands.ExecutionException;
 import org.eclipse.core.resources.IFile;
 
-import cn.nju.seg.atg.parse.ConditionCoverage;
-import cn.nju.seg.atg.parse.CoverageCriteria;
-import cn.nju.seg.atg.parse.PathCoverage;
-import nju.seg.zhangyf.atgwrapper.AtgWrapperPluginSettings;
-import nju.seg.zhangyf.atgwrapper.batch.BatchConfig.BatchItem;
-import nju.seg.zhangyf.atgwrapper.outcome.TestOutcome;
-import nju.seg.zhangyf.util.CdtUtil;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
+
+import nju.seg.zhangyf.atgwrapper.config.ConfigTags;
 import nju.seg.zhangyf.util.ResourceAndUiUtil;
+import nju.seg.zhangyf.util.SwtUtil;
 
-/**
- * @author Zhang Yifan
- */
-public final class BatchFileHandler extends BatchFileHandlerBase<BatchItem, BatchConfig, TestOutcome> {
+public class BatchFileHandler extends AbstractHandler {
 
+  /* (non-Javadoc)
+   * @see org.eclipse.core.commands.IHandler#execute(org.eclipse.core.commands.ExecutionEvent)
+   */
   @Override
-  protected BatchConfig parseConfig(IFile configFile) throws Exception {
-    assert configFile != null;
-
-    return BatchConfig.parseBatchConfig(ResourceAndUiUtil.eclipseFileToPath(configFile));
-  }
-
-  @Override
-  protected Predicate<IFunctionDeclaration> getFunctionFilter(final BatchItem batchItem) {
-    assert batchItem != null;
-
-    switch (batchItem.mode) {
-    case ALL:
-      return func -> true;
-
-    case SPECIFY_INCLUDED:
-      // if the config specify functions, the predicate checks the function's name
-      return func -> batchItem.includedBatchFunctions.contains(func.getElementName());
-
-    case SPECIFY_EXCLUDED:
-      return func -> !batchItem.excludedBatchFunctions.contains(func.getElementName());
-
-    default:
-      throw new IllegalSelectorException();
+  public Object execute(final ExecutionEvent event) throws ExecutionException {
+    final Optional<IFile> optionalSelectedFile = ResourceAndUiUtil.getFirstActiveSelectionAs(IFile.class);
+    if (!optionalSelectedFile.isPresent()) {
+      // handle not a `IFIle` is selected
+      SwtUtil.createErrorMessageBox(ResourceAndUiUtil.getActiveShell().get(),
+                                    "The selection is not a file.")
+             .open();
+      return null;
     }
-  }
 
-  @Override
-  protected TestOutcome runTest(final IFunctionDeclaration function, final BatchConfig batchConfig, final BatchItem batchItem) {
-    assert function != null && batchConfig != null && batchItem != null;
+    final IFile batchFile = optionalSelectedFile.get();
+    final Config rawBatchConfig = ConfigFactory.parseFile(ResourceAndUiUtil.eclipseFileToJavaFile(batchFile));
 
-    final String action = batchConfig.atgConfig.flatMap(v -> v.action)
-                                               .orElse("atg-pc");
-    final String functionSignature = CdtUtil.getFunctionSinguatureOrName(function);
+    if (rawBatchConfig.hasPath(ConfigTags.ATG_ACTION_PATH)) {
+      // create a handler to process the batch file
 
-    // set the coverage criteria
-    final CoverageCriteria cc;
-    if (action.equals("atg-tsc") || action.equals("atg-pc")) {
-      cc = new PathCoverage(action);
-      AtgWrapperPluginSettings.doIfDebug(() -> {
-        System.out.println("\nProcess function: " + functionSignature + " with action: " + action + ", use PathCoverage.\n");
-      });
+      // get action from config file
+      final String action = rawBatchConfig.getString(ConfigTags.ATG_ACTION_PATH);
+
+      final BatchFileRunnerBase<?, ?, ?> runner;
+      try {
+        // create handler to process the batch file based on the action
+        runner = BatchFileRunners.createBatchFileRunner(action);
+      } catch (final Throwable ex) {
+        // if we failed to create a runner to process the batch file, show the error
+        SwtUtil.createErrorMessageBoxWithActiveShell(
+                                                     "Can not create a runner for the batch file: " + batchFile.getFullPath().toOSString()
+                                                         + ",\nskip processing the file.")
+               .open();
+        return null;
+      }
+
+      // process the batch file
+      @SuppressWarnings("unused") final ListenableFuture<?> processResult = runner.processBatchItemAsync(batchFile);
     } else {
-      cc = new ConditionCoverage(action);
-      AtgWrapperPluginSettings.doIfDebug(() -> {
-        System.out.println("\nProcess function: " + functionSignature + " with action: " + action + ", use ConditionCoverage.\n");
-      });
+      // if we can not get the action, show the error
+      SwtUtil.createErrorMessageBoxWithActiveShell(
+                                                   "Can not get action from config file: " + batchFile.getFullPath().toOSString()
+                                                       + ",\nskip processing the file.")
+             .open();
+
     }
-    // The `run` method and underlying methods are fixed to make the work cancelable.
-    // They will check whether the thread is interrupted which means the task is cancelled, and throw `CancellationException` if interrupted.
-    try {
-      cc.run(function);
-      // build a outcome for the single test, which is a snapshot of current `TestBuilder`.
-      return new TestOutcome(functionSignature);
-    } catch (final CancellationException ce) {
-      // FIXME instead of rethrow, we may gather some info from the canceled work.
-      throw ce;
-    }
+
+    return null;
   }
 
-  // @Override
-  // protected void processBatchResult(final BatchConfig batchConfig, final BatchFileOutcome<TestOutcome> batchFileOutcome) {}
+  @Override
+  public boolean isEnabled() {
+    // return super.isEnabled();
+    return true;
+  }
 }

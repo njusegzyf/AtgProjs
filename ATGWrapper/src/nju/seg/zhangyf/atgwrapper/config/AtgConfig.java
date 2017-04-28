@@ -1,4 +1,4 @@
-package nju.seg.zhangyf.atgwrapper.batch;
+package nju.seg.zhangyf.atgwrapper.config;
 
 import java.io.IOException;
 import java.nio.file.Paths;
@@ -176,16 +176,16 @@ public final class AtgConfig extends StorageConfig {
 
     final AtgConfigBuilder builder = new AtgConfigBuilder();
 
-    builder.resultFolder = ConfigUtil2.getOptionalString(rawConfig, BatchTags.RESULT_FOLDER_TAG);
-    builder.isCopyConfigToResultFolder = ConfigUtil2.getOptionalBoolean(rawConfig, BatchTags.IS_COPY_CONFIG_TO_RESULT_FOLDER_TAG).orElse(Boolean.FALSE).booleanValue();
+    builder.resultFolder = ConfigUtil2.getOptionalString(rawConfig, ConfigTags.RESULT_FOLDER_TAG);
+    builder.isCopyConfigToResultFolder = ConfigUtil2.getOptionalBoolean(rawConfig, ConfigTags.IS_COPY_CONFIG_TO_RESULT_FOLDER_TAG).orElse(Boolean.FALSE).booleanValue();
 
-    builder.action = ConfigUtil2.getOptionalString(rawConfig, BatchTags.ACTION_TAG);
-    builder.countOfRepeation = ConfigUtil2.getOptionalInteger(rawConfig, BatchTags.COUNT_OF_REPEATION_TAG);
-    builder.maxNumOfPredictParam = ConfigUtil2.getOptionalInteger(rawConfig, BatchTags.MAX_NUM_OF_PREDICT_PARAM_TAG);
-    builder.maxNumOfGenerateCycle = ConfigUtil2.getOptionalInteger(rawConfig, BatchTags.MAX_NUM_OF_GENERATE_CYCLE_TAG);
-    builder.predictBoundary = ConfigUtil2.getOptionalDouble(rawConfig, BatchTags.PREDICT_BOUNDARY_TAG);
-    builder.maxStep = ConfigUtil2.getOptionalDouble(rawConfig, BatchTags.MAX_STEP_TAG);
-    builder.startPoint = ConfigUtil2.getOptionalDouble(rawConfig, BatchTags.START_POINT_TAG);
+    builder.action = ConfigUtil2.getOptionalString(rawConfig, ConfigTags.ACTION_TAG);
+    builder.countOfRepeation = ConfigUtil2.getOptionalInteger(rawConfig, ConfigTags.COUNT_OF_REPEATION_TAG);
+    builder.maxNumOfPredictParam = ConfigUtil2.getOptionalInteger(rawConfig, ConfigTags.MAX_NUM_OF_PREDICT_PARAM_TAG);
+    builder.maxNumOfGenerateCycle = ConfigUtil2.getOptionalInteger(rawConfig, ConfigTags.MAX_NUM_OF_GENERATE_CYCLE_TAG);
+    builder.predictBoundary = ConfigUtil2.getOptionalDouble(rawConfig, ConfigTags.PREDICT_BOUNDARY_TAG);
+    builder.maxStep = ConfigUtil2.getOptionalDouble(rawConfig, ConfigTags.MAX_STEP_TAG);
+    builder.startPoint = ConfigUtil2.getOptionalDouble(rawConfig, ConfigTags.START_POINT_TAG);
 
     return builder.build();
   }

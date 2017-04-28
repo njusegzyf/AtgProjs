@@ -1,4 +1,4 @@
-package nju.seg.zhangyf.atgwrapper.batch;
+package nju.seg.zhangyf.atgwrapper.config;
 
 import java.util.Optional;
 

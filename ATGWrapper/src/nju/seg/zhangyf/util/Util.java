@@ -72,7 +72,7 @@ public final class Util {
   }
 
   // append methods
-  
+
   public static void appendAll(final Appendable output,
                                final CharSequence... contents)
       throws IOException {

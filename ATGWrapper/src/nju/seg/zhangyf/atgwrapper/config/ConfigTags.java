@@ -1,11 +1,11 @@
-package nju.seg.zhangyf.atgwrapper.batch;
+package nju.seg.zhangyf.atgwrapper.config;
 
 /**
  * Tags that are used in batch items.
  * 
  * @author Zhang Yifan
  */
-public final class BatchTags {
+public final class ConfigTags {
 
   public static final String NAME_TAG = "Name";
   public static final String TYPE_TAG = "Type";
@@ -27,6 +27,8 @@ public final class BatchTags {
   public static final String TARGET_NODES_TAG = "TargetNodes";
   public static final String TARGET_PATHS_TAG = "TargetPaths";
   public static final String PATH_TAG = "Path";
+  public static final String TARGET_PATH_FRAGMENTS_TAG =  "TargetPathFragments";
+  public static final String PATH_FRAGMENT_TAG =  "PathFragment";  
 
   // tags for `StorageConfig`
 
@@ -59,5 +61,5 @@ public final class BatchTags {
   public static final String ATG_ACTION_PATH = "ATG.Action";
   
   @Deprecated
-  private BatchTags() {}
+  private ConfigTags() {}
 }

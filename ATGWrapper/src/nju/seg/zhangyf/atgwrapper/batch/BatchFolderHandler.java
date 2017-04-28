@@ -20,7 +20,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 
-import nju.seg.zhangyf.atgwrapper.coverage.BranchCoverage;
+import nju.seg.zhangyf.atgwrapper.config.ConfigTags;
 import nju.seg.zhangyf.util.ResourceAndUiUtil;
 import nju.seg.zhangyf.util.SwtUtil;
 import nju.seg.zhangyf.util.Util;
@@ -64,7 +64,8 @@ public final class BatchFolderHandler extends AbstractHandler {
         selectedFolder.get().accept(resourceVisitor);
         BatchFolderHandler.startProcessBatchItems(filesToProcess);
       } catch (final CoreException e) {
-        e.printStackTrace();
+        SwtUtil.createErrorMessageBoxWithActiveShell("Failed to batch folder with exception:\n" + e.toString())
+               .open();
       }
       return null;
     }
@@ -78,18 +79,16 @@ public final class BatchFolderHandler extends AbstractHandler {
         selectedCContainer.get().getResource().accept(resourceVisitor);
         BatchFolderHandler.startProcessBatchItems(filesToProcess);
       } catch (final CoreException e) {
-        e.printStackTrace();
+        SwtUtil.createErrorMessageBoxWithActiveShell("Failed to batch folder with exception:\n" + e.toString())
+        .open();
       }
       return null;
     }
 
     // handle not a `IFolder` or a `CContainer` is selected
-    SwtUtil.createErrorMessageBox(ResourceAndUiUtil.getActiveShell().get(),
-                                  "The selection is not a folder or a container.")
+    SwtUtil.createErrorMessageBoxWithActiveShell("The selection is not a folder or a container.")
            .open();
-
     return null;
-
   }
 
   @Override
@@ -113,36 +112,49 @@ public final class BatchFolderHandler extends AbstractHandler {
       return;
     }
 
-    final IFile configFile = filesToProcess.poll();
-    assert configFile != null;
+    final IFile batchFile = filesToProcess.poll();
+    assert batchFile != null;
 
-    final Config config = ConfigFactory.parseFile(ResourceAndUiUtil.eclipseFileToJavaFile(configFile));
+    final Config rawBatchConfig = ConfigFactory.parseFile(ResourceAndUiUtil.eclipseFileToJavaFile(batchFile));
 
-    if (config.hasPath(BatchTags.ATG_ACTION_PATH)) {
-      // create a handler to process the batch file, and
+    if (rawBatchConfig.hasPath(ConfigTags.ATG_ACTION_PATH)) {
+      // create a handler to process the batch file
 
       // get action from config file
-      final String action = config.getString(BatchTags.ATG_ACTION_PATH);
+      final String action = rawBatchConfig.getString(ConfigTags.ATG_ACTION_PATH);
 
-      // create handler to process the batch file based on the action
-      final BatchFileHandlerBase<?, ?, ?> handler;
-      if (BranchCoverage.BRANCH_COVERAGE_ACTION_NAME.equals(action)) {
-        handler = new BatchBranchCoverageFileHandler();
-      } else {
-        handler = new BatchFileHandler();
+      final BatchFileRunnerBase<?, ?, ?> runner;
+      try {
+        // create handler to process the batch file based on the action
+        runner = BatchFileRunners.createBatchFileRunner(action);
+      } catch (final Throwable ex) {
+        // if we failed to create a runner to process the batch file, show the error and call self recursively to handle the next item.
+        SwtUtil.createErrorMessageBoxWithActiveShell(
+                                                     "Can not create a runner for the batch file: " + batchFile.getFullPath().toOSString()
+                                                         + ",\nskip processing the file.")
+               .open();
+        BatchFolderHandler.processBatchItem(filesToProcess, executor);
+        return;
       }
 
-      final ListenableFuture<?> processResult = handler.processBatchItemAsync(configFile);
+      // process the batch file
+      final ListenableFuture<?> processResult = runner.processBatchItemAsync(batchFile);
       // add a callback to start processing next batch file when the batch file is done
       processResult.addListener(() -> BatchFolderHandler.processBatchItem(filesToProcess, executor),
                                 executor);
+      return;
+    } else {
+      // if we can not get the action, skip it and just call self recursively to handle the next item.
 
-    } else {// if we can not get the action, skip it by calling self recursively
-      SwtUtil.createErrorMessageBoxWithActiveShell(
-                                                   "Can not get action from config file: " + configFile.getFullPath().toOSString()
-                                                       + ",\nskip processing the file.")
-             .open();
+      // Note: Since HOCON allows a config file includes other config files, it is not an error that a config file does not define the action.
+      //
+      // SwtUtil.createErrorMessageBoxWithActiveShell(
+      // "Can not get action from config file: " + batchFile.getFullPath().toOSString()
+      // + ",\nskip processing the file.")
+      // .open();
+
       BatchFolderHandler.processBatchItem(filesToProcess, executor);
+      return;
     }
   }
 

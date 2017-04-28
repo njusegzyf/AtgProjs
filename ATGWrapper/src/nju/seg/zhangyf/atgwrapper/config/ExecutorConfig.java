@@ -1,4 +1,4 @@
-package nju.seg.zhangyf.atgwrapper.batch;
+package nju.seg.zhangyf.atgwrapper.config;
 
 import java.time.Duration;
 import java.util.Optional;
@@ -64,9 +64,9 @@ public final class ExecutorConfig {
   }
 
   public static ExecutorConfig parse(final Config rawConfig) {
-    Preconditions.checkArgument(rawConfig.hasPath(BatchTags.TYPE_TAG));
+    Preconditions.checkArgument(rawConfig.hasPath(ConfigTags.TYPE_TAG));
 
-    final ExecutorServiceType type = rawConfig.getEnum(ExecutorServiceType.class, BatchTags.TYPE_TAG);
+    final ExecutorServiceType type = rawConfig.getEnum(ExecutorServiceType.class, ConfigTags.TYPE_TAG);
     // switch (rawConfig.getString(ExecutorConfig.TYPE_TAG)) {
     // case ExecutorConfig.SINGLE_THREAD_EXECUTOR_TAG:
     // type = ExecutorServiceType.SINGLE_THREAD_EXECUTOR;
@@ -90,7 +90,7 @@ public final class ExecutorConfig {
     // throw new IllegalArgumentException();
     // }
 
-    final Optional<Integer> arg = ConfigUtil2.getOptionalInteger(rawConfig, BatchTags.ARG_TAG);
+    final Optional<Integer> arg = ConfigUtil2.getOptionalInteger(rawConfig, ConfigTags.ARG_TAG);
     // Preconditions.checkArgument(type != null);
     if (type == ExecutorServiceType.SINGLE_THREAD_EXECUTOR || type == ExecutorServiceType.CACHED_THREAD_POOL) {
       Preconditions.checkArgument(!arg.isPresent());
@@ -102,7 +102,7 @@ public final class ExecutorConfig {
       Preconditions.checkArgument(!arg.isPresent() || arg.get() > 0);
     }
 
-    final Optional<Duration> timeout = ConfigUtil2.getOptionalDuration(rawConfig, BatchTags.SINGLE_FUNCTION_TIMEOUT_TAG);
+    final Optional<Duration> timeout = ConfigUtil2.getOptionalDuration(rawConfig, ConfigTags.SINGLE_FUNCTION_TIMEOUT_TAG);
     timeout.ifPresent(t -> {
       assert !t.isNegative() && !t.isZero();
     });

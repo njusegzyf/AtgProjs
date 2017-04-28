@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -12,6 +13,7 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -22,9 +24,6 @@ import org.eclipse.cdt.core.model.ICElement;
 import org.eclipse.cdt.core.model.ICElementVisitor;
 import org.eclipse.cdt.core.model.IFunctionDeclaration;
 import org.eclipse.cdt.core.model.ITranslationUnit;
-import org.eclipse.core.commands.AbstractHandler;
-import org.eclipse.core.commands.ExecutionEvent;
-import org.eclipse.core.commands.ExecutionException;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.CoreException;
@@ -32,14 +31,15 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.MessageBox;
 
 import com.google.common.base.Charsets;
+import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import com.google.common.io.Files;
 import com.google.common.io.ByteSink;
 import com.google.common.io.ByteSource;
 import com.google.common.io.CharSink;
+import com.google.common.io.Files;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
@@ -49,6 +49,9 @@ import com.google.common.util.concurrent.SettableFuture;
 import cn.nju.seg.atg.parse.TestBuilder;
 import cn.nju.seg.atg.util.ATG;
 import nju.seg.zhangyf.atgwrapper.AtgWrapperPluginSettings;
+import nju.seg.zhangyf.atgwrapper.config.AtgConfig;
+import nju.seg.zhangyf.atgwrapper.config.batch.BatchConfigBase;
+import nju.seg.zhangyf.atgwrapper.config.batch.BatchItemConfigBase;
 import nju.seg.zhangyf.atgwrapper.outcome.BatchFileOutcome;
 import nju.seg.zhangyf.atgwrapper.outcome.TestOutcome;
 import nju.seg.zhangyf.util.ResourceAndUiUtil;
@@ -58,41 +61,15 @@ import nju.seg.zhangyf.util.Util;
 /**
  * @author Zhang Yifan
  */
-public abstract class BatchFileHandlerBase<TBatchItem extends BatchItemBase, TBatchConfig extends BatchConfigBase<TBatchItem>, TTestOutcome extends TestOutcome>
-    extends AbstractHandler {
-
-  /* (non-Javadoc)
-   * @see org.eclipse.core.commands.IHandler#execute(org.eclipse.core.commands.ExecutionEvent)
-   */
-  @Override
-  public Object execute(final ExecutionEvent event) throws ExecutionException {
-    final Optional<IFile> selectedFile = ResourceAndUiUtil.getFirstActiveSelectionAs(IFile.class);
-    if (!selectedFile.isPresent()) {
-      // handle not a `IFIle` is selected
-      SwtUtil.createErrorMessageBox(ResourceAndUiUtil.getActiveShell().get(),
-                                    "The selection is not a file.")
-             .open();
-      return null;
-    }
-
-    try {
-      this.processBatchItemAsync(selectedFile.get());
-    } catch (final Throwable ignored) {}
-
-    return null;
-  }
-
-  @Override
-  public boolean isEnabled() {
-    // return super.isEnabled();
-    return true;
-  }
+public abstract class BatchFileRunnerBase<TBatchItem extends BatchItemConfigBase, TBatchConfig extends BatchConfigBase<TBatchItem>, TTestOutcome extends TestOutcome> {
 
   /**
    * Processes the batch file asynchronously.
    */
   public ListenableFuture<List<TaskOutcome<TTestOutcome>>> processBatchItemAsync(final IFile configFile) {
     Preconditions.checkNotNull(configFile);
+    // check that there is no processing running
+    Preconditions.checkState(BatchFileRunnerBase.isProcessingBatchFile.compareAndSet(false, true));
 
     if (!(configFile.isAccessible() && configFile.getName().endsWith(".conf"))) {
       // handle if not a config file is passed
@@ -118,13 +95,13 @@ public abstract class BatchFileHandlerBase<TBatchItem extends BatchItemBase, TBa
       throw new IllegalArgumentException();
     }
 
-    AtgWrapperPluginSettings.doIfDebug(() -> BatchFileHandlerBase.printProcessConfigFile(configFile.getName()));
+    AtgWrapperPluginSettings.doIfDebug(() -> BatchFileRunnerBase.printProcessConfigFile(configFile.getName()));
 
     // get the project the config file belongs to, which will be used as the fallback (default) project
     final IProject fallbackProject = configFile.getProject();
 
     for (final String library : batchConfig.libraries) {
-      if (!BatchFileHandlerBase.loadLibrary(library)) { // if we failed to load library
+      if (!BatchFileRunnerBase.loadLibrary(library)) { // if we failed to load library
         throw new IllegalArgumentException();
       }
     }
@@ -143,7 +120,7 @@ public abstract class BatchFileHandlerBase<TBatchItem extends BatchItemBase, TBa
     batchConfig.atgConfig.ifPresent(atgConfig -> {
       AtgConfig.enableAtgConfig(atgConfig);
       if (atgConfig.isCopyConfigToResultFolder) {
-        File configFileAsSource = ResourceAndUiUtil.eclipseFileToJavaFile(configFile);
+        final File configFileAsSource = ResourceAndUiUtil.eclipseFileToJavaFile(configFile);
         final ByteSource source = Files.asByteSource(configFileAsSource);
         final ByteSink sink = Files.asByteSink(Paths.get(ATG.resultFolder).resolve(configFile.getName()).toFile());
         try {
@@ -162,15 +139,15 @@ public abstract class BatchFileHandlerBase<TBatchItem extends BatchItemBase, TBa
     for (final TBatchItem batchItem : batchConfig.getBatchItems()) {
       // handle a batch item
       try {
-        final IProject project = BatchFileHandlerBase.getProjectWithFallback(batchItem.project, fallbackProject);
+        final IProject project = BatchFileRunnerBase.getProjectWithFallback(batchItem.project, fallbackProject);
 
         // get the target batch file (cpp file, a translation unit)
         final IFile batchFile = project.getFile(batchItem.batchFile);
         final ITranslationUnit tu = CoreModelUtil.findTranslationUnit(batchFile);
         if (tu == null) {
           // handle if the target batch file is not a translation unit
-          final boolean stopFlag = BatchFileHandlerBase.handleBatchItemError(batchItem.batchFile,
-                                                                             "Cannot find translation unit in: " + batchFile.getLocation().toString());
+          final boolean stopFlag = BatchFileRunnerBase.handleBatchItemError(batchItem.batchFile,
+                                                                            "Cannot find translation unit in: " + batchFile.getLocation().toString());
 
           if (stopFlag) {
             // break if this error should stop processing remaining batch items
@@ -187,12 +164,27 @@ public abstract class BatchFileHandlerBase<TBatchItem extends BatchItemBase, TBa
         tu.accept(new ICElementVisitor() {
           @Override
           public boolean visit(ICElement element) throws CoreException {
-            final Optional<IFunctionDeclaration> function = Util.asOptional(element, IFunctionDeclaration.class);
+            final Optional<IFunctionDeclaration> optioanlFunction = Util.asOptional(element, IFunctionDeclaration.class);
             // handle `IFunctionDeclaration`
-            if (function.isPresent()) {
-              if (predicate.test(function.get())) { // if we need to process this function
+            if (optioanlFunction.isPresent()) {
+              final IFunctionDeclaration function = optioanlFunction.get();
+              if (predicate.test(function)) { // if we need to process this function
                 // for debug, print the function
-                AtgWrapperPluginSettings.doIfDebug(() -> BatchFileHandlerBase.printProcessFunction(function.get()));
+                AtgWrapperPluginSettings.doIfDebug(() -> BatchFileRunnerBase.printProcessFunction(function));
+
+                // first check the test config is OK
+                final List<String> testErrors = BatchFileRunnerBase.this.checkTestConfig(function, batchConfig, batchItem);
+                if (!testErrors.isEmpty()) {
+                  // if there are some errors, show the errors and stop processing the function
+                  final StringBuilder errorMessageBuilder = new StringBuilder();
+                  Util.appendAllWithNewLine(errorMessageBuilder,
+                                            "There are some errors in the batch item: ", batchItem.toString());
+                  Joiner.on(Util.LINE_SEPATATOR).appendTo(errorMessageBuilder, testErrors);
+
+                  SwtUtil.createErrorMessageBoxWithActiveShell(errorMessageBuilder.toString())
+                         .open();
+                  return false;
+                }
 
                 // used to record the `workTask`
                 final SettableFuture<ListenableFuture<TTestOutcome>> workTaskFuture = SettableFuture.create();
@@ -218,7 +210,7 @@ public abstract class BatchFileHandlerBase<TBatchItem extends BatchItemBase, TBa
                       } else { // wait without timeout
                         workTaskRes = workTaskRef.get();
                       }
-                      return TaskOutcome.create(function.get().getSignature(), workTaskRes);
+                      return TaskOutcome.create(function.getSignature(), workTaskRes);
                     } catch (final TimeoutException e) {
                       // handle timeout, cancel the work
                       // Note: Calling `cancel` do not force the executor to stop the work,
@@ -226,17 +218,17 @@ public abstract class BatchFileHandlerBase<TBatchItem extends BatchItemBase, TBa
                       // The work may still be running even `cancel` returns `true`.
                       final boolean cancelResult = workTaskRef.cancel(true);
                       AtgWrapperPluginSettings.doIfDebug(() -> {
-                        System.out.println("Cancel processing function: " + function.get().getSignature() + " for timeout, result: " + cancelResult + ".\n");
+                        System.out.println("Cancel processing function: " + function.getSignature() + " for timeout, result: " + cancelResult + ".\n");
                       });
-                      return TaskOutcome.create(function.get().getSignature());
+                      return TaskOutcome.create(function.getSignature());
                     } catch (final CancellationException | java.util.concurrent.ExecutionException e) {
                       // TODO handle for execution exception
-                      return TaskOutcome.create(function.get().getSignature());
+                      return TaskOutcome.create(function.getSignature());
                     }
                   });
                   collectTaskOutcomeList.add(resultTask);
 
-                  return BatchFileHandlerBase.this.runTest(function.get(), batchConfig, batchItem);
+                  return BatchFileRunnerBase.this.runTest(function, batchConfig, batchItem);
 
                 });
                 workTaskFuture.set(workTask);
@@ -248,7 +240,7 @@ public abstract class BatchFileHandlerBase<TBatchItem extends BatchItemBase, TBa
             }
 
             // handle other sub types of `ICElement`
-            if (element instanceof IType) { // not visit children of an `IType`
+            if (element instanceof IType) { // not visit children of an `IType`, as we do not handle member functions
               return false;
             } else { // for other sub types of `ICElement`, visit their children
               return true;
@@ -259,7 +251,7 @@ public abstract class BatchFileHandlerBase<TBatchItem extends BatchItemBase, TBa
         AtgWrapperPluginSettings.doIfDebug(() -> e.printStackTrace());
 
         // handle exception happened in processing a batch item
-        if (BatchFileHandlerBase.handleBatchItemError(batchItem.batchFile, e)) {
+        if (BatchFileRunnerBase.handleBatchItemError(batchItem.batchFile, e)) {
           break;
         }
       }
@@ -271,7 +263,7 @@ public abstract class BatchFileHandlerBase<TBatchItem extends BatchItemBase, TBa
                                                                                         return Futures.allAsList(collectTaskOutcomeList);
                                                                                       }, collectExecutor);
 
-    // Instead of use `Futures.addCallback` to attach the result processing, 
+    // Instead of use `Futures.addCallback` to attach the result processing,
     // we should use `Futures.transform` to append the work and returns the transformed future,
     // which ensures that the returned future is done until the result processing is done.
     return Futures.transform(resultListFuture, result -> {
@@ -289,99 +281,17 @@ public abstract class BatchFileHandlerBase<TBatchItem extends BatchItemBase, TBa
         batchFileOutcome.appendOverview(System.out);
       });
 
-      BatchFileHandlerBase.this.processBatchResult(batchConfig, batchFileOutcome);
+      BatchFileRunnerBase.this.processBatchResult(batchConfig, batchFileOutcome);
+
+      // set `isProcessingBatchFile` to false, indicating that the processing is done
+      final boolean setIsProcessingBatchFileResult = BatchFileRunnerBase.isProcessingBatchFile.compareAndSet(true, false);
+      assert setIsProcessingBatchFileResult;
+
       return result;
     });
   }
 
-  /** Handles the error occurred in processing a batch item, returns whether it should stop processing remaining batch items. */
-  public static boolean handleBatchItemError(final String batchItemName, final String errorMessage) {
-    assert (batchItemName != null && errorMessage != null);
-
-    final MessageBox errorMsgBox = SwtUtil.createMessageBox(ResourceAndUiUtil.getActiveShell().get(),
-                                                            SWT.YES | SWT.NO | SWT.ICON_ERROR,
-                                                            "Error in handle batch item: " + batchItemName + "\n"
-                                                                + errorMessage + '\n'
-                                                                + "Do you want to abort remaining processing?",
-                                                            "Error");
-    final int res = errorMsgBox.open();
-
-    // indicate that the error should stop processing remaining batch items
-    return res == SWT.YES;
-  }
-
-  /** Handles the error occurred in processing a batch item, returns whether it should stop processing remaining batch items. */
-  public static boolean handleBatchItemError(final String batchItemName, final Throwable exception) {
-    assert (batchItemName != null && exception != null);
-
-    return BatchFileHandlerBase.handleBatchItemError(batchItemName, exception.getMessage());
-  }
-
-  private static void printProcessConfigFile(final String configFileName) {
-    assert (configFileName != null);
-
-    System.out.println();
-    System.out.println("About to process config file: " + configFileName);
-    System.out.println();
-  }
-
-  private static void printProcessFunction(final IFunctionDeclaration function) throws CModelException {
-    assert (function != null);
-
-    BatchFileHandlerBase.printProcessFunctionBlank();
-    System.out.println("About to process function: " + function.getSignature());
-  }
-
-  private static void printProcessFunctionBlank() {
-    System.out.println();
-  }
-
-  private static IProject getProjectWithFallback(final Optional<String> projectName, final IProject fallbackProject) {
-    if (projectName.isPresent()) {
-      // return the specified project
-      return ResourceAndUiUtil.getProject(projectName.get());
-    } else {
-      // return the fallback
-      return fallbackProject;
-    }
-  }
-
-  private final static Set<String> loadedLibraries = Sets.<String> newHashSet();
-
-  private static boolean loadLibrary(final String library) {
-    assert (!Strings.isNullOrEmpty(library));
-
-    if (BatchFileHandlerBase.loadedLibraries.contains(library)) {
-      // if the library is already loaded, do not load again
-      return true;
-    }
-
-    try {
-      // load the library
-      // FIXME Since the libraries must be loaded before or with the class that contains native methods (typically in the static init block of the class),
-      // we can not simply load libraries here.
-      // Currently. all libraries are loaded in the static init block of class `cn.nju.seg.atg.callCPP` using `CallCPPLibLoader`.
-      // System.loadLibrary(library);
-
-      // record the loaded library
-      BatchFileHandlerBase.loadedLibraries.add(library);
-
-      // for debug, print the path of libraryFile
-      AtgWrapperPluginSettings.doIfDebug(() -> System.out.println("Load library in: " + library));
-
-      return true;
-    } catch (Throwable e) {
-      // for debug, print the path of libraryFile
-      AtgWrapperPluginSettings.doIfDebug(() -> System.out.println("Failed to load library in: " + library));
-
-      // handle failed to load JNI native library
-      SwtUtil.createErrorMessageBox(ResourceAndUiUtil.getActiveShell().get(),
-                                    "Cannot load callCPP library in location: " + library + ":\n" + e.toString())
-             .open();
-
-      return false;
-    }
-  }
+  // Sub classes should implement the following methods.
 
   protected abstract TBatchConfig parseConfig(final IFile configFile) throws Exception;
 
@@ -391,10 +301,28 @@ public abstract class BatchFileHandlerBase<TBatchItem extends BatchItemBase, TBa
                                           final TBatchConfig batchConfig,
                                           final TBatchItem batchItem);
 
+  // Sub classes can override the following methods.
+
+  /**
+   * Checks the test config.
+   * 
+   * @param function
+   * @param batchConfig
+   * @param batchItem
+   * @return A list of error messages.
+   */
+  @SuppressWarnings("unused") // @OverridingMethodsMustInvokeSuper
+  protected List<String> checkTestConfig(final IFunctionDeclaration function,
+                                         final TBatchConfig batchConfig,
+                                         final TBatchItem batchItem) {
+    assert function != null && batchConfig != null && batchItem != null;
+
+    return Collections.emptyList();
+  }
+
   /**
    * Sub classes can override this method to perform extra work on the batch results.
    */
-  @SuppressWarnings("unused")
   protected void processBatchResult(final TBatchConfig batchConfig, final BatchFileOutcome<TTestOutcome> batchFileOutcome) {
     assert batchConfig != null;
     assert batchFileOutcome != null;
@@ -418,7 +346,106 @@ public abstract class BatchFileHandlerBase<TBatchItem extends BatchItemBase, TBa
              .open();
     }
   }
+  
+  // Static help methods.
 
+  /**
+   *  Handles the error occurred in processing a batch item, returns whether it should stop processing remaining batch items. 
+   */
+  protected static boolean handleBatchItemError(final String batchItemName, final String errorMessage) {
+    assert (batchItemName != null && errorMessage != null);
+
+    final MessageBox errorMsgBox = SwtUtil.createMessageBox(ResourceAndUiUtil.getActiveShell().get(),
+                                                            SWT.YES | SWT.NO | SWT.ICON_ERROR,
+                                                            "Error in handle batch item: " + batchItemName + "\n"
+                                                                + errorMessage + '\n'
+                                                                + "Do you want to abort remaining processing?",
+                                                            "Error");
+    final int res = errorMsgBox.open();
+
+    // indicate that the error should stop processing remaining batch items
+    return res == SWT.YES;
+  }
+
+  /** Handles the error occurred in processing a batch item, returns whether it should stop processing remaining batch items. */
+  protected static boolean handleBatchItemError(final String batchItemName, final Throwable exception) {
+    assert (batchItemName != null && exception != null);
+
+    return BatchFileRunnerBase.handleBatchItemError(batchItemName, exception.getMessage());
+  }
+
+  private static void printProcessConfigFile(final String configFileName) {
+    assert (configFileName != null);
+
+    System.out.println();
+    System.out.println("About to process config file: " + configFileName);
+    System.out.println();
+  }
+
+  private static void printProcessFunction(final IFunctionDeclaration function) throws CModelException {
+    assert (function != null);
+
+    BatchFileRunnerBase.printProcessFunctionBlank();
+    System.out.println("About to process function: " + function.getSignature());
+  }
+
+  private static void printProcessFunctionBlank() {
+    System.out.println();
+  }
+
+  private static IProject getProjectWithFallback(final Optional<String> projectName, final IProject fallbackProject) {
+    if (projectName.isPresent()) {
+      // return the specified project
+      return ResourceAndUiUtil.getProject(projectName.get());
+    } else {
+      // return the fallback
+      return fallbackProject;
+    }
+  }
+
+  private final static Set<String> loadedLibraries = Sets.<String> newHashSet();
+
+  private static boolean loadLibrary(final String library) {
+    assert (!Strings.isNullOrEmpty(library));
+
+    if (BatchFileRunnerBase.loadedLibraries.contains(library)) {
+      // if the library is already loaded, do not load again
+      return true;
+    }
+
+    try {
+      // load the library
+      // FIXME Since the libraries must be loaded before or with the class that contains native methods (typically in the static init block of the class),
+      // we can not simply load libraries here.
+      // Currently. all libraries are loaded in the static init block of class `cn.nju.seg.atg.callCPP` using `CallCPPLibLoader`.
+      // System.loadLibrary(library);
+
+      // record the loaded library
+      BatchFileRunnerBase.loadedLibraries.add(library);
+
+      // for debug, print the path of libraryFile
+      AtgWrapperPluginSettings.doIfDebug(() -> System.out.println("Load library in: " + library));
+
+      return true;
+    } catch (Throwable e) {
+      // for debug, print the path of libraryFile
+      AtgWrapperPluginSettings.doIfDebug(() -> System.out.println("Failed to load library in: " + library));
+
+      // handle failed to load JNI native library
+      SwtUtil.createErrorMessageBox(ResourceAndUiUtil.getActiveShell().get(),
+                                    "Cannot load callCPP library in location: " + library + ":\n" + e.toString())
+             .open();
+
+      return false;
+    }
+  }
+
+  /**
+   * Represents the outcome of a single test.
+   * 
+   * @author Zhang Yifan
+   * @param <TSingleTestOutcome>
+   */
   public static class TaskOutcome<TSingleTestOutcome extends TestOutcome> {
     public final String testFunctionSignuature;
     public final Optional<TSingleTestOutcome> optioanlTestOutcome;
@@ -447,4 +474,11 @@ public abstract class BatchFileHandlerBase<TBatchItem extends BatchItemBase, TBa
       return new TaskOutcome<>(testFunctionSignuature, Optional.of(result));
     }
   }
+
+  /**
+   * Records whether there is some test running.
+   * <p>
+   * Note: Since the underlying ATG tool can not run tests in parallel, we use this static field to stop running tests in parallel.
+   */
+  private static final AtomicBoolean isProcessingBatchFile = new AtomicBoolean(false);
 }

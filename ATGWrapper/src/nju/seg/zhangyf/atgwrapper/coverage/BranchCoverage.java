@@ -13,13 +13,14 @@ import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.DoubleStream;
 import org.eclipse.cdt.core.model.IFunctionDeclaration;
 
 import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
-import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
@@ -65,7 +66,7 @@ public final class BranchCoverage extends CoverageCriteria {
     this.buildCFG(function);
 
     // 获取程序的路径集合
-    // Note: Since we do not change paths, we do not need to build paths for every run
+    // Note: Since we do not change paths, there is no need to rebuild paths for every run
     PathCoverage.buildPaths();
 
     this.lastBuiltFunction = Optional.of(function);
@@ -73,13 +74,14 @@ public final class BranchCoverage extends CoverageCriteria {
 
   /**
    * Note: The framework of this function refers to {@link cn.nju.seg.atg.parse.PathCoverage#run(IFunctionDeclaration)}
-   * @return 
+   * 
+   * @return
    */
   public double[] run(final IFunctionDeclaration function,
-                  final Function<IFunctionDeclaration, List<String>> targetNodesProvider,
-                  final Optional<Function<List<String>, List<String>>> targetNodeSorter,
-                  final BiFunction<IFunctionDeclaration, String, List<CFGPath>> targetPathsProvider,
-                  final Optional<Function<List<CFGPath>, List<CFGPath>>> pathSortFunc) {
+                      final Function<IFunctionDeclaration, List<String>> targetNodesProvider,
+                      final Optional<Function<List<String>, List<String>>> targetNodeSorter,
+                      final BiFunction<IFunctionDeclaration, String, List<CFGPath>> targetPathsProvider,
+                      final Optional<Function<List<CFGPath>, List<CFGPath>>> pathSortFunc) {
     Preconditions.checkNotNull(function);
     Preconditions.checkNotNull(targetNodeSorter);
 
@@ -94,7 +96,7 @@ public final class BranchCoverage extends CoverageCriteria {
 
     // create the folder to store result files
     // if failed to create, `folderPath` will be null and results will not be written to files
-    Path folderPath = null;
+    /* final */ Path folderPath = null;
     try {
       folderPath = Files.createDirectories(Paths.get(ATG.resultFolder).resolve(functionName).toAbsolutePath());
     } catch (final IOException ignored) {}
@@ -110,7 +112,7 @@ public final class BranchCoverage extends CoverageCriteria {
     // Note: `indexOfRun` starts from 1
     for (int indexOfRun = 1; indexOfRun <= TestBuilder.repetitionNum; indexOfRun++) {
       // record a map of target node -> covered paths
-      final ArrayListMultimap<String, CFGPath> coveredTargetNodesMap = ArrayListMultimap.create();
+      final HashMultimap<String, CFGPath> coveredTargetNodesMap = HashMultimap.create();
       // record all paths that have run
       final HashSet<CFGPath> completedPaths = Sets.newHashSetWithExpectedSize(TestBuilder.allPaths.size());
 
@@ -183,21 +185,19 @@ public final class BranchCoverage extends CoverageCriteria {
         branchCoverages[indexOfRun - 1] = branchCoverage;
         result.append(branchCoverage);
         result.append('\n');
-        
+
         result.append("\ntotal time:" + totalTime + " sec\n");
         result.append("function time:" + TestBuilder.function_time / 1000.0 + " sec (" + TestBuilder.function_frequency + " times) \n");
         result.append("algorithm time:" + execute_time / 1000.0 + " sec\n");
-        
+
         final long uncoverdPathsTimeInMs = TestBuilder.uncoverdPathsTime;
         Util.appendAllWithNewLine(result, "total time for uncovered paths:", String.valueOf(uncoverdPathsTimeInMs / 1000.0), " sec");
         Util.appendAllWithNewLine(result, "total time for covered paths:", String.valueOf((totalTimeInMs - uncoverdPathsTimeInMs) / 1000.0), " sec");
         Util.appendAllWithNewLine(result, "io time: ", String.valueOf(TestBuilder.ioTime / 1000.0), " sec");
-        
+
         // print each node's coverage
         for (final String coveredNodeName : coverdNodeNamesList) {
-          result.append("\ncovered target branch node: ");
-          result.append(coveredNodeName);
-          result.append(" with paths:\n");
+          Util.appendAllWithNewLine(result, "\ncovered target branch node: ", coveredNodeName, " with paths:");
 
           for (final CFGPath cfgPath : coveredTargetNodesMap.get(coveredNodeName)) {
             joinerOnComma.appendTo(result, CfgPathUtil.cfgPathNodeNames(cfgPath).collect(Collectors.toList()));
@@ -223,21 +223,25 @@ public final class BranchCoverage extends CoverageCriteria {
     // prints each run's info
     for (int i = 0; i < TestBuilder.repetitionNum; i++) {
       joinerOnTab.appendTo(result,
-                               "Run " + (i + 1) + ":",
-                               branchCoverages[i],
-                               TestBuilder.algorithmTime[i],
-                               df.format(TestBuilder.totalTime[i] - TestBuilder.algorithmTime[i]),
-                               TestBuilder.totalTime[i]);
+                           "Run " + (i + 1) + ":",
+                           branchCoverages[i],
+                           TestBuilder.algorithmTime[i],
+                           df.format(TestBuilder.totalTime[i] - TestBuilder.algorithmTime[i]),
+                           TestBuilder.totalTime[i]);
       result.append('\n');
     }
 
     Util.appendAllWithNewLine(result, "Best coverage: ", String.valueOf(Arrays.stream(branchCoverages).max().getAsDouble()));
     Util.appendAllWithNewLine(result, "Average coverage: ", String.valueOf(Arrays.stream(branchCoverages).average().getAsDouble()));
+    
     result.append("Detail coverage:\n");
-    joinerOnTab.appendTo(result, Arrays.asList(TestBuilder.coveredRatio));
-    
+    joinerOnTab.appendTo(result, DoubleStream.of(branchCoverages)
+                                             .boxed()
+                                             .collect(Collectors.toList()));
+    Util.appendNewLine(result);
+
     this.printTotalResult(result);
-    
+
     return branchCoverages;
   }
 
@@ -251,7 +255,7 @@ public final class BranchCoverage extends CoverageCriteria {
 
     this.run(ifd,
              BranchCoverage::getTargetNodeIdsInBranchCoverage, Optional.empty(),
-             BranchCoverage::getAllTargetPaths, Optional.empty());
+             BranchCoverage::getAllCoveredPaths, Optional.empty());
   }
 
   /**
@@ -273,11 +277,11 @@ public final class BranchCoverage extends CoverageCriteria {
   }
 
   /**
-   * Gets all target paths for a given function and a given node.
+   * Gets all paths that covers a given node in a given function.
    * <p>
    * This method is used when user do not specify target paths in config file.
    */
-  public static List<CFGPath> getAllTargetPaths(final IFunctionDeclaration ifd, final String targetNodeName) {
+  public static List<CFGPath> getAllCoveredPaths(final IFunctionDeclaration ifd, final String targetNodeName) {
     assert ifd != null;
     assert targetNodeName != null;
     // FIXME Since `NodeCoverages.getAllCoveredPaths` assume that the target function's CFG is parsed and is stored in `TestBuilder`,

@@ -15,9 +15,9 @@ Class LibraryInfo{
 
 
 [LibraryInfo[]]$libraries = @(
-    # [LibraryInfo]::new('/root/eclipseWorkspace/ATGWrapperCpp/src/coral', 'CallCPP.cpp', 'Coral'),
+    [LibraryInfo]::new('/root/eclipseWorkspace/ATGWrapperCpp/src/coral', 'CallCPP.cpp', 'Coral'),
     # [LibraryInfo]::new('/root/eclipseWorkspace/ATGWrapperCpp/src/stat', 'CallCPP_Stat.cpp', 'Stat'),
-    # [LibraryInfo]::new('/root/eclipseWorkspace/ATGWrapperCpp/src/blindHashOpti', 'CallCPP.cpp', 'BlindHashOpti'),
+    [LibraryInfo]::new('/root/eclipseWorkspace/ATGWrapperCpp/src/blindHashOpti', 'CallCPP.cpp', 'BlindHashOpti'),
     [LibraryInfo]::new('/root/eclipseWorkspace/ATGWrapperCpp/src/dartAndEtc', 'CallCPP.cpp', 'DartAndEtc')
 )
 $libPrefix = 'CallCPP'
