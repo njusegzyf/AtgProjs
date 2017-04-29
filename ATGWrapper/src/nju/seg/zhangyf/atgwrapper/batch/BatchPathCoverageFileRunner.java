@@ -23,7 +23,7 @@ import nju.seg.zhangyf.util.ResourceAndUiUtil;
 public final class BatchPathCoverageFileRunner extends BatchFileRunnerBase<BatchPathCoverageItemConfig, BatchPathCoverageConfig, TestOutcome> {
 
   @Override
-  protected BatchPathCoverageConfig parseConfig(IFile configFile) throws Exception {
+  protected BatchPathCoverageConfig parseConfig(IFile configFile) { // throws Exception {
     assert configFile != null;
 
     return BatchPathCoverageConfig.parseBatchConfig(ResourceAndUiUtil.eclipseFileToPath(configFile));
@@ -82,15 +82,10 @@ public final class BatchPathCoverageFileRunner extends BatchFileRunnerBase<Batch
     }
   }
 
-//  @Override
-//  protected void processBatchResult(final BatchPathCoverageConfig batchConfig, final BatchFileOutcome<TestOutcome> batchFileOutcome) {
-//    super.processBatchResult(batchConfig, batchFileOutcome);
-//  }
-//  
-//  @Override
-//  protected List<String> checkTestConfig(final IFunctionDeclaration function, 
-//                                         final BatchPathCoverageConfig batchConfig, 
-//                                         final BatchPathCoverageItemConfig batchItem) {
-//    return super.checkTestConfig(function, batchConfig, batchItem);
-//  } 
+  // @Override
+  // protected List<String> checkTestConfig(final IFunctionDeclaration function,
+  // final BatchPathCoverageConfig batchConfig,
+  // final BatchPathCoverageItemConfig batchItem) {
+  // return super.checkTestConfig(function, batchConfig, batchItem);
+  // }
 }

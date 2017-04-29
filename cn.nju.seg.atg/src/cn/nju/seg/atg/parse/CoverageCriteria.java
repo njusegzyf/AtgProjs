@@ -98,7 +98,7 @@ public abstract class CoverageCriteria extends AbstractAST {
     final Path resultFolderPath = Paths.get(ATG.resultFolder);
     try {
       Files.createDirectories(resultFolderPath);
-    } catch (IOException ignored) {
+    } catch (final IOException ignored) {
       return;
     }
 
@@ -120,7 +120,7 @@ public abstract class CoverageCriteria extends AbstractAST {
     // e.printStackTrace();
     // }
 
-    final String message = CFGBuilder.funcName + "finished";
+    final String message = CFGBuilder.funcName + " finished";
     System.out.println(message);
     AtgConsole.consoleStream.println(message);
   }

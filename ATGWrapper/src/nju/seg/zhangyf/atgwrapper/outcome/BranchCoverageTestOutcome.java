@@ -7,7 +7,7 @@ import com.google.common.base.Preconditions;
  */
 public final class BranchCoverageTestOutcome extends TestOutcome {
 
-  public BranchCoverageTestOutcome(final String testFunctionSignuature, final double[] coverage) {
+  public BranchCoverageTestOutcome(final String testFunctionSignuature, final CoverageResult[] coverage) {
     super(Preconditions.checkNotNull(testFunctionSignuature),
           Preconditions.checkNotNull(coverage));
   }

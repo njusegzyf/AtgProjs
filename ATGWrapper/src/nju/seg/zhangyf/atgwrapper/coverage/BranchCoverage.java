@@ -14,6 +14,7 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.DoubleStream;
+
 import org.eclipse.cdt.core.model.IFunctionDeclaration;
 
 import com.google.common.base.Charsets;
@@ -32,6 +33,7 @@ import cn.nju.seg.atg.util.ATG;
 import cn.nju.seg.atg.util.CFGPath;
 import nju.seg.zhangyf.atgwrapper.cfg.CfgPathUtil;
 import nju.seg.zhangyf.atgwrapper.coverage.NodeCoverages.NodeCoverageOutcome;
+import nju.seg.zhangyf.atgwrapper.outcome.CoverageResult;
 import nju.seg.zhangyf.util.Util;
 
 /**
@@ -77,11 +79,11 @@ public final class BranchCoverage extends CoverageCriteria {
    * 
    * @return
    */
-  public double[] run(final IFunctionDeclaration function,
-                      final Function<IFunctionDeclaration, List<String>> targetNodesProvider,
-                      final Optional<Function<List<String>, List<String>>> targetNodeSorter,
-                      final BiFunction<IFunctionDeclaration, String, List<CFGPath>> targetPathsProvider,
-                      final Optional<Function<List<CFGPath>, List<CFGPath>>> pathSortFunc) {
+  public CoverageResult[] run(final IFunctionDeclaration function,
+                                    final Function<IFunctionDeclaration, List<String>> targetNodesProvider,
+                                    final Optional<Function<List<String>, List<String>>> targetNodeSorter,
+                                    final BiFunction<IFunctionDeclaration, String, List<CFGPath>> targetPathsProvider,
+                                    final Optional<Function<List<CFGPath>, List<CFGPath>>> pathSortFunc) {
     Preconditions.checkNotNull(function);
     Preconditions.checkNotNull(targetNodeSorter);
 
@@ -102,7 +104,8 @@ public final class BranchCoverage extends CoverageCriteria {
     } catch (final IOException ignored) {}
 
     // record all run's branch coverage
-    final double[] branchCoverages = new double[TestBuilder.repetitionNum];
+    final CoverageResult[] branchCoverages = new CoverageResult[TestBuilder.repetitionNum];
+    final int totalBranchNum = targetNodeNames.size();
 
     // reused result string builder
     final StringBuilder result = new StringBuilder();
@@ -165,13 +168,13 @@ public final class BranchCoverage extends CoverageCriteria {
         // clear result buffer
         result.delete(0, result.length());
 
-        result.append("----------------------------run" + indexOfRun + "----------------------------\n");
+        result.append("----------------------------Run" + indexOfRun + "----------------------------\n");
 
-        result.append("target branch nodes: ");
+        result.append("Target branch nodes: ");
         joinerOnComma.appendTo(result, targetNodeNames);
         result.append('\n');
 
-        result.append("covered target branch nodes: ");
+        result.append("Covered target branch nodes: ");
         // Joiner.on(',').appendTo(result, coveredTargetNodesMap.keySet());
         // do follow to make the output nodes in order
         final Set<String> coveredNodeNamesSet = coveredTargetNodesMap.keySet();
@@ -180,20 +183,19 @@ public final class BranchCoverage extends CoverageCriteria {
         joinerOnComma.appendTo(result, coverdNodeNamesList);
         result.append('\n');
 
-        result.append("branch node coverage: ");
-        final double branchCoverage = (double) coverdNodeNamesList.size() / targetNodeNames.size();
-        branchCoverages[indexOfRun - 1] = branchCoverage;
-        result.append(branchCoverage);
+        result.append("Branch node coverage: ");
+        branchCoverages[indexOfRun - 1] = new CoverageResult(coverdNodeNamesList.size(), totalBranchNum);
+        result.append(branchCoverages[indexOfRun - 1].toCoverageString());
         result.append('\n');
 
-        result.append("\ntotal time:" + totalTime + " sec\n");
-        result.append("function time:" + TestBuilder.function_time / 1000.0 + " sec (" + TestBuilder.function_frequency + " times) \n");
-        result.append("algorithm time:" + execute_time / 1000.0 + " sec\n");
+        result.append("Total time:" + totalTime + " sec\n");
+        result.append("Function time:" + TestBuilder.function_time / 1000.0 + " sec (" + TestBuilder.function_frequency + " times) \n");
+        result.append("Algorithm time:" + execute_time / 1000.0 + " sec\n");
 
         final long uncoverdPathsTimeInMs = TestBuilder.uncoverdPathsTime;
-        Util.appendAllWithNewLine(result, "total time for uncovered paths:", String.valueOf(uncoverdPathsTimeInMs / 1000.0), " sec");
-        Util.appendAllWithNewLine(result, "total time for covered paths:", String.valueOf((totalTimeInMs - uncoverdPathsTimeInMs) / 1000.0), " sec");
-        Util.appendAllWithNewLine(result, "io time: ", String.valueOf(TestBuilder.ioTime / 1000.0), " sec");
+        Util.appendAllWithNewLine(result, "Total time for uncovered paths:", String.valueOf(uncoverdPathsTimeInMs / 1000.0), " sec");
+        Util.appendAllWithNewLine(result, "Total time for covered paths:", String.valueOf((totalTimeInMs - uncoverdPathsTimeInMs) / 1000.0), " sec");
+        Util.appendAllWithNewLine(result, "Io time: ", String.valueOf(TestBuilder.ioTime / 1000.0), " sec");
 
         // print each node's coverage
         for (final String coveredNodeName : coverdNodeNamesList) {
@@ -224,18 +226,19 @@ public final class BranchCoverage extends CoverageCriteria {
     for (int i = 0; i < TestBuilder.repetitionNum; i++) {
       joinerOnTab.appendTo(result,
                            "Run " + (i + 1) + ":",
-                           branchCoverages[i],
+                           branchCoverages[i].coverdNum + " / " + branchCoverages[i].coverdNum,
                            TestBuilder.algorithmTime[i],
                            df.format(TestBuilder.totalTime[i] - TestBuilder.algorithmTime[i]),
                            TestBuilder.totalTime[i]);
       result.append('\n');
     }
 
-    Util.appendAllWithNewLine(result, "Best coverage: ", String.valueOf(Arrays.stream(branchCoverages).max().getAsDouble()));
-    Util.appendAllWithNewLine(result, "Average coverage: ", String.valueOf(Arrays.stream(branchCoverages).average().getAsDouble()));
-    
-    result.append("Detail coverage:\n");
-    joinerOnTab.appendTo(result, DoubleStream.of(branchCoverages)
+    final double[] branchCoveragesRatio = Arrays.stream(branchCoverages).mapToDouble(CoverageResult::coverageRatio).toArray();
+    Util.appendAllWithNewLine(result, "Best coverage ratio: ", String.valueOf(DoubleStream.of(branchCoveragesRatio).max().getAsDouble()));
+    Util.appendAllWithNewLine(result, "Average coverage ratio: ", String.valueOf(DoubleStream.of(branchCoveragesRatio).average().getAsDouble()));
+
+    result.append("Detail coverage ratio:\n");
+    joinerOnTab.appendTo(result, DoubleStream.of(branchCoveragesRatio)
                                              .boxed()
                                              .collect(Collectors.toList()));
     Util.appendNewLine(result);

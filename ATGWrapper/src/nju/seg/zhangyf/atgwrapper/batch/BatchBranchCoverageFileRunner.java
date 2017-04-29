@@ -26,6 +26,7 @@ import nju.seg.zhangyf.atgwrapper.config.batch.BatchBranchCoverageConfig.BatchBr
 import nju.seg.zhangyf.atgwrapper.config.batch.BatchBranchCoverageConfig.TargetNodeConfig;
 import nju.seg.zhangyf.atgwrapper.coverage.BranchCoverage;
 import nju.seg.zhangyf.atgwrapper.outcome.BranchCoverageTestOutcome;
+import nju.seg.zhangyf.atgwrapper.outcome.CoverageResult;
 import nju.seg.zhangyf.util.CdtUtil;
 import nju.seg.zhangyf.util.ResourceAndUiUtil;
 
@@ -35,7 +36,7 @@ import nju.seg.zhangyf.util.ResourceAndUiUtil;
 public final class BatchBranchCoverageFileRunner extends BatchFileRunnerBase<BatchBranchCoverageItemConfig, BatchBranchCoverageConfig, BranchCoverageTestOutcome> {
 
   @Override
-  protected BatchBranchCoverageConfig parseConfig(final IFile configFile) throws Exception {
+  protected BatchBranchCoverageConfig parseConfig(final IFile configFile) { // throws Exception {
     assert configFile != null;
 
     return BatchBranchCoverageConfig.parseBatchConfig(ResourceAndUiUtil.eclipseFileToPath(configFile));
@@ -99,7 +100,7 @@ public final class BatchBranchCoverageFileRunner extends BatchFileRunnerBase<Bat
     try {
       // The `run` method and underlying methods are fixed to make the work cancelable.
       // They will check whether the thread is interrupted which means the task is cancelled, and throw `CancellationException` if interrupted.
-      final double[] branchCoverages = branchCoverage.run(function, targetNodesProvider, Optional.empty(), targetPathsProvider, Optional.empty());
+      final CoverageResult[] branchCoverages = branchCoverage.run(function, targetNodesProvider, Optional.empty(), targetPathsProvider, Optional.empty());
 
       // build a outcome for the single test, which is a snapshot of current `TestBuilder`.
       return new BranchCoverageTestOutcome(functionSignature, branchCoverages);
@@ -114,7 +115,7 @@ public final class BatchBranchCoverageFileRunner extends BatchFileRunnerBase<Bat
                                          final BatchBranchCoverageConfig batchConfig,
                                          final BatchBranchCoverageItemConfig batchItem) {
     assert function != null && batchConfig != null && batchItem != null;
-    
+
     final ArrayList<String> errorList = Lists.newArrayList(super.checkTestConfig(function, batchConfig, batchItem));
 
     final BranchCoverage branchCoverage = new BranchCoverage();
@@ -146,10 +147,4 @@ public final class BatchBranchCoverageFileRunner extends BatchFileRunnerBase<Bat
 
     return errorList;
   }
-
-  // @Override
-  // protected void processBatchResult(final BatchBranchCoverageConfig batchConfig, final BatchFileOutcome<BranchCoverageTestOutcome> batchFileOutcome) {
-  // super.processBatchResult(batchConfig, batchFileOutcome);
-  // }
-
 }

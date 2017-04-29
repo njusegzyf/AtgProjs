@@ -15,6 +15,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import org.eclipse.cdt.core.dom.ast.IType;
@@ -45,12 +46,12 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.SettableFuture;
-
 import cn.nju.seg.atg.parse.TestBuilder;
 import cn.nju.seg.atg.util.ATG;
 import nju.seg.zhangyf.atgwrapper.AtgWrapperPluginSettings;
 import nju.seg.zhangyf.atgwrapper.config.AtgConfig;
 import nju.seg.zhangyf.atgwrapper.config.batch.BatchConfigBase;
+import nju.seg.zhangyf.atgwrapper.config.batch.BatchConfigs;
 import nju.seg.zhangyf.atgwrapper.config.batch.BatchItemConfigBase;
 import nju.seg.zhangyf.atgwrapper.outcome.BatchFileOutcome;
 import nju.seg.zhangyf.atgwrapper.outcome.TestOutcome;
@@ -66,10 +67,13 @@ public abstract class BatchFileRunnerBase<TBatchItem extends BatchItemConfigBase
   /**
    * Processes the batch file asynchronously.
    */
-  public ListenableFuture<List<TaskOutcome<TTestOutcome>>> processBatchItemAsync(final IFile configFile) {
+  public final ListenableFuture<List<TaskOutcome<TTestOutcome>>> processBatchItemAsync(final IFile configFile) {
     Preconditions.checkNotNull(configFile);
+
     // check that there is no processing running
-    Preconditions.checkState(BatchFileRunnerBase.isProcessingBatchFile.compareAndSet(false, true));
+    if (!BatchFileRunnerBase.isProcessingBatchFile.compareAndSet(false, true)) {
+      Futures.immediateFailedFuture(new IllegalStateException("Some processing is already running."));
+    }
 
     if (!(configFile.isAccessible() && configFile.getName().endsWith(".conf"))) {
       // handle if not a config file is passed
@@ -77,23 +81,17 @@ public abstract class BatchFileRunnerBase<TBatchItem extends BatchItemConfigBase
                                     configFile.getFullPath().toString() + " is not an accessible config file.")
              .open();
 
-      throw new IllegalArgumentException();
+      // Note: Instead of throw, this async method should return a failed future and reset the processing flag.
+      return BatchFileRunnerBase.createFailedFutureAndResetProcessingFlag();
     }
 
     // read the config file
-    final TBatchConfig batchConfig;
-    try {
-      batchConfig = this.parseConfig(configFile);
-    } catch (final Exception e) {
-      // handle failed to parse config
-      SwtUtil.createErrorMessageBoxWithActiveShell(
-                                                   "Failed to parse the config file: \n"
-                                                       + configFile.getLocation().toString()
-                                                       + "with exception: \n"
-                                                       + e.toString())
-             .open();
-      throw new IllegalArgumentException();
+    final Optional<TBatchConfig> optionalBatchConfig = BatchConfigs.tryParseAndShowErrorIfFailed(configFile,
+                                                                                                 this::parseConfig);
+    if (!optionalBatchConfig.isPresent()) {
+      return BatchFileRunnerBase.createFailedFutureAndResetProcessingFlag();
     }
+    final TBatchConfig batchConfig = optionalBatchConfig.get();
 
     AtgWrapperPluginSettings.doIfDebug(() -> BatchFileRunnerBase.printProcessConfigFile(configFile.getName()));
 
@@ -102,7 +100,7 @@ public abstract class BatchFileRunnerBase<TBatchItem extends BatchItemConfigBase
 
     for (final String library : batchConfig.libraries) {
       if (!BatchFileRunnerBase.loadLibrary(library)) { // if we failed to load library
-        throw new IllegalArgumentException();
+        return BatchFileRunnerBase.createFailedFutureAndResetProcessingFlag();
       }
     }
 
@@ -293,7 +291,7 @@ public abstract class BatchFileRunnerBase<TBatchItem extends BatchItemConfigBase
 
   // Sub classes should implement the following methods.
 
-  protected abstract TBatchConfig parseConfig(final IFile configFile) throws Exception;
+  protected abstract TBatchConfig parseConfig(final IFile configFile);// throws Exception;
 
   protected abstract Predicate<IFunctionDeclaration> getFunctionFilter(final TBatchItem batchItem);
 
@@ -319,11 +317,8 @@ public abstract class BatchFileRunnerBase<TBatchItem extends BatchItemConfigBase
 
     return Collections.emptyList();
   }
-
-  /**
-   * Sub classes can override this method to perform extra work on the batch results.
-   */
-  protected void processBatchResult(final TBatchConfig batchConfig, final BatchFileOutcome<TTestOutcome> batchFileOutcome) {
+  
+  private void processBatchResult(final TBatchConfig batchConfig, final BatchFileOutcome<TTestOutcome> batchFileOutcome) {
     assert batchConfig != null;
     assert batchFileOutcome != null;
 
@@ -332,6 +327,7 @@ public abstract class BatchFileRunnerBase<TBatchItem extends BatchItemConfigBase
       batchFileOutcome.appendOverview(result);
       Util.appendNewLine(result);
       batchFileOutcome.appendSucceedTaskOutcomes(result);
+      this.processBatchResultExtra(batchConfig, batchFileOutcome, result);
     } catch (final IOException ignored) {}
 
     final File resultFile = Paths.get(ATG.resultFolder).resolve("batchResult.txt").toFile();
@@ -346,11 +342,19 @@ public abstract class BatchFileRunnerBase<TBatchItem extends BatchItemConfigBase
              .open();
     }
   }
-  
+
+  /**
+   * Sub classes can override this method to perform extra work on the batch results.
+   */
+  @SuppressWarnings("unused")
+  protected void processBatchResultExtra(final TBatchConfig batchConfig, 
+                                         final BatchFileOutcome<TTestOutcome> batchFileOutcome,
+                                         final StringBuilder result) {}
+
   // Static help methods.
 
   /**
-   *  Handles the error occurred in processing a batch item, returns whether it should stop processing remaining batch items. 
+   * Handles the error occurred in processing a batch item, returns whether it should stop processing remaining batch items.
    */
   protected static boolean handleBatchItemError(final String batchItemName, final String errorMessage) {
     assert (batchItemName != null && errorMessage != null);
@@ -481,4 +485,15 @@ public abstract class BatchFileRunnerBase<TBatchItem extends BatchItemConfigBase
    * Note: Since the underlying ATG tool can not run tests in parallel, we use this static field to stop running tests in parallel.
    */
   private static final AtomicBoolean isProcessingBatchFile = new AtomicBoolean(false);
+
+  private static <T> ListenableFuture<T> createFailedFutureAndResetProcessingFlag(final Supplier<Exception> exceptionSupplier) {
+    assert exceptionSupplier != null;
+
+    BatchFileRunnerBase.isProcessingBatchFile.set(false);
+    return Futures.immediateFailedFuture(exceptionSupplier.get());
+  }
+
+  private static <T> ListenableFuture<T> createFailedFutureAndResetProcessingFlag() {
+    return BatchFileRunnerBase.createFailedFutureAndResetProcessingFlag(IllegalArgumentException::new);
+  }
 }

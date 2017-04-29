@@ -9,9 +9,9 @@ import org.eclipse.core.resources.IFile;
 
 import com.google.common.util.concurrent.ListenableFuture;
 import com.typesafe.config.Config;
-import com.typesafe.config.ConfigFactory;
 
 import nju.seg.zhangyf.atgwrapper.config.ConfigTags;
+import nju.seg.zhangyf.atgwrapper.config.batch.BatchConfigs;
 import nju.seg.zhangyf.util.ResourceAndUiUtil;
 import nju.seg.zhangyf.util.SwtUtil;
 
@@ -31,8 +31,12 @@ public class BatchFileHandler extends AbstractHandler {
       return null;
     }
 
-    final IFile batchFile = optionalSelectedFile.get();
-    final Config rawBatchConfig = ConfigFactory.parseFile(ResourceAndUiUtil.eclipseFileToJavaFile(batchFile));
+    final IFile batchConfigFile = optionalSelectedFile.get();
+    final Optional<Config> optionalRawBatchConfig = BatchConfigs.tryParseAndShowErrorIfFailed(batchConfigFile);
+    if (!optionalRawBatchConfig.isPresent()) {
+      return null;
+    }
+    final Config rawBatchConfig = optionalRawBatchConfig.get();
 
     if (rawBatchConfig.hasPath(ConfigTags.ATG_ACTION_PATH)) {
       // create a handler to process the batch file
@@ -47,18 +51,18 @@ public class BatchFileHandler extends AbstractHandler {
       } catch (final Throwable ex) {
         // if we failed to create a runner to process the batch file, show the error
         SwtUtil.createErrorMessageBoxWithActiveShell(
-                                                     "Can not create a runner for the batch file: " + batchFile.getFullPath().toOSString()
+                                                     "Can not create a runner for the batch file: " + batchConfigFile.getFullPath().toOSString()
                                                          + ",\nskip processing the file.")
                .open();
         return null;
       }
 
       // process the batch file
-      @SuppressWarnings("unused") final ListenableFuture<?> processResult = runner.processBatchItemAsync(batchFile);
+      @SuppressWarnings("unused") final ListenableFuture<?> processResult = runner.processBatchItemAsync(batchConfigFile);
     } else {
       // if we can not get the action, show the error
       SwtUtil.createErrorMessageBoxWithActiveShell(
-                                                   "Can not get action from config file: " + batchFile.getFullPath().toOSString()
+                                                   "Can not get action from config file: " + batchConfigFile.getFullPath().toOSString()
                                                        + ",\nskip processing the file.")
              .open();
 

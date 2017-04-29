@@ -3,6 +3,7 @@ package nju.seg.zhangyf.atgwrapper.outcome;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.text.DecimalFormat;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import com.google.common.base.Preconditions;
@@ -56,13 +57,13 @@ public class TestOutcome {
   public final double[] algorithmTime;
 
   /**
-   * Coverage for each tests as a percentage.
-   * Note: It differs from {@link TestBuilder#coveredRatio} which records the covered path number. 
+   * Coverage for each tests
+   * Note: It differs from {@link TestBuilder#coveredRatio} which records the covered path number.
    */
-  public final double[] coverage;
+  public final CoverageResult[] coverage;
 
   public final String[] findResult;
-  
+
   public final long[] totalUncoverdPathsTime;
 
   private TestOutcome(final String testFunctionSignuature,
@@ -74,7 +75,7 @@ public class TestOutcome {
                       final double[] algorithmTime,
                       final String[] findResult,
                       final long[] totalUncoverdPathsTime,
-                      final double[] coverage) {
+                      final CoverageResult[] coverage) {
     assert !Strings.isNullOrEmpty(testFunctionSignuature);
     assert countOfRepeation > 0;
     assert functionTime > 0L;
@@ -103,14 +104,14 @@ public class TestOutcome {
    */
   public TestOutcome(final String testFunctionSignuature) {
     this(testFunctionSignuature,
-         IntStream.of(TestBuilder.coveredRatio).mapToDouble(coverdNum -> (double) coverdNum / TestBuilder.pathsSize)
-         .toArray());
+         IntStream.of(TestBuilder.coveredRatio).mapToObj(coverdNum -> new CoverageResult(coverdNum, TestBuilder.pathsSize))
+                  .toArray(size -> new CoverageResult[size]));
   }
-  
+
   /**
    * Note: Since {@link TestBuilder} reuse arrays, we must create copies here like {@code Util.sameLengthCopyOfArray(TestBuilder.totalTime)}.
    */
-  protected TestOutcome(final String testFunctionSignuature, final double[] coverage) {
+  protected TestOutcome(final String testFunctionSignuature, final CoverageResult[] coverage) {
     this(testFunctionSignuature,
          TestBuilder.repetitionNum,
          TestBuilder.function_time,
@@ -128,6 +129,6 @@ public class TestOutcome {
 
     Util.appendAllWithNewLine(output, "Function : ", this.testFunctionSignuature);
   }
-  
+
   public static final DecimalFormat DEFAULT_DECIMAL_FORMAT = new DecimalFormat("0.000");
 }

@@ -104,7 +104,7 @@ public class PathCoverage extends CoverageCriteria {
 
     for (int indexOfRun = 1; indexOfRun <= TestBuilder.repetitionNum; indexOfRun++) {
       // 获取当前微秒时间，为计算插件运行时间做准备
-      long start_time = System.currentTimeMillis();
+      final long start_time = System.currentTimeMillis();
 
       // @since 0.1, reset statistics data
       TestBuilder.resetForNewTestRepeation();
@@ -237,8 +237,8 @@ public class PathCoverage extends CoverageCriteria {
         }
 
         final long execute_time = System.currentTimeMillis() - start_time - TestBuilder.function_time;
-        TestBuilder.totalTime[indexOfRun - 1] = (execute_time + TestBuilder.function_time) / 1000;
-        TestBuilder.algorithmTime[indexOfRun - 1] = execute_time / 1000;
+        TestBuilder.totalTime[indexOfRun - 1] = (double)(execute_time + TestBuilder.function_time) / 1000.0;
+        TestBuilder.algorithmTime[indexOfRun - 1] = (double)execute_time / 1000.0;
         TestBuilder.totalUncoverdPathsTime[indexOfRun - 1] = TestBuilder.uncoverdPathsTime;
         TestBuilder.coveredRatio[indexOfRun - 1] = countOfCoveredPath;
         TestBuilder.totalFrequency[indexOfRun - 1] = TestBuilder.function_frequency;
