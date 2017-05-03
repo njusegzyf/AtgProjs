@@ -22,7 +22,7 @@ import cn.nju.seg.atg.util.CFGPath;
 import cn.nju.seg.atg.util.PCATG;
 
 /**
- * Use {@link PCATG} to run node coverage.
+ * Uses {@link PCATG} to run node coverage.
  * 
  * @see cn.nju.seg.atg.parse.PathCoverage
  * @see cn.nju.seg.atg.util.PCATG
@@ -103,7 +103,7 @@ public final class NodeCoverages {
       if (!completedPaths.contains(targetPath)) { // if we have not run the path, run the paths
         // 执行ATG过程
         isCovered = new PCATG().generateTestData(pathIndex - 1) > -1;
-        // mark the path as has been run 
+        // mark the path as has been run
         completedPaths.add(targetPath);
         if (isCovered) { // if we find a new path that covers the target node
           newCoveredPathHandler.accept(targetPath);

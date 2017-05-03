@@ -88,7 +88,8 @@ public final class TestBuilder {
    */
   public static long[] totalUncoverdPathsTime = new long[TestBuilder.repetitionNum];
 
-  public static String findResult[] = new String[TestBuilder.repetitionNum];
+  public static String[] findResult = new String[TestBuilder.repetitionNum];
+  
   /**
    * 单次覆盖的路径列表
    */

@@ -5,13 +5,13 @@ import java.util.ArrayList;
 import javax.swing.JOptionPane;
 
 import org.eclipse.cdt.core.dom.ast.ASTVisitor;
-import org.eclipse.cdt.core.dom.ast.IASTArraySubscriptExpression;
-import org.eclipse.cdt.core.dom.ast.IASTBinaryExpression;
+// import org.eclipse.cdt.core.dom.ast.IASTArraySubscriptExpression;
+// import org.eclipse.cdt.core.dom.ast.IASTBinaryExpression;
 import org.eclipse.cdt.core.dom.ast.IASTCompoundStatement;
 import org.eclipse.cdt.core.dom.ast.IASTConditionalExpression;
 import org.eclipse.cdt.core.dom.ast.IASTDeclarator;
 import org.eclipse.cdt.core.dom.ast.IASTDoStatement;
-import org.eclipse.cdt.core.dom.ast.IASTExpressionStatement;
+// import org.eclipse.cdt.core.dom.ast.IASTExpressionStatement;
 import org.eclipse.cdt.core.dom.ast.IASTForStatement;
 import org.eclipse.cdt.core.dom.ast.IASTIfStatement;
 import org.eclipse.cdt.core.dom.ast.IASTNode;
@@ -41,7 +41,7 @@ public class FunctionVisitor extends ASTVisitor {
 	private IASTStandardFunctionDeclarator declartor;
 	
 	public IASTStandardFunctionDeclarator getDeclartor() {
-		return declartor;
+		return this.declartor;
 	}
 
 	public FunctionVisitor(String funcName){
@@ -60,7 +60,7 @@ public class FunctionVisitor extends ASTVisitor {
 //	}
 	
 	public CFGNode getStartNode() {
-		return startNode;
+		return this.startNode;
 	}
 
 	public int visit(IASTDeclarator node) {
@@ -86,7 +86,7 @@ public class FunctionVisitor extends ASTVisitor {
 //					this.parameters.add(iParameters[i].getDeclarator().getRawSignature());
 //				}
 //			}
-			if(tempName.compareTo(funcName)==0){
+			if(tempName.compareTo(this.funcName)==0){
 				this.declartor = iasfd;
 				// 获取函数的输入参数的类型、参数个数
 				CFGBuilder.parameterTypes = ASTStringUtil.getParameterSignatureArray(iasfd);
@@ -118,10 +118,10 @@ public class FunctionVisitor extends ASTVisitor {
 			else if(iacsChildren[0] instanceof IASTReturnStatement){ }   //return
 			else{
 				int offsetTmp = iacsChildren[0].getFileLocation().getNodeOffset();
-				startNode.setSign(-1);
-				startNode.setOffset(offsetTmp);
+				this.startNode.setSign(-1);
+				this.startNode.setOffset(offsetTmp);
 				CFGBuilder.nodeNumber++;
-				startNode.setNodeNumber(CFGBuilder.nodeNumber);
+				this.startNode.setNodeNumber(CFGBuilder.nodeNumber);
 			}
 		}
 		
@@ -141,11 +141,11 @@ public class FunctionVisitor extends ASTVisitor {
 				        lastStatementOffset = iacsChildren[i].getFileLocation().getNodeOffset();
 				        if(i==0){
 				        	CFGBuilder.nodeNumber--;
-					        startNode = CFGBuilder.currentNode;
+					        this.startNode = CFGBuilder.currentNode;
 				        }
 				        else{
-					        startNode.addChild(CFGBuilder.currentNode);
-				            CFGBuilder.currentNode.addParent(startNode);
+					        this.startNode.addChild(CFGBuilder.currentNode);
+				            CFGBuilder.currentNode.addParent(this.startNode);
 				        }
 				        
 				        ConditionalOperatorVisitor.visitConditionalOperator(condExpression);
@@ -195,11 +195,11 @@ public class FunctionVisitor extends ASTVisitor {
 				if(countI == 1){
 					lastStatementOffset = iacsChildren[i].getFileLocation().getNodeOffset();
 					if(i==0){
-						startNode = CFGBuilder.currentNode;
+						this.startNode = CFGBuilder.currentNode;
 					}
 					else{
-						startNode.addChild(CFGBuilder.currentNode);
-					    CFGBuilder.currentNode.addParent(startNode);
+						this.startNode.addChild(CFGBuilder.currentNode);
+					    CFGBuilder.currentNode.addParent(this.startNode);
 					}
 
 					IfStatementVisitor ifStatementVisitor = new IfStatementVisitor();
@@ -254,11 +254,11 @@ public class FunctionVisitor extends ASTVisitor {
 					lastStatementOffset = iacsChildren[i].getFileLocation().getNodeOffset();
 					
 					if(i==0){
-						startNode = CFGBuilder.currentNode;
+						this.startNode = CFGBuilder.currentNode;
 					}
 					else{
-						startNode.addChild(CFGBuilder.currentNode);
-					    CFGBuilder.currentNode.addParent(startNode);
+						this.startNode.addChild(CFGBuilder.currentNode);
+					    CFGBuilder.currentNode.addParent(this.startNode);
 					}
 
 					CFGBuilder.terminalNodes.add(CFGBuilder.currentNode);
@@ -349,11 +349,11 @@ public class FunctionVisitor extends ASTVisitor {
 				if(countI == 1){
 					lastStatementOffset = iacsChildren[i].getFileLocation().getNodeOffset();
 					if(i==0){
-						startNode = CFGBuilder.currentNode;
+						this.startNode = CFGBuilder.currentNode;
 					}
 					else{
-						startNode.addChild(CFGBuilder.currentNode);
-					    CFGBuilder.currentNode.addParent(startNode);
+						this.startNode.addChild(CFGBuilder.currentNode);
+					    CFGBuilder.currentNode.addParent(this.startNode);
 					}							
 					CFGBuilder.terminalNodes.add(CFGBuilder.currentNode);
 					whileNode = CFGBuilder.currentNode;
@@ -442,11 +442,11 @@ public class FunctionVisitor extends ASTVisitor {
 				if(countI == 1){
 					lastStatementOffset = iacsChildren[i].getFileLocation().getNodeOffset();
 					if(i==0){
-						startNode = CFGBuilder.currentNode;
+						this.startNode = CFGBuilder.currentNode;
 					}
 					else{
-						startNode.addChild(CFGBuilder.currentNode);
-					    CFGBuilder.currentNode.addParent(startNode);
+						this.startNode.addChild(CFGBuilder.currentNode);
+					    CFGBuilder.currentNode.addParent(this.startNode);
 					}							
 					
 					DoStatementVisitor doVisitor = new DoStatementVisitor();
@@ -514,10 +514,10 @@ public class FunctionVisitor extends ASTVisitor {
 				}
 				if(countI==1){
 					if(i==0){
-					    startNode = CFGBuilder.currentNode;
+					    this.startNode = CFGBuilder.currentNode;
 				    }else{
-				        CFGBuilder.currentNode.addParent(startNode);
-						startNode.addChild(CFGBuilder.currentNode);
+				        CFGBuilder.currentNode.addParent(this.startNode);
+						this.startNode.addChild(CFGBuilder.currentNode);
 					}
 					
 					ReturnStatementVisitor returnStatementVisitor = new ReturnStatementVisitor();

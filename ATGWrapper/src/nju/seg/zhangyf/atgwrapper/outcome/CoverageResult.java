@@ -1,9 +1,12 @@
 package nju.seg.zhangyf.atgwrapper.outcome;
 
+import java.io.Serializable;
+
 /**
  * @author Zhang Yifan
  */
-public final class CoverageResult {
+public final class CoverageResult implements Serializable  {
+
   public final int coverdNum;
   public final int totalNum;
 
@@ -22,4 +25,6 @@ public final class CoverageResult {
   public double coverageRatio() {
     return (double) this.coverdNum / this.totalNum;
   }
+  
+  private static final long serialVersionUID = 1L;
 }

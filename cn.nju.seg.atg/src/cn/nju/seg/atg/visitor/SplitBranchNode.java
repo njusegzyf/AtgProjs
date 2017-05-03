@@ -29,7 +29,7 @@ public 	class SplitBranchNode{
 	}
 
 	public CFGNode getNode() {
-		return node;
+		return this.node;
 	}
 	
 	/**
@@ -38,7 +38,7 @@ public 	class SplitBranchNode{
 	 * <p>返回－1表示原节点的true分支
 	 */
 	public int getTrueNextNodeIndex(){
-		int Tindex = index;
+    int Tindex = this.index;
 		if(this.innerLogicalOp==Operator.AND){
 			return ++Tindex;
 		}
@@ -64,7 +64,7 @@ public 	class SplitBranchNode{
 	 * <p>返回－1表示原节点的false分支
 	 */
 	public int getFalseNextNodeIndex(){
-		int Findex = index;
+		int Findex = this.index;
 		if(this.innerLogicalOp==Operator.AND){
 			Findex++;
 			for(int i = this.outerLogicalOps.size();i > 0; i--){
@@ -86,7 +86,7 @@ public 	class SplitBranchNode{
 	
 	@Override
 	public String toString(){
-		return "[constraint:"+node.getBinaryExpression().toString()
+		return "[constraint:"+this.node.getBinaryExpression().toString()
 				+", True next node index:"+this.getTrueNextNodeIndex()+", False next node index:"+this.getFalseNextNodeIndex()+"]";
 	}
 }

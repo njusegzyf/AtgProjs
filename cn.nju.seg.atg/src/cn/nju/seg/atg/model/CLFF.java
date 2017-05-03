@@ -56,9 +56,9 @@ public class CLFF {
 	}
 
 	public Coodinate optimalValue(){
-		Coodinate optimal = clist.get(0);
+		Coodinate optimal = this.clist.get(0);
 		double Dvalue = Double.MAX_VALUE;
-		for(Coodinate c : clist){
+		for(Coodinate c : this.clist){
 			if(Math.abs(c.getY()) < Dvalue){
 				Dvalue = Math.abs(c.getY());
 				optimal = c;
@@ -79,9 +79,9 @@ public class CLFF {
 		List<Interval> effectiveIntervalList = new ArrayList<Interval>();
 		CLF tempCLF;
 		
-		int cListSize = clist.size();
+		int cListSize = this.clist.size();
 		for (int i=0; i<(cListSize-1); i++){
-			tempCLF = new CLF(clist.get(i), clist.get(i+1), comparisonOperator);
+			tempCLF = new CLF(this.clist.get(i), this.clist.get(i+1), this.comparisonOperator);
 			if (tempCLF.getEffectiveInterval() != null){
 				effectiveIntervalList.add(tempCLF.getEffectiveInterval());
 			}
@@ -98,34 +98,34 @@ public class CLFF {
 		List<Double> params = new ArrayList<Double>();
 		CLF tempCLF;
 				
-		clist.add(0, new Coodinate(TestBuilder.leftSearchBoundary,0));
-		clist.add(new Coodinate(TestBuilder.rightSearchBoundary,0));
-		int cListSize = clist.size();
+		this.clist.add(0, new Coodinate(TestBuilder.leftSearchBoundary,0));
+		this.clist.add(new Coodinate(TestBuilder.rightSearchBoundary,0));
+		int cListSize = this.clist.size();
 		
 		for(int i = 1;i < cListSize-2; i++){		  
-		    tempCLF = new CLF(clist.get(i), clist.get(i+1), comparisonOperator);
+		    tempCLF = new CLF(this.clist.get(i), this.clist.get(i+1), this.comparisonOperator);
 		    if(tempCLF.getParamsInExtensionCord() == ConstantValue.LEFT){
 		    	double param = tempCLF.paramInExtensionCord();
 		    	//交点必须在相邻区间内
-		    	if(param > clist.get(i-1).getX()){
+		    	if(param > this.clist.get(i-1).getX()){
 		    		params.add(param);
 		    		//添加调整值
 		    		if(ATG.NEED_REFINED_SEARCH)
-		    		    addAdjustValue(param,clist.get(i).getX(),clist.get(i+1).getX(),params,ConstantValue.LEFT);               
+		    		    addAdjustValue(param,this.clist.get(i).getX(),this.clist.get(i+1).getX(),params,ConstantValue.LEFT);               
 		    	}
 		    }
 		    else if(tempCLF.getParamsInExtensionCord() == ConstantValue.RIGHT){
 		    	double param = tempCLF.paramInExtensionCord();
-		    	if(param < clist.get(i+2).getX()){
+		    	if(param < this.clist.get(i+2).getX()){
 		    		params.add(param);
 		    		if(ATG.NEED_REFINED_SEARCH)
-		    		    addAdjustValue(param,clist.get(i).getX(),clist.get(i+1).getX(),params,ConstantValue.RIGHT);        
+		    		    addAdjustValue(param,this.clist.get(i).getX(),this.clist.get(i+1).getX(),params,ConstantValue.RIGHT);        
 		    	}
 		    }		    	
 	    }
 		
-		clist.remove(cListSize-1);
-		clist.remove(0);
+		this.clist.remove(cListSize-1);
+		this.clist.remove(0);
 		
 		return params;
 	}
@@ -163,7 +163,7 @@ public class CLFF {
 	 * 求拓展边界
 	 */
 	public void getNewBoundary(){
-		CLF tempCLF = new CLF(clist.get(0), clist.get(1), comparisonOperator);
+		CLF tempCLF = new CLF(this.clist.get(0), this.clist.get(1), this.comparisonOperator);
 		if(tempCLF.getParamsInExtensionCord()==ConstantValue.LEFT){
     	    double param = tempCLF.paramInExtensionCord();
     	    if(param < TestBuilder.leftSearchBoundary){
@@ -172,8 +172,8 @@ public class CLFF {
     	    }
     	}
 		
-		int cListSize = clist.size();
-	    tempCLF = new CLF(clist.get(cListSize-2), clist.get(cListSize-1), comparisonOperator);
+		int cListSize = this.clist.size();
+	    tempCLF = new CLF(this.clist.get(cListSize-2), this.clist.get(cListSize-1), this.comparisonOperator);
 	    if(tempCLF.getParamsInExtensionCord()==ConstantValue.RIGHT){
 	    	double param = tempCLF.paramInExtensionCord();
 	    	if(param > TestBuilder.rightSearchBoundary){
@@ -184,26 +184,26 @@ public class CLFF {
 	}
 	
 	public List<Coodinate> getClist() {
-		return clist;
+		return this.clist;
 	}
 
 	public Operator getComparisonOperator() {
-		return comparisonOperator;
+		return this.comparisonOperator;
 	}
 	
 	public double getLeftBoundary() {
-		return leftBoundary;
+		return this.leftBoundary;
 	}
 
 	public double getRightBoundary() {
-		return rightBoundary;
+		return this.rightBoundary;
 	}
 
 	public boolean isLeftTransboundary() {
-		return isLeftTransboundary;
+		return this.isLeftTransboundary;
 	}
 
 	public boolean isRightTransboundary() {
-		return isRightTransboundary;
+		return this.isRightTransboundary;
 	}
 }

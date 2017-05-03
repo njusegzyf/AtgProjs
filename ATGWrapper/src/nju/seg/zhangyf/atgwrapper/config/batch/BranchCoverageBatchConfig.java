@@ -1,7 +1,5 @@
 package nju.seg.zhangyf.atgwrapper.config.batch;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -9,31 +7,31 @@ import java.util.stream.Collectors;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.typesafe.config.Config;
-import com.typesafe.config.ConfigFactory;
 
 import nju.seg.zhangyf.atgwrapper.config.AtgConfig;
 import nju.seg.zhangyf.atgwrapper.config.ConfigTags;
 import nju.seg.zhangyf.atgwrapper.config.ExecutorConfig;
 import nju.seg.zhangyf.atgwrapper.config.PathFragmentListConfig;
-import nju.seg.zhangyf.atgwrapper.config.batch.BatchBranchCoverageConfig.BatchBranchCoverageItemConfig;
+import nju.seg.zhangyf.atgwrapper.config.batch.BatchItemConfigBase.BatchItemConfigBuilderBase;
+import nju.seg.zhangyf.atgwrapper.config.batch.BranchCoverageBatchConfig.BranchCoverageBatchItemConfig;
 import nju.seg.zhangyf.util.ConfigUtil2;
 
 /**
  * @author Zhang Yifan
  */
-public class BatchBranchCoverageConfig extends BatchConfigBase<BatchBranchCoverageItemConfig> {
+public class BranchCoverageBatchConfig extends BatchConfigBase<BranchCoverageBatchItemConfig> {
 
-  public final List<BatchBranchCoverageItemConfig> batchItems;
+  public final List<BranchCoverageBatchItemConfig> batchItems;
 
   @Override
-  public List<BatchBranchCoverageItemConfig> getBatchItems() {
+  public List<BranchCoverageBatchItemConfig> getBatchItems() {
     return this.batchItems;
   }
 
-  BatchBranchCoverageConfig(final List<String> libraries,
+  BranchCoverageBatchConfig(final List<String> libraries,
                             final Optional<AtgConfig> atgConfig,
                             final Optional<ExecutorConfig> executorConfig,
-                            final List<BatchBranchCoverageItemConfig> batchItems) {
+                            final List<BranchCoverageBatchItemConfig> batchItems) {
     super(libraries, atgConfig, executorConfig);
 
     this.batchItems = batchItems;
@@ -94,11 +92,11 @@ public class BatchBranchCoverageConfig extends BatchConfigBase<BatchBranchCovera
     }
   }
 
-  public static final class BatchBranchCoverageItemConfig extends BatchItemConfigBase {
+  public static final class BranchCoverageBatchItemConfig extends BatchItemConfigBase {
     public final String batchFunction;
     public final Optional<List<TargetNodeConfig>> targetNodes;
 
-    BatchBranchCoverageItemConfig(final Optional<String> project,
+    BranchCoverageBatchItemConfig(final Optional<String> project,
                                   final String batchFile,
                                   final String batchFunction,
                                   final Optional<List<TargetNodeConfig>> targetNodes) {
@@ -116,68 +114,66 @@ public class BatchBranchCoverageConfig extends BatchConfigBase<BatchBranchCovera
     }
   }
 
-  public static final class BatchBranchCoverageItemConfigBuilder {
-    public Optional<String> project;
-    public String batchFile;
+  public static final class BranchCoverageBatchItemConfigBuilder extends BatchItemConfigBuilderBase<BranchCoverageBatchItemConfig> {
     public String batchFunction;
     public Optional<List<TargetNodeConfig>> targetNodes;
 
-    public BatchBranchCoverageItemConfigBuilder() {
+    public BranchCoverageBatchItemConfigBuilder() {
       this.reset();
     }
 
-    public BatchBranchCoverageItemConfig build() {
+    @Override
+    public BranchCoverageBatchItemConfig build() {
       this.checkVaild();
 
-      final BatchBranchCoverageItemConfig result = new BatchBranchCoverageItemConfig(this.project,
-                                                                                     this.batchFile,
-                                                                                     this.batchFunction,
-                                                                                     this.targetNodes);
+      final BranchCoverageBatchItemConfig result =
+          new BranchCoverageBatchItemConfig(this.project, this.batchFile, this.batchFunction, this.targetNodes);
+
       this.reset();
       return result;
     }
 
+    @Override
     public void checkVaild() {
+      super.checkVaild();
+
       Preconditions.checkState(this.project != null);
       Preconditions.checkState(!Strings.isNullOrEmpty(this.batchFile));
       Preconditions.checkState(!Strings.isNullOrEmpty(this.batchFunction));
       Preconditions.checkState(this.targetNodes != null);
     }
 
+    @Override
     public void reset() {
-      this.project = Optional.empty();
-      this.batchFile = null;
+      super.reset();
+
       this.batchFunction = null;
     }
   }
 
-  public static BatchBranchCoverageConfig parseBatchConfig(final Path configPath) {
-    Preconditions.checkNotNull(configPath);
-    Preconditions.checkArgument(Files.isRegularFile(configPath));
-
-    final Config config = ConfigFactory.parseFile(configPath.toFile());
+  public static BranchCoverageBatchConfig parseBatchConfig(final Config rawConfig) {
+    Preconditions.checkNotNull(rawConfig);
 
     // check essential config items
 
     // check config of libraries
-    Preconditions.checkArgument(config.hasPath(ConfigTags.LIBRARIES_TAG), "Illegal config file.");
-    final List<String> libraries = config.getStringList(ConfigTags.LIBRARIES_TAG);
+    Preconditions.checkArgument(rawConfig.hasPath(ConfigTags.LIBRARIES_TAG), "Illegal config file.");
+    final List<String> libraries = rawConfig.getStringList(ConfigTags.LIBRARIES_TAG);
 
-    final Optional<AtgConfig> atgConfig = ConfigUtil2.getOptionalConfig(config, ConfigTags.ATG_CONFIG_TAG)
+    final Optional<AtgConfig> atgConfig = ConfigUtil2.getOptionalConfig(rawConfig, ConfigTags.ATG_CONFIG_TAG)
                                                      .map(AtgConfig::parse);
 
-    final Optional<ExecutorConfig> executorConfig = ConfigUtil2.getOptionalConfig(config, ConfigTags.EXECUTOR_TAG)
+    final Optional<ExecutorConfig> executorConfig = ConfigUtil2.getOptionalConfig(rawConfig, ConfigTags.EXECUTOR_TAG)
                                                                .map(ExecutorConfig::parse);
 
-    final List<? extends Config> rawBatchItemConfigs = config.getConfigList(ConfigTags.BATCH_ITEMS_TAG);
+    final List<? extends Config> rawBatchItemConfigs = rawConfig.getConfigList(ConfigTags.BATCH_ITEMS_TAG);
 
-    final BatchBranchCoverageItemConfigBuilder builder = new BatchBranchCoverageItemConfigBuilder();
-    final List<BatchBranchCoverageItemConfig> batchItems = rawBatchItemConfigs.stream().map((final Config rawBatchItem) -> {
+    final BranchCoverageBatchItemConfigBuilder builder = new BranchCoverageBatchItemConfigBuilder();
+    final List<BranchCoverageBatchItemConfig> batchItems = rawBatchItemConfigs.stream().map((final Config rawBatchItem) -> {
       Preconditions.checkState(rawBatchItem.hasPath(ConfigTags.BATCH_FILE_TAG));
       Preconditions.checkState(rawBatchItem.hasPath(ConfigTags.BATCH_FUNCTION_TAG));
 
-      builder.project = ConfigUtil2.getOptionalString(rawBatchItem, ConfigTags.PROJECT_TAG);
-      builder.batchFile = rawBatchItem.getString(ConfigTags.BATCH_FILE_TAG);
+      BatchItemConfigBase.parse(builder, rawBatchItem);
       builder.batchFunction = rawBatchItem.getString(ConfigTags.BATCH_FUNCTION_TAG);
 
       if (rawBatchItem.hasPath(ConfigTags.TARGET_NODES_TAG)) {
@@ -192,6 +188,6 @@ public class BatchBranchCoverageConfig extends BatchConfigBase<BatchBranchCovera
       return builder.build();
     }).collect(Collectors.toList());
 
-    return new BatchBranchCoverageConfig(libraries, atgConfig, executorConfig, batchItems);
+    return new BranchCoverageBatchConfig(libraries, atgConfig, executorConfig, batchItems);
   }
 }

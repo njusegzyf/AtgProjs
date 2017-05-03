@@ -34,13 +34,13 @@ public class Coodinate {
 		this.y = y;
 	}
 	public double getX() {
-		return x;
+		return this.x;
 	}
 	public void setX(double x) {
 		this.x = x;
 	}
 	public double getY() {
-		return y;
+		return this.y;
 	}
 	public void setY(double y) {
 		this.y = y;

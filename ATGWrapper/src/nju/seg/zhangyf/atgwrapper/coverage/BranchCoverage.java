@@ -37,7 +37,7 @@ import nju.seg.zhangyf.atgwrapper.outcome.CoverageResult;
 import nju.seg.zhangyf.util.Util;
 
 /**
- * Use {@link nju.seg.zhangyf.atgwrapper.coverage.NodeCoverages#runNodeCoverageInAtg(int, java.util.Optional)} to perform branch coverage.
+ * Uses {@link nju.seg.zhangyf.atgwrapper.coverage.NodeCoverages#runNodeCoverageInAtg(int, java.util.Optional)} to perform branch coverage.
  * 
  * @see nju.seg.zhangyf.atgwrapper.coverage.NodeCoverages
  * @see cn.nju.seg.atg.parse.CoverageCriteria
@@ -199,7 +199,8 @@ public final class BranchCoverage extends CoverageCriteria {
 
         // print each node's coverage
         for (final String coveredNodeName : coverdNodeNamesList) {
-          Util.appendAllWithNewLine(result, "\ncovered target branch node: ", coveredNodeName, " with paths:");
+          Util.appendNewLine(result);
+          Util.appendAllWithNewLine(result, "Covered target branch node: ", coveredNodeName, " with paths:");
 
           for (final CFGPath cfgPath : coveredTargetNodesMap.get(coveredNodeName)) {
             joinerOnComma.appendTo(result, CfgPathUtil.cfgPathNodeNames(cfgPath).collect(Collectors.toList()));
@@ -234,8 +235,8 @@ public final class BranchCoverage extends CoverageCriteria {
     }
 
     final double[] branchCoveragesRatio = Arrays.stream(branchCoverages).mapToDouble(CoverageResult::coverageRatio).toArray();
-    Util.appendAllWithNewLine(result, "Best coverage ratio: ", String.valueOf(DoubleStream.of(branchCoveragesRatio).max().getAsDouble()));
-    Util.appendAllWithNewLine(result, "Average coverage ratio: ", String.valueOf(DoubleStream.of(branchCoveragesRatio).average().getAsDouble()));
+    Util.appendAllWithNewLine(result, "Best branch coverage ratio: ", String.valueOf(DoubleStream.of(branchCoveragesRatio).max().getAsDouble()));
+    Util.appendAllWithNewLine(result, "Average branch coverage ratio: ", String.valueOf(DoubleStream.of(branchCoveragesRatio).average().getAsDouble()));
 
     result.append("Detail coverage ratio:\n");
     joinerOnTab.appendTo(result, DoubleStream.of(branchCoveragesRatio)

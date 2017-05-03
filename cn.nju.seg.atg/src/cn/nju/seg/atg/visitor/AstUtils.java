@@ -40,7 +40,7 @@ public final class AstUtils {
 	public static class NameFinderVisitor extends ASTVisitor {
 		public IASTName name;
 		{
-			shouldVisitNames = true;
+			this.shouldVisitNames = true;
 		}
 
 		@Override
@@ -52,7 +52,7 @@ public final class AstUtils {
 	
 	private static class FunctionNameFinderVisitor extends NameFinderVisitor {
 		{
-			shouldVisitExpressions = true;
+			this.shouldVisitExpressions = true;
 		}
 		
 		@Override
@@ -193,8 +193,8 @@ public final class AstUtils {
 		final HashMap<ITranslationUnit, IASTTranslationUnit> astCache = new HashMap<ITranslationUnit, IASTTranslationUnit>();
 		function.accept(new ASTVisitor() {
 			{
-				shouldVisitDeclarators = true;
-				shouldVisitNames = true;
+				this.shouldVisitDeclarators = true;
+				this.shouldVisitNames = true;
 			}
 
 			@Override

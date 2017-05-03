@@ -30,7 +30,8 @@ public class IfStatementVisitor extends ASTVisitor {
 
 	public IfStatementVisitor() { }
 
-	public int visit(IASTStatement node) {
+	@Override
+  public int visit(IASTStatement node) {
 		if (node instanceof IASTIfStatement) {
 			IASTIfStatement iais = (IASTIfStatement) node;
 			IASTBinaryExpression iabe = (IASTBinaryExpression) iais.getChildren()[0];
@@ -2309,7 +2310,7 @@ public class IfStatementVisitor extends ASTVisitor {
 				    if(condExpression!=null){
 				    	CFGBuilder.currentNode = new CFGNode();
 				    	parent.setIfChild(CFGBuilder.currentNode);
-				    	CFGBuilder.currentNode.addParent(parent);;
+				    	CFGBuilder.currentNode.addParent(parent);
 					    ConditionalOperatorVisitor.visitConditionalOperator(condExpression);
 				    }
 				}
@@ -3138,7 +3139,7 @@ public class IfStatementVisitor extends ASTVisitor {
 				    if(condExpression!=null){
 				    	CFGBuilder.currentNode = new CFGNode();
 				    	parent.setIfChild(CFGBuilder.currentNode);
-				    	CFGBuilder.currentNode.addParent(parent);;
+				    	CFGBuilder.currentNode.addParent(parent);
 					    ConditionalOperatorVisitor.visitConditionalOperator(condExpression);
 				    }
 				}
@@ -3264,7 +3265,7 @@ public class IfStatementVisitor extends ASTVisitor {
 				    if(condExpression!=null){
 				    	CFGBuilder.currentNode = new CFGNode();
 				    	parent.setElseChild(CFGBuilder.currentNode);
-				    	CFGBuilder.currentNode.addParent(parent);;
+				    	CFGBuilder.currentNode.addParent(parent);
 					    ConditionalOperatorVisitor.visitConditionalOperator(condExpression);
 				    }
 				}
@@ -4100,7 +4101,7 @@ public class IfStatementVisitor extends ASTVisitor {
 				    if(condExpression!=null){
 				    	CFGBuilder.currentNode = new CFGNode();
 				    	parent.setIfChild(CFGBuilder.currentNode);
-				    	CFGBuilder.currentNode.addParent(parent);;
+				    	CFGBuilder.currentNode.addParent(parent);
 					    ConditionalOperatorVisitor.visitConditionalOperator(condExpression);
 				    }
 				}

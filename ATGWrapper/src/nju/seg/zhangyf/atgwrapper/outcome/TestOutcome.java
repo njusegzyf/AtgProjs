@@ -2,12 +2,16 @@ package nju.seg.zhangyf.atgwrapper.outcome;
 
 import java.io.IOException;
 import java.io.PrintStream;
+import java.io.Serializable;
 import java.text.DecimalFormat;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
+import com.google.common.collect.Streams;
+import com.google.common.primitives.Booleans;
 import com.typesafe.config.ConfigException.Null;
 
 import cn.nju.seg.atg.parse.TestBuilder;
@@ -22,7 +26,7 @@ import nju.seg.zhangyf.util.Util;
  * @author Zhang Yifan
  */
 @SuppressWarnings("unused")
-public class TestOutcome {
+public class TestOutcome implements Serializable {
 
   public final String testFunctionSignuature;
 
@@ -101,7 +105,10 @@ public class TestOutcome {
 
   /**
    * Constructs a new `TestOutcome` with the coverage calculated by `(double) coverdNum / TestBuilder.pathsSize`.
+   * 
+   * @deprecated Use static factory methods instead.
    */
+  @Deprecated
   public TestOutcome(final String testFunctionSignuature) {
     this(testFunctionSignuature,
          IntStream.of(TestBuilder.coveredRatio).mapToObj(coverdNum -> new CoverageResult(coverdNum, TestBuilder.pathsSize))
@@ -124,6 +131,39 @@ public class TestOutcome {
          coverage);
   }
 
+  public static TestOutcome createForPathCoverage(final String testFunctionSignuature) {
+    Preconditions.checkNotNull(testFunctionSignuature);
+    // Preconditions.checkArgument(!Strings.isNullOrEmpty(testFunctionSignuature));
+
+    final CoverageResult[] coverages =
+        IntStream.of(TestBuilder.coveredRatio).mapToObj(coverdNum -> new CoverageResult(coverdNum, TestBuilder.pathsSize))
+                 .toArray(CoverageResult[]::new);
+
+    return new TestOutcome(testFunctionSignuature, coverages);
+  }
+
+  public static TestOutcome createForOtherCoverage(final String testFunctionSignuature) {
+    Preconditions.checkNotNull(testFunctionSignuature);
+
+    // FIXME fix create test outcome for other types
+    return TestOutcome.createForPathCoverage(testFunctionSignuature);
+  }
+
+  public static TestOutcome createForTargetNodeCoverage(final String testFunctionSignuature) {
+    Preconditions.checkNotNull(testFunctionSignuature);
+    // Preconditions.checkArgument(!Strings.isNullOrEmpty(testFunctionSignuature));
+
+    final CoverageResult[] coverages =
+        Stream.of(TestBuilder.findResult)
+              .map(coverdRes -> {
+                final int coverdNum = "Y".equals(coverdRes) ? 1 : 0;
+                return new CoverageResult(coverdNum, 1);
+              })
+              .toArray(CoverageResult[]::new);
+
+    return new TestOutcome(testFunctionSignuature, coverages);
+  }
+
   public void appendOutcome(final Appendable output) throws IOException {
     assert output != null;
 
@@ -131,4 +171,7 @@ public class TestOutcome {
   }
 
   public static final DecimalFormat DEFAULT_DECIMAL_FORMAT = new DecimalFormat("0.000");
+  
+
+  private static final long serialVersionUID = 1L;
 }

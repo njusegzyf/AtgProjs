@@ -70,19 +70,19 @@ public class Condition {
 	}
 
 	public boolean isCovered() {
-		return TbranchCovered && FbranchCovered;
+		return this.TbranchCovered && this.FbranchCovered;
 	}
 	
 	public boolean isTbranchCovered() {
-		return TbranchCovered;
+		return this.TbranchCovered;
 	}
 
 	public boolean isFbranchCovered() {
-		return FbranchCovered;
+		return this.FbranchCovered;
 	}
 
 	public double[] getTcoveredInput() {
-		return TcoveredInput;
+		return this.TcoveredInput;
 	}
 
 	public void setTcoveredInput(double[] input) {
@@ -94,7 +94,7 @@ public class Condition {
 	}
 
 	public double[] getFcoveredInput() {
-		return FcoveredInput;
+		return this.FcoveredInput;
 	}
 
 	public void setFcoveredInput(double[] input) {
@@ -106,22 +106,22 @@ public class Condition {
 	}
 
 	public String getInfo() {
-		return info;
+		return this.info;
 	}
 
 	public String getNodeId() {
-		return nodeId;
+		return this.nodeId;
 	}
 	
 	public int getNodeIndex() {
-		return nodeIndex;
+		return this.nodeIndex;
 	}
 	
 	public int getId() {
-		return id;
+		return this.id;
 	}
 
 	public BinaryExpression getConstraint() {
-		return constraint;
+		return this.constraint;
 	}
 }

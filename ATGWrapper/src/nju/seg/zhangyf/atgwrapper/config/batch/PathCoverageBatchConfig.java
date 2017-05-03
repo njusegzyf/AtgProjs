@@ -1,7 +1,5 @@
 package nju.seg.zhangyf.atgwrapper.config.batch;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -9,24 +7,26 @@ import java.util.stream.Collectors;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.typesafe.config.Config;
-import com.typesafe.config.ConfigFactory;
 
 import nju.seg.zhangyf.atgwrapper.config.AtgConfig;
 import nju.seg.zhangyf.atgwrapper.config.ConfigTags;
 import nju.seg.zhangyf.atgwrapper.config.ExecutorConfig;
 import nju.seg.zhangyf.util.ConfigUtil2;
 
-public final class BatchPathCoverageConfig extends BatchConfigBase<BatchPathCoverageConfig.BatchPathCoverageItemConfig> {
+/**
+ * @author Zhang Yifan
+ */
+public final class PathCoverageBatchConfig extends BatchConfigBase<PathCoverageBatchConfig.PathCoverageBatchItemConfig> {
 
-  final List<BatchPathCoverageItemConfig> batchItems;
+  final List<PathCoverageBatchItemConfig> batchItems;
 
   @Override
-  public List<BatchPathCoverageItemConfig> getBatchItems() {
+  public List<PathCoverageBatchItemConfig> getBatchItems() {
     return this.batchItems;
   }
 
-  private BatchPathCoverageConfig(final List<String> libraries,
-                                  final List<BatchPathCoverageItemConfig> batchItems,
+  private PathCoverageBatchConfig(final List<String> libraries,
+                                  final List<PathCoverageBatchItemConfig> batchItems,
                                   final Optional<AtgConfig> atgConfig,
                                   final Optional<ExecutorConfig> executorConfig) {
     super(libraries, atgConfig, executorConfig);
@@ -36,7 +36,7 @@ public final class BatchPathCoverageConfig extends BatchConfigBase<BatchPathCove
     this.batchItems = batchItems;
   }
 
-  private BatchPathCoverageConfig(final List<String> libraries, final List<BatchPathCoverageItemConfig> batchItems) {
+  private PathCoverageBatchConfig(final List<String> libraries, final List<PathCoverageBatchItemConfig> batchItems) {
     this(libraries, batchItems, Optional.empty(), Optional.empty());
   }
 
@@ -60,26 +60,26 @@ public final class BatchPathCoverageConfig extends BatchConfigBase<BatchPathCove
 
     public void setModeAll() {
       this.mode = BatchItemMode.ALL;
-      this.includedBatchFunctions = BatchPathCoverageItemConfig.EMPTY_FUNCTIONS_LIST;
-      this.excludedBatchFunctions = BatchPathCoverageItemConfig.EMPTY_FUNCTIONS_LIST;
+      this.includedBatchFunctions = PathCoverageBatchItemConfig.EMPTY_FUNCTIONS_LIST;
+      this.excludedBatchFunctions = PathCoverageBatchItemConfig.EMPTY_FUNCTIONS_LIST;
     }
 
     public void setModeSpecifyIncluded(final ImmutableList<String> includedBatchFunctions) {
       this.mode = BatchItemMode.SPECIFY_INCLUDED;
       this.includedBatchFunctions = includedBatchFunctions;
-      this.excludedBatchFunctions = BatchPathCoverageItemConfig.EMPTY_FUNCTIONS_LIST;
+      this.excludedBatchFunctions = PathCoverageBatchItemConfig.EMPTY_FUNCTIONS_LIST;
     }
 
     public void setModeSpecifyExcluded(final ImmutableList<String> excludedBatchFunctions) {
       this.mode = BatchItemMode.SPECIFY_EXCLUDED;
-      this.includedBatchFunctions = BatchPathCoverageItemConfig.EMPTY_FUNCTIONS_LIST;
+      this.includedBatchFunctions = PathCoverageBatchItemConfig.EMPTY_FUNCTIONS_LIST;
       this.excludedBatchFunctions = excludedBatchFunctions;
     }
 
-    public BatchPathCoverageItemConfig build() {
+    public PathCoverageBatchItemConfig build() {
       this.checkVaild();
 
-      final BatchPathCoverageItemConfig result = new BatchPathCoverageItemConfig(this.project,
+      final PathCoverageBatchItemConfig result = new PathCoverageBatchItemConfig(this.project,
                                                                                  this.batchFile,
                                                                                  this.mode,
                                                                                  this.includedBatchFunctions,
@@ -95,18 +95,18 @@ public final class BatchPathCoverageConfig extends BatchConfigBase<BatchPathCove
       assert this.mode != null;
       switch (this.mode) {
       case ALL:
-        assert this.includedBatchFunctions == BatchPathCoverageItemConfig.EMPTY_FUNCTIONS_LIST
-            && this.excludedBatchFunctions == BatchPathCoverageItemConfig.EMPTY_FUNCTIONS_LIST;
+        assert this.includedBatchFunctions == PathCoverageBatchItemConfig.EMPTY_FUNCTIONS_LIST
+            && this.excludedBatchFunctions == PathCoverageBatchItemConfig.EMPTY_FUNCTIONS_LIST;
         break;
 
       case SPECIFY_INCLUDED:
-        assert this.includedBatchFunctions != BatchPathCoverageItemConfig.EMPTY_FUNCTIONS_LIST
-            && this.excludedBatchFunctions == BatchPathCoverageItemConfig.EMPTY_FUNCTIONS_LIST;
+        assert this.includedBatchFunctions != PathCoverageBatchItemConfig.EMPTY_FUNCTIONS_LIST
+            && this.excludedBatchFunctions == PathCoverageBatchItemConfig.EMPTY_FUNCTIONS_LIST;
         break;
 
       case SPECIFY_EXCLUDED:
-        assert this.includedBatchFunctions == BatchPathCoverageItemConfig.EMPTY_FUNCTIONS_LIST
-            && this.excludedBatchFunctions != BatchPathCoverageItemConfig.EMPTY_FUNCTIONS_LIST;
+        assert this.includedBatchFunctions == PathCoverageBatchItemConfig.EMPTY_FUNCTIONS_LIST
+            && this.excludedBatchFunctions != PathCoverageBatchItemConfig.EMPTY_FUNCTIONS_LIST;
         break;
 
       default:
@@ -118,18 +118,20 @@ public final class BatchPathCoverageConfig extends BatchConfigBase<BatchPathCove
       this.project = Optional.empty();
       this.batchFile = null;
       this.mode = null;
-      this.includedBatchFunctions = BatchPathCoverageItemConfig.EMPTY_FUNCTIONS_LIST;
-      this.excludedBatchFunctions = BatchPathCoverageItemConfig.EMPTY_FUNCTIONS_LIST;
+      this.includedBatchFunctions = PathCoverageBatchItemConfig.EMPTY_FUNCTIONS_LIST;
+      this.excludedBatchFunctions = PathCoverageBatchItemConfig.EMPTY_FUNCTIONS_LIST;
     }
   }
 
-  public static final class BatchPathCoverageItemConfig extends BatchItemConfigBase {
+  // FIXME use builder pattern for `PathCoverageBatchItemConfig`
+
+  public static final class PathCoverageBatchItemConfig extends BatchItemConfigBase {
 
     public final BatchItemMode mode;
     public final ImmutableList<String> includedBatchFunctions;
     public final ImmutableList<String> excludedBatchFunctions;
 
-    private BatchPathCoverageItemConfig(final Optional<String> project,
+    private PathCoverageBatchItemConfig(final Optional<String> project,
                                         final String batchFile,
                                         final BatchItemMode mode,
                                         final ImmutableList<String> includedBatchFunctions,
@@ -147,8 +149,7 @@ public final class BatchPathCoverageConfig extends BatchConfigBase<BatchPathCove
     public boolean isProcessAll() {
       return this.mode == BatchItemMode.ALL;
     }
-    
-    
+
     @Override
     public String toString() {
       return "BatchPathCoverageItemConfig [batchFile=" + this.batchFile + "]";
@@ -159,29 +160,29 @@ public final class BatchPathCoverageConfig extends BatchConfigBase<BatchPathCove
      * {@code batchFunctions} set to an empty array.
      */
     @Deprecated
-    public static BatchPathCoverageItemConfig createBatchItemWithAll(final String batchFile, final Optional<String> project) {
+    public static PathCoverageBatchItemConfig createBatchItemWithAll(final String batchFile, final Optional<String> project) {
       assert batchFile != null;
       assert project != null;
 
-      return new BatchPathCoverageItemConfig(project,
+      return new PathCoverageBatchItemConfig(project,
                                              batchFile,
                                              BatchItemMode.ALL,
-                                             BatchPathCoverageItemConfig.EMPTY_FUNCTIONS_LIST,
-                                             BatchPathCoverageItemConfig.EMPTY_FUNCTIONS_LIST);
+                                             PathCoverageBatchItemConfig.EMPTY_FUNCTIONS_LIST,
+                                             PathCoverageBatchItemConfig.EMPTY_FUNCTIONS_LIST);
     }
 
     @Deprecated
-    public static BatchPathCoverageItemConfig createBatchItemWithIncluded(final String batchFile,
+    public static PathCoverageBatchItemConfig createBatchItemWithIncluded(final String batchFile,
                                                                           final ImmutableList<String> includedFunctions,
                                                                           final Optional<String> project) {
       assert batchFile != null;
       assert project != null;
 
-      return new BatchPathCoverageItemConfig(project,
+      return new PathCoverageBatchItemConfig(project,
                                              batchFile,
                                              BatchItemMode.SPECIFY_INCLUDED,
                                              includedFunctions,
-                                             BatchPathCoverageItemConfig.EMPTY_FUNCTIONS_LIST);
+                                             PathCoverageBatchItemConfig.EMPTY_FUNCTIONS_LIST);
     }
 
     /**
@@ -189,44 +190,41 @@ public final class BatchPathCoverageConfig extends BatchConfigBase<BatchPathCove
      * {@code batchFunctions} set to an empty array.
      */
     @Deprecated
-    public static BatchPathCoverageItemConfig createBatchItemWithExcluded(final String batchFile,
+    public static PathCoverageBatchItemConfig createBatchItemWithExcluded(final String batchFile,
                                                                           final ImmutableList<String> excludedFunctions,
                                                                           final Optional<String> project) {
       assert batchFile != null;
       assert project != null;
 
-      return new BatchPathCoverageItemConfig(project,
+      return new PathCoverageBatchItemConfig(project,
                                              batchFile,
                                              BatchItemMode.SPECIFY_EXCLUDED,
-                                             BatchPathCoverageItemConfig.EMPTY_FUNCTIONS_LIST,
+                                             PathCoverageBatchItemConfig.EMPTY_FUNCTIONS_LIST,
                                              excludedFunctions);
     }
 
     private static final ImmutableList<String> EMPTY_FUNCTIONS_LIST = ImmutableList.of();
   }
 
-  public static BatchPathCoverageConfig parseBatchConfig(final Path configPath) {
-    Preconditions.checkNotNull(configPath);
-    Preconditions.checkArgument(Files.isRegularFile(configPath));
-
-    final Config config = ConfigFactory.parseFile(configPath.toFile());
+  public static PathCoverageBatchConfig parseBatchConfig(final Config rawConfig) {
+    Preconditions.checkNotNull(rawConfig);
 
     // check essential config items
 
     // check config of libraries
-    Preconditions.checkArgument(config.hasPath(ConfigTags.LIBRARIES_TAG), "Illegal config file.");
-    final List<String> libraries = config.getStringList(ConfigTags.LIBRARIES_TAG);
+    Preconditions.checkArgument(rawConfig.hasPath(ConfigTags.LIBRARIES_TAG), "Illegal config file.");
+    final List<String> libraries = rawConfig.getStringList(ConfigTags.LIBRARIES_TAG);
 
-    final Optional<AtgConfig> atgConfig = ConfigUtil2.getOptionalConfig(config, ConfigTags.ATG_CONFIG_TAG)
+    final Optional<AtgConfig> atgConfig = ConfigUtil2.getOptionalConfig(rawConfig, ConfigTags.ATG_CONFIG_TAG)
                                                      .map(AtgConfig::parse);
 
-    final Optional<ExecutorConfig> executorConfig = ConfigUtil2.getOptionalConfig(config, ConfigTags.EXECUTOR_TAG)
+    final Optional<ExecutorConfig> executorConfig = ConfigUtil2.getOptionalConfig(rawConfig, ConfigTags.EXECUTOR_TAG)
                                                                .map(ExecutorConfig::parse);
 
-    final List<? extends Config> rawBatchItemConfigs = config.getConfigList(ConfigTags.BATCH_ITEMS_TAG);
+    final List<? extends Config> rawBatchItemConfigs = rawConfig.getConfigList(ConfigTags.BATCH_ITEMS_TAG);
 
     final BatchPathCoverageItemConfigBuilder builder = new BatchPathCoverageItemConfigBuilder();
-    final List<BatchPathCoverageItemConfig> batchItems = rawBatchItemConfigs.stream().<BatchPathCoverageItemConfig> map((final Config rawBatchItem) -> {
+    final List<PathCoverageBatchItemConfig> batchItems = rawBatchItemConfigs.stream().<PathCoverageBatchItemConfig> map((final Config rawBatchItem) -> {
       Preconditions.checkState(rawBatchItem.hasPath(ConfigTags.BATCH_FILE_TAG));
 
       // final Optional<String> project = ConfigUtil2.getStringOptional(batchItem, BatchConfig.PROJECT_TAG);
@@ -246,8 +244,8 @@ public final class BatchPathCoverageConfig extends BatchConfigBase<BatchPathCove
       }
 
       return builder.build();
-    }).collect(Collectors.<BatchPathCoverageItemConfig> toList());
+    }).collect(Collectors.<PathCoverageBatchItemConfig> toList());
 
-    return new BatchPathCoverageConfig(libraries, batchItems, atgConfig, executorConfig);
+    return new PathCoverageBatchConfig(libraries, batchItems, atgConfig, executorConfig);
   }
 }

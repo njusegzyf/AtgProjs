@@ -31,10 +31,11 @@ public class FunctionCallVisitor extends ASTVisitor{
 	}
 	
 	public List<Function> getNewFunctionCalls() {
-		return newFunctionCalls;
+		return this.newFunctionCalls;
 	}
 
-	public int visit(IASTName name) {
+	@Override
+  public int visit(IASTName name) {
 		//visit the target source file under test, and find all of the function calls
 		if(name.isReference()){	
 			String fcType = null;
@@ -45,7 +46,7 @@ public class FunctionCallVisitor extends ASTVisitor{
 				fcType = ASTTypeUtil.getType(type);
 			}		
 			//return a function declaration
-			IASTStandardFunctionDeclarator iasfd = AstUtils.tryInferTypeFromFunctionCall(name, index);
+			IASTStandardFunctionDeclarator iasfd = AstUtils.tryInferTypeFromFunctionCall(name, this.index);
 			if(iasfd != null){
 				String fcName = iasfd.getName().getRawSignature();
 				//get the location where call is in

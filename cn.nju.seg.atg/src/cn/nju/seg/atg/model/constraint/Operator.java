@@ -73,6 +73,6 @@ public enum Operator {
     
     @Override
 	public String toString() {
-		return str;
+		return this.str;
 	}
 }

@@ -1,6 +1,5 @@
 package cn.nju.seg.atg.util;
 
-import java.util.Arrays;
 import java.util.List;
 
 /**

@@ -10,40 +10,42 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import org.eclipse.cdt.core.model.IFunctionDeclaration;
-import org.eclipse.core.resources.IFile;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
+import com.typesafe.config.Config;
 
 import cn.nju.seg.atg.parse.TestBuilder;
 import cn.nju.seg.atg.util.CFGPath;
 import nju.seg.zhangyf.atgwrapper.AtgWrapperPluginSettings;
 import nju.seg.zhangyf.atgwrapper.cfg.CfgPathUtil;
 import nju.seg.zhangyf.atgwrapper.config.PathFragmentConfig;
-import nju.seg.zhangyf.atgwrapper.config.batch.BatchBranchCoverageConfig;
-import nju.seg.zhangyf.atgwrapper.config.batch.BatchBranchCoverageConfig.BatchBranchCoverageItemConfig;
-import nju.seg.zhangyf.atgwrapper.config.batch.BatchBranchCoverageConfig.TargetNodeConfig;
+import nju.seg.zhangyf.atgwrapper.config.batch.BranchCoverageBatchConfig;
+import nju.seg.zhangyf.atgwrapper.config.batch.BranchCoverageBatchConfig.BranchCoverageBatchItemConfig;
+import nju.seg.zhangyf.atgwrapper.config.batch.BranchCoverageBatchConfig.TargetNodeConfig;
 import nju.seg.zhangyf.atgwrapper.coverage.BranchCoverage;
 import nju.seg.zhangyf.atgwrapper.outcome.BranchCoverageTestOutcome;
 import nju.seg.zhangyf.atgwrapper.outcome.CoverageResult;
 import nju.seg.zhangyf.util.CdtUtil;
-import nju.seg.zhangyf.util.ResourceAndUiUtil;
 
 /**
+ * Batch runner for branch coverage, which uses {@link BranchCoverage} to run tests for each batch item.
+ * 
+ * @see {@link BranchCoverage}
  * @author Zhang Yifan
  */
-public final class BatchBranchCoverageFileRunner extends BatchFileRunnerBase<BatchBranchCoverageItemConfig, BatchBranchCoverageConfig, BranchCoverageTestOutcome> {
+public final class BranchCoverageBatchFileRunner extends BatchFileRunnerBase<BranchCoverageBatchItemConfig, BranchCoverageBatchConfig, BranchCoverageTestOutcome> {
 
   @Override
-  protected BatchBranchCoverageConfig parseConfig(final IFile configFile) { // throws Exception {
-    assert configFile != null;
+  protected BranchCoverageBatchConfig parseConfig(final Config rawConfig) { // throws Exception {
+    assert rawConfig != null;
 
-    return BatchBranchCoverageConfig.parseBatchConfig(ResourceAndUiUtil.eclipseFileToPath(configFile));
+    return BranchCoverageBatchConfig.parseBatchConfig(rawConfig);
   }
 
   @Override
-  protected Predicate<IFunctionDeclaration> getFunctionFilter(final BatchBranchCoverageItemConfig batchItem) {
+  protected Predicate<IFunctionDeclaration> getFunctionFilter(final BranchCoverageBatchItemConfig batchItem) {
     assert batchItem != null && !Strings.isNullOrEmpty(batchItem.batchFunction);
 
     return fun -> batchItem.batchFunction.equals(fun.getElementName());
@@ -51,8 +53,8 @@ public final class BatchBranchCoverageFileRunner extends BatchFileRunnerBase<Bat
 
   @Override
   protected BranchCoverageTestOutcome runTest(final IFunctionDeclaration function,
-                                              final BatchBranchCoverageConfig batchConfig,
-                                              final BatchBranchCoverageItemConfig batchItem) {
+                                              final BranchCoverageBatchConfig batchConfig,
+                                              final BranchCoverageBatchItemConfig batchItem) {
     assert function != null && batchConfig != null && batchItem != null;
 
     final String functionSignature = CdtUtil.getFunctionSinguatureOrName(function);
@@ -112,8 +114,8 @@ public final class BatchBranchCoverageFileRunner extends BatchFileRunnerBase<Bat
 
   @Override
   protected List<String> checkTestConfig(final IFunctionDeclaration function,
-                                         final BatchBranchCoverageConfig batchConfig,
-                                         final BatchBranchCoverageItemConfig batchItem) {
+                                         final BranchCoverageBatchConfig batchConfig,
+                                         final BranchCoverageBatchItemConfig batchItem) {
     assert function != null && batchConfig != null && batchItem != null;
 
     final ArrayList<String> errorList = Lists.newArrayList(super.checkTestConfig(function, batchConfig, batchItem));
@@ -122,7 +124,7 @@ public final class BatchBranchCoverageFileRunner extends BatchFileRunnerBase<Bat
     branchCoverage.buildCfgAndPaths(function);
 
     if (batchItem.targetNodes.isPresent()) {
-      for (final BatchBranchCoverageConfig.TargetNodeConfig targetNode : batchItem.targetNodes.get()) {
+      for (final BranchCoverageBatchConfig.TargetNodeConfig targetNode : batchItem.targetNodes.get()) {
         if (targetNode.targetPaths.isPresent()) {
           // if target paths are given, check these paths exist
           for (final List<String> targetPath : targetNode.targetPaths.get()) {

@@ -18,9 +18,9 @@ public final class BatchFileRunners {
 
     final String lowercaseAction = action.trim().toLowerCase();
     if (BranchCoverage.BRANCH_COVERAGE_ACTION_NAME.equals(lowercaseAction)) {
-      return new BatchBranchCoverageFileRunner();
+      return new BranchCoverageBatchFileRunner();
     } else if (PathCoverage.PATH_COVERAGE_ACTION_NAME.equals(lowercaseAction) || PathCoverage.TARGET_NODE_COVERAGE_ACTION_NAME.equals(lowercaseAction)) {
-      return new BatchPathCoverageFileRunner();
+      return new PathCoverageBatchFileRunner();
     } else {
       // TODO handle other coverage
       throw new IllegalArgumentException("Unknown action: " + action);

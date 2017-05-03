@@ -237,8 +237,8 @@ public class PathCoverage extends CoverageCriteria {
         }
 
         final long execute_time = System.currentTimeMillis() - start_time - TestBuilder.function_time;
-        TestBuilder.totalTime[indexOfRun - 1] = (double)(execute_time + TestBuilder.function_time) / 1000.0;
-        TestBuilder.algorithmTime[indexOfRun - 1] = (double)execute_time / 1000.0;
+        TestBuilder.totalTime[indexOfRun - 1] = (double) (execute_time + TestBuilder.function_time) / 1000.0;
+        TestBuilder.algorithmTime[indexOfRun - 1] = (double) execute_time / 1000.0;
         TestBuilder.totalUncoverdPathsTime[indexOfRun - 1] = TestBuilder.uncoverdPathsTime;
         TestBuilder.coveredRatio[indexOfRun - 1] = countOfCoveredPath;
         TestBuilder.totalFrequency[indexOfRun - 1] = TestBuilder.function_frequency;
@@ -258,34 +258,37 @@ public class PathCoverage extends CoverageCriteria {
       }
     }
 
-    // @since 0.1, move these output out of the inner loop, which should be printed once at the end
-    final DecimalFormat df = new DecimalFormat("0.000");
-    // @since 0.1, use joiner to join strings
-    Joiner joinerOnTab = Joiner.on('\t');
-    for (int i = 0; i < TestBuilder.repetitionNum; i++) {
-      joinerOnTab.appendTo(resultStr,
-                           TestBuilder.allPaths.size(),
-                           TestBuilder.coveredRatio[i],
-                           TestBuilder.algorithmTime[i],
-                           df.format(TestBuilder.totalTime[i] - TestBuilder.algorithmTime[i]),
-                           TestBuilder.totalTime[i],
-                           TestBuilder.everyCoveredPaths[i]);
-      resultStr.append('\n');
-      // resultStr.append(TestBuilder.allPaths.size() + "\t" + TestBuilder.coveredRatio[i] + "\t"
-      // + TestBuilder.algorithmTime[i] + "\t" + df.format(TestBuilder.totalTime[i] - TestBuilder.algorithmTime[i]) + "\t"
-      // + TestBuilder.totalTime[i] + "\t" + TestBuilder.everyCoveredPaths[i] + "\n");
-    }
-    resultStr.append("best coverage:\t" + MathFunc.getMax(TestBuilder.coveredRatio) + " / " + TestBuilder.allPaths.size() + "\n");
-    resultStr.append("average coverage:\t" + MathFunc.getAverage(TestBuilder.coveredRatio) + " / " + TestBuilder.allPaths.size() + "\n");
+    if (PathCoverage.PATH_COVERAGE_ACTION_NAME.equals(this.actionName)) { // This output only has meaning for path coverage ("atg-pc")
+      // @since 0.1, move these output out of the inner loop, which should be printed once at the end
+      final DecimalFormat df = new DecimalFormat("0.000");
+      // @since 0.1, use joiner to join strings
+      Joiner joinerOnTab = Joiner.on('\t');
+      for (int i = 0; i < TestBuilder.repetitionNum; i++) {
+        joinerOnTab.appendTo(resultStr,
+                             TestBuilder.allPaths.size(),
+                             TestBuilder.coveredRatio[i],
+                             TestBuilder.algorithmTime[i],
+                             df.format(TestBuilder.totalTime[i] - TestBuilder.algorithmTime[i]),
+                             TestBuilder.totalTime[i],
+                             Strings.nullToEmpty(TestBuilder.everyCoveredPaths[i])); // Note: `appendTo` do not accepts null, and
+                                                                                     // TestBuilder.everyCoveredPaths[i] may be null
+        resultStr.append('\n');
+        // resultStr.append(TestBuilder.allPaths.size() + "\t" + TestBuilder.coveredRatio[i] + "\t"
+        // + TestBuilder.algorithmTime[i] + "\t" + df.format(TestBuilder.totalTime[i] - TestBuilder.algorithmTime[i]) + "\t"
+        // + TestBuilder.totalTime[i] + "\t" + TestBuilder.everyCoveredPaths[i] + "\n");
+      }
+      resultStr.append("best coverage:\t" + MathFunc.getMax(TestBuilder.coveredRatio) + " / " + TestBuilder.allPaths.size() + "\n");
+      resultStr.append("average coverage:\t" + MathFunc.getAverage(TestBuilder.coveredRatio) + " / " + TestBuilder.allPaths.size() + "\n");
 
-    // @since 0.1
-    resultStr.append("Detail coverage:\n");
-    // Note: `Arrays.asList(TestBuilder.coveredRatio)` will returns a list that contains one element which is the int array,
-    // as it accepts `Object...` but not `int...`.
-    joinerOnTab.appendTo(resultStr, IntStream.of(TestBuilder.coveredRatio)
-                                             .boxed()
-                                             .collect(Collectors.toList()));
-    resultStr.append('\n');
+      // @since 0.1
+      resultStr.append("Detail coverage:\n");
+      // Note: `Arrays.asList(TestBuilder.coveredRatio)` will returns a list that contains one element which is the int array,
+      // as it accepts `Object...` but not `int...`.
+      joinerOnTab.appendTo(resultStr, IntStream.of(TestBuilder.coveredRatio)
+                                               .boxed()
+                                               .collect(Collectors.toList()));
+      resultStr.append('\n');
+    }
 
     this.printTotalResult(resultStr);
   }

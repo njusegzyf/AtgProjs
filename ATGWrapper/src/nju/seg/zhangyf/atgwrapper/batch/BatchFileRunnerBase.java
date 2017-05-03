@@ -1,7 +1,10 @@
 package nju.seg.zhangyf.atgwrapper.batch;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -39,13 +42,14 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.io.ByteSink;
 import com.google.common.io.ByteSource;
-import com.google.common.io.CharSink;
 import com.google.common.io.Files;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.SettableFuture;
+import com.typesafe.config.Config;
+
 import cn.nju.seg.atg.parse.TestBuilder;
 import cn.nju.seg.atg.util.ATG;
 import nju.seg.zhangyf.atgwrapper.AtgWrapperPluginSettings;
@@ -60,6 +64,8 @@ import nju.seg.zhangyf.util.SwtUtil;
 import nju.seg.zhangyf.util.Util;
 
 /**
+ * Note: This class is thread hostile, which means it can only be executed in a single thread environment.
+ * 
  * @author Zhang Yifan
  */
 public abstract class BatchFileRunnerBase<TBatchItem extends BatchItemConfigBase, TBatchConfig extends BatchConfigBase<TBatchItem>, TTestOutcome extends TestOutcome> {
@@ -160,8 +166,11 @@ public abstract class BatchFileRunnerBase<TBatchItem extends BatchItemConfigBase
 
         // visit the `ITranslationUnit`, and performs operations on `IFunctionDeclaration`s
         tu.accept(new ICElementVisitor() {
+
+          private boolean hasResetAtgConfig = false;
+
           @Override
-          public boolean visit(ICElement element) throws CoreException {
+          public boolean visit(final ICElement element) throws CoreException {
             final Optional<IFunctionDeclaration> optioanlFunction = Util.asOptional(element, IFunctionDeclaration.class);
             // handle `IFunctionDeclaration`
             if (optioanlFunction.isPresent()) {
@@ -189,7 +198,17 @@ public abstract class BatchFileRunnerBase<TBatchItem extends BatchItemConfigBase
 
                 // submit a task to run the work, this task returns a SingleTestOutcome and may be canceled
                 final ListenableFuture<TTestOutcome> workTask = executor.submit(() -> {
-                  // submit a task to handle timeout and collect result
+                  // Since we allow each batch item to customize config, we should reset the atg config to the default,
+                  // and then apply the custom atg config when the first work in a batch item is going to be executed.
+                  if (!this.hasResetAtgConfig) {
+                    // reset the default config defined in the batch file
+                    batchConfig.atgConfig.ifPresent(AtgConfig::enableAtgConfig);
+                    // enable the custom config defined in the batch item
+                    batchItem.atgConfig.ifPresent(AtgConfig::enableAtgConfig);
+                    this.hasResetAtgConfig = true;
+                  }
+
+                  // In the work task, we first submit another task which handles timeout and collects the work task's result.
                   // Note: This task should be submitted in the work task instead of after submitting the work task,
                   // which enables that the timing begins just before the work is going to run.
                   final ListenableFuture<TaskOutcome<TTestOutcome>> resultTask = collectExecutor.submit(() -> {
@@ -291,7 +310,7 @@ public abstract class BatchFileRunnerBase<TBatchItem extends BatchItemConfigBase
 
   // Sub classes should implement the following methods.
 
-  protected abstract TBatchConfig parseConfig(final IFile configFile);// throws Exception;
+  protected abstract TBatchConfig parseConfig(final Config rawConfig);// throws Exception;
 
   protected abstract Predicate<IFunctionDeclaration> getFunctionFilter(final TBatchItem batchItem);
 
@@ -317,7 +336,7 @@ public abstract class BatchFileRunnerBase<TBatchItem extends BatchItemConfigBase
 
     return Collections.emptyList();
   }
-  
+
   private void processBatchResult(final TBatchConfig batchConfig, final BatchFileOutcome<TTestOutcome> batchFileOutcome) {
     assert batchConfig != null;
     assert batchFileOutcome != null;
@@ -333,11 +352,22 @@ public abstract class BatchFileRunnerBase<TBatchItem extends BatchItemConfigBase
     final File resultFile = Paths.get(ATG.resultFolder).resolve("batchResult.txt").toFile();
     try {
       // write result to file
-      final CharSink sink = Files.asCharSink(resultFile, Charsets.US_ASCII);
-      sink.write(result);
+      Files.asCharSink(resultFile, Charsets.US_ASCII).write(result);
     } catch (final IOException ex) {
       SwtUtil.createErrorMessageBoxWithActiveShell(
                                                    "Failed to write batch result to: " + resultFile.toString()
+                                                       + "\nwith exception: " + ex.toString())
+             .open();
+    }
+
+    final File resultBinaryFile = Paths.get(ATG.resultFolder).resolve("batchResultBinary").toFile();
+    try (final FileOutputStream fo = new FileOutputStream(resultBinaryFile);
+        final ObjectOutputStream oo = new ObjectOutputStream(fo)) {
+      // write result to file
+      oo.writeObject(batchFileOutcome);
+    } catch (final IOException ex) {
+      SwtUtil.createErrorMessageBoxWithActiveShell(
+                                                   "Failed to write binary batch otucome to: " + resultBinaryFile.toString()
                                                        + "\nwith exception: " + ex.toString())
              .open();
     }
@@ -347,7 +377,7 @@ public abstract class BatchFileRunnerBase<TBatchItem extends BatchItemConfigBase
    * Sub classes can override this method to perform extra work on the batch results.
    */
   @SuppressWarnings("unused")
-  protected void processBatchResultExtra(final TBatchConfig batchConfig, 
+  protected void processBatchResultExtra(final TBatchConfig batchConfig,
                                          final BatchFileOutcome<TTestOutcome> batchFileOutcome,
                                          final StringBuilder result) {}
 
@@ -450,9 +480,14 @@ public abstract class BatchFileRunnerBase<TBatchItem extends BatchItemConfigBase
    * @author Zhang Yifan
    * @param <TSingleTestOutcome>
    */
-  public static class TaskOutcome<TSingleTestOutcome extends TestOutcome> {
+  public static class TaskOutcome<TSingleTestOutcome extends TestOutcome> implements Serializable {
     public final String testFunctionSignuature;
-    public final Optional<TSingleTestOutcome> optioanlTestOutcome;
+    
+    /** 
+     * The type of this filed is changed from Java {@link Optional} to Guava {@link com.google.common.base.Optional},
+     * since Java {@code Optional} is not serializable.
+     */
+    public final com.google.common.base.Optional<TSingleTestOutcome> optioanlTestOutcome;
 
     public boolean isTestSucceed() {
       return this.optioanlTestOutcome.isPresent();
@@ -463,7 +498,7 @@ public abstract class BatchFileRunnerBase<TBatchItem extends BatchItemConfigBase
       assert optioanlTestOutcome != null;
 
       this.testFunctionSignuature = testFunctionSignuature;
-      this.optioanlTestOutcome = optioanlTestOutcome;
+      this.optioanlTestOutcome = com.google.common.base.Optional.fromJavaUtil(optioanlTestOutcome);
     }
 
     private static <T extends TestOutcome> TaskOutcome<T> create(final String testFunctionSignuature) {
@@ -477,6 +512,8 @@ public abstract class BatchFileRunnerBase<TBatchItem extends BatchItemConfigBase
 
       return new TaskOutcome<>(testFunctionSignuature, Optional.of(result));
     }
+    
+    private static final long serialVersionUID = 1L;
   }
 
   /**

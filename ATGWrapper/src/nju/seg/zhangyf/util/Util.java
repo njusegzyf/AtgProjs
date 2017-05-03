@@ -70,6 +70,12 @@ public final class Util {
 
     return Arrays.copyOf(original, original.length);
   }
+  
+  public static boolean[] sameLengthCopyOfArray(final boolean[] original) {
+    Preconditions.checkNotNull(original);
+
+    return Arrays.copyOf(original, original.length);
+  }
 
   // append methods
 

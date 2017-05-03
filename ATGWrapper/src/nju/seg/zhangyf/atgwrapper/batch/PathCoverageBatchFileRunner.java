@@ -1,36 +1,37 @@
 package nju.seg.zhangyf.atgwrapper.batch;
 
 import java.nio.channels.IllegalSelectorException;
+import java.util.List;
 import java.util.concurrent.CancellationException;
 import java.util.function.Predicate;
 
 import org.eclipse.cdt.core.model.IFunctionDeclaration;
-import org.eclipse.core.resources.IFile;
+
+import com.typesafe.config.Config;
 
 import cn.nju.seg.atg.parse.ConditionCoverage;
 import cn.nju.seg.atg.parse.CoverageCriteria;
 import cn.nju.seg.atg.parse.PathCoverage;
 import nju.seg.zhangyf.atgwrapper.AtgWrapperPluginSettings;
-import nju.seg.zhangyf.atgwrapper.config.batch.BatchPathCoverageConfig;
-import nju.seg.zhangyf.atgwrapper.config.batch.BatchPathCoverageConfig.BatchPathCoverageItemConfig;
+import nju.seg.zhangyf.atgwrapper.config.batch.PathCoverageBatchConfig;
+import nju.seg.zhangyf.atgwrapper.config.batch.PathCoverageBatchConfig.PathCoverageBatchItemConfig;
 import nju.seg.zhangyf.atgwrapper.outcome.TestOutcome;
 import nju.seg.zhangyf.util.CdtUtil;
-import nju.seg.zhangyf.util.ResourceAndUiUtil;
 
 /**
  * @author Zhang Yifan
  */
-public final class BatchPathCoverageFileRunner extends BatchFileRunnerBase<BatchPathCoverageItemConfig, BatchPathCoverageConfig, TestOutcome> {
+public final class PathCoverageBatchFileRunner extends BatchFileRunnerBase<PathCoverageBatchItemConfig, PathCoverageBatchConfig, TestOutcome> {
 
   @Override
-  protected BatchPathCoverageConfig parseConfig(IFile configFile) { // throws Exception {
-    assert configFile != null;
+  protected PathCoverageBatchConfig parseConfig(final Config rawConfig) { // throws Exception {
+    assert rawConfig != null;
 
-    return BatchPathCoverageConfig.parseBatchConfig(ResourceAndUiUtil.eclipseFileToPath(configFile));
+    return PathCoverageBatchConfig.parseBatchConfig(rawConfig);
   }
 
   @Override
-  protected Predicate<IFunctionDeclaration> getFunctionFilter(final BatchPathCoverageItemConfig batchItem) {
+  protected Predicate<IFunctionDeclaration> getFunctionFilter(final PathCoverageBatchItemConfig batchItem) {
     assert batchItem != null;
 
     switch (batchItem.mode) {
@@ -50,7 +51,7 @@ public final class BatchPathCoverageFileRunner extends BatchFileRunnerBase<Batch
   }
 
   @Override
-  protected TestOutcome runTest(final IFunctionDeclaration function, final BatchPathCoverageConfig batchConfig, final BatchPathCoverageItemConfig batchItem) {
+  protected TestOutcome runTest(final IFunctionDeclaration function, final PathCoverageBatchConfig batchConfig, final PathCoverageBatchItemConfig batchItem) {
     assert function != null && batchConfig != null && batchItem != null;
 
     final String action = batchConfig.atgConfig.flatMap(v -> v.action)
@@ -59,7 +60,8 @@ public final class BatchPathCoverageFileRunner extends BatchFileRunnerBase<Batch
 
     // set the coverage criteria
     final CoverageCriteria cc;
-    if (action.equals("atg-tsc") || action.equals("atg-pc")) {
+    if (PathCoverage.TARGET_NODE_COVERAGE_ACTION_NAME.equals(action)
+        || PathCoverage.PATH_COVERAGE_ACTION_NAME.equals(action)) { // action.equals("atg-tsc") || action.equals("atg-pc")
       cc = new PathCoverage(action);
       AtgWrapperPluginSettings.doIfDebug(() -> {
         System.out.println("\nProcess function: " + functionSignature + " with action: " + action + ", use PathCoverage.\n");
@@ -70,22 +72,35 @@ public final class BatchPathCoverageFileRunner extends BatchFileRunnerBase<Batch
         System.out.println("\nProcess function: " + functionSignature + " with action: " + action + ", use ConditionCoverage.\n");
       });
     }
-    // The `run` method and underlying methods are fixed to make the work cancelable.
-    // They will check whether the thread is interrupted which means the task is cancelled, and throw `CancellationException` if interrupted.
+
     try {
+      // The `run` method and underlying methods are fixed to make the work cancelable.
+      // They will check whether the thread is interrupted which means the task is cancelled, and throw `CancellationException` if interrupted.
       cc.run(function);
+
       // build a outcome for the single test, which is a snapshot of current `TestBuilder`.
-      return new TestOutcome(functionSignature);
+      if (PathCoverage.PATH_COVERAGE_ACTION_NAME.equals(action)) {
+        return TestOutcome.createForPathCoverage(functionSignature);
+      } else if (PathCoverage.TARGET_NODE_COVERAGE_ACTION_NAME.equals(action)) {
+        return TestOutcome.createForTargetNodeCoverage(functionSignature);
+      } else {
+        return TestOutcome.createForOtherCoverage(functionSignature);
+      }
     } catch (final CancellationException ce) {
       // FIXME instead of rethrow, we may gather some info from the canceled work.
       throw ce;
     }
   }
 
-  // @Override
-  // protected List<String> checkTestConfig(final IFunctionDeclaration function,
-  // final BatchPathCoverageConfig batchConfig,
-  // final BatchPathCoverageItemConfig batchItem) {
-  // return super.checkTestConfig(function, batchConfig, batchItem);
-  // }
+   @Override
+   protected List<String> checkTestConfig(final IFunctionDeclaration function, 
+                                          final PathCoverageBatchConfig batchConfig, 
+                                          final PathCoverageBatchItemConfig batchItem) {
+     assert function != null && batchConfig != null && batchItem != null;
+     
+     // TODO add check for path coverage config
+   return super.checkTestConfig(function, batchConfig, batchItem);
+   }
+  
+//  public 
 }

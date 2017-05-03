@@ -45,18 +45,18 @@ public class CLF {
 	 * @return intersection_type
 	 */
 	public int getParamsInExtensionCord(){
-		double x1 = c1.getX();
-		double y1 = c1.getY();
-		double x2 = c2.getX();
-		double y2 = c2.getY();
+		double x1 = this.c1.getX();
+		double y1 = this.c1.getY();
+		double x2 = this.c2.getX();
+		double y2 = this.c2.getY();
 		
 		if (this.comparisonOperator == Operator.GT || 
 				this.comparisonOperator == Operator.GE){
 			//if: 斜率不为0
 			if (Math.abs(y1 - y2) > Double.MIN_VALUE){
 				if(y1 < 0 && y2 < 0){
-					paramInExtensionCord = (x1*y2-x2*y1)/(y2-y1);
-					return (paramInExtensionCord<x1)?ConstantValue.LEFT:ConstantValue.RIGHT;
+					this.paramInExtensionCord = (x1*y2-x2*y1)/(y2-y1);
+					return (this.paramInExtensionCord<x1)?ConstantValue.LEFT:ConstantValue.RIGHT;
 				}
 			}
 		}
@@ -64,15 +64,15 @@ public class CLF {
 				this.comparisonOperator == Operator.LE){
 			if (Math.abs(y1 - y2) > Double.MIN_VALUE){
 				if(y1 > 0 && y2 > 0){
-					paramInExtensionCord = (x1*y2-x2*y1)/(y2-y1);
-					return (paramInExtensionCord<x1)?ConstantValue.LEFT:ConstantValue.RIGHT;				
+					this.paramInExtensionCord = (x1*y2-x2*y1)/(y2-y1);
+					return (this.paramInExtensionCord<x1)?ConstantValue.LEFT:ConstantValue.RIGHT;				
 				}
 			}
 		}
 		else if (this.comparisonOperator == Operator.EQ){
 			if(Math.abs(y1 - y2) > Double.MIN_VALUE){
-				paramInExtensionCord = (x1*y2-x2*y1)/(y2-y1);			
-				return (paramInExtensionCord<x1)?ConstantValue.LEFT:ConstantValue.RIGHT;
+				this.paramInExtensionCord = (x1*y2-x2*y1)/(y2-y1);			
+				return (this.paramInExtensionCord<x1)?ConstantValue.LEFT:ConstantValue.RIGHT;
 			}
 		}
 		
@@ -114,10 +114,10 @@ public class CLF {
 	private Interval getGreaterInterval()
 	{
 		Interval interval = new Interval();
-		double x1 = c1.getX();
-		double y1 = c1.getY();
-		double x2 = c2.getX();
-		double y2 = c2.getY();
+		double x1 = this.c1.getX();
+		double y1 = this.c1.getY();
+		double x2 = this.c2.getX();
+		double y2 = this.c2.getY();
 		
 		//if: 斜率为0
 		if (Math.abs(y1 - y2) <= Double.MIN_VALUE)
@@ -174,10 +174,10 @@ public class CLF {
 	private Interval getLessInteval()
 	{
 		Interval interval = new Interval();
-		double x1 = c1.getX();
-		double y1 = c1.getY();
-		double x2 = c2.getX();
-		double y2 = c2.getY();
+		double x1 = this.c1.getX();
+		double y1 = this.c1.getY();
+		double x2 = this.c2.getX();
+		double y2 = this.c2.getY();
 		
 		if (Math.abs(y1 - y2) <= Double.MIN_VALUE)
 		{
@@ -242,8 +242,8 @@ public class CLF {
 	private Interval getUnequalInterval()
 	{
 		Interval interval = new Interval();
-		interval.setLeftBoundary(c1.getX());
-		interval.setRightBoundary(c2.getX());
+		interval.setLeftBoundary(this.c1.getX());
+		interval.setRightBoundary(this.c2.getX());
 		return interval;
 	}
 	
@@ -251,10 +251,10 @@ public class CLF {
 	 * 打印拟合函数相关信息
 	 */
 	public void printCLF(){
-		double x1 = c1.getX();
-		double y1 = c1.getY();
-		double x2 = c2.getX();
-		double y2 = c2.getY();
+		double x1 = this.c1.getX();
+		double y1 = this.c1.getY();
+		double x2 = this.c2.getX();
+		double y2 = this.c2.getY();
 		double coefficient = (y1 - y2) / (x1 - x2);
 		double constant = y1 - coefficient*x1;
 		double zeroCoodinate = (x1*y2-x2*y1)/(y2-y1);
@@ -264,7 +264,7 @@ public class CLF {
 	}
 	
 	public Coodinate getC1() {
-		return c1;
+		return this.c1;
 	}
 
 	public void setC1(Coodinate c1) {
@@ -272,7 +272,7 @@ public class CLF {
 	}
 
 	public Coodinate getC2() {
-		return c2;
+		return this.c2;
 	}
 
 	public void setC2(Coodinate c2) {
@@ -280,7 +280,7 @@ public class CLF {
 	}
 
 	public Operator getComparisonOperator() {
-		return comparisonOperator;
+		return this.comparisonOperator;
 	}
 
 	public void setComparisonOperator(Operator comparisonOperator) {
@@ -288,6 +288,6 @@ public class CLF {
 	}
 
 	public double paramInExtensionCord() {
-		return paramInExtensionCord;
+		return this.paramInExtensionCord;
 	}
 }

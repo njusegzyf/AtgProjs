@@ -18,6 +18,6 @@ public enum ExprProperty {
     
     @Override
 	public String toString() {
-		return name;
+		return this.name;
 	}
 }

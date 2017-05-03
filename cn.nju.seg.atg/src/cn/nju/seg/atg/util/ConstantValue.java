@@ -167,5 +167,5 @@ public class ConstantValue {
 	 */
 //	public static final int PATH_SEARCH_CFG_DIRECTED = 3;
 	
-	private ConstantValue() {};
+	private ConstantValue() {}
 }

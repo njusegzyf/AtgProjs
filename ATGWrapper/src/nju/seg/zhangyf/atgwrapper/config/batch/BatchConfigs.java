@@ -42,12 +42,14 @@ public class BatchConfigs {
     return BatchConfigs.tryParseAndShowErrorIfFailed(configFile, ConfigFactory::parseFile);
   }
 
-  public static <T> Optional<T> tryParseAndShowErrorIfFailed(final IFile configFile, final Function<IFile, T> parseFunc) {
+  public static <T> Optional<T> tryParseAndShowErrorIfFailed(final IFile configFile, final Function<Config, T> parseFunc) {
     Preconditions.checkNotNull(configFile);
     Preconditions.checkNotNull(parseFunc);
 
     try {
-      return Optional.of(parseFunc.apply(configFile));
+      final Config rawConfig = ConfigFactory.parseFile(ResourceAndUiUtil.eclipseFileToJavaFile(configFile));
+      final Config rawConfigResolved =  rawConfig.resolve();
+      return Optional.of(parseFunc.apply(rawConfigResolved));
     } catch (final Throwable e) {
       // handle failed to parse config
       SwtUtil.createErrorMessageBoxWithActiveShell(
@@ -63,7 +65,7 @@ public class BatchConfigs {
   public static Optional<Config> tryParseAndShowErrorIfFailed(final IFile configFile) {
     Preconditions.checkNotNull(configFile);
 
-    return BatchConfigs.tryParseAndShowErrorIfFailed(configFile, file -> ConfigFactory.parseFile(ResourceAndUiUtil.eclipseFileToJavaFile(file)));
+    return BatchConfigs.tryParseAndShowErrorIfFailed(configFile, Function.identity());
   }
 
   @Deprecated

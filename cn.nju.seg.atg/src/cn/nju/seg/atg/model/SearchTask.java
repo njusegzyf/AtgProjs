@@ -42,25 +42,25 @@ public class SearchTask implements Comparable<SearchTask>{
 	}
 
 	public int getSearchIndex() {
-		return searchIndex;
+		return this.searchIndex;
 	}
 
 	public double[] getInitInputs() {
-		return initInputs;
+		return this.initInputs;
 	}
 
 	public double getPriority() {
-		return priority;
+		return this.priority;
 	}
 
 	public int getChangeTime() {
-		return changeTime;
+		return this.changeTime;
 	}
 
 	@Override
 	public int compareTo(SearchTask o) {
-		return priority > o.priority ? 1 :
-			(priority < o.priority ? -1 : 0);
+		return this.priority > o.priority ? 1 :
+			(this.priority < o.priority ? -1 : 0);
 	}
 }
 

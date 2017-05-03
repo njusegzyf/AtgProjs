@@ -76,13 +76,13 @@ public class Interval {
 //	}
 	
 	public double getLeftBoundary() {
-		return leftBoundary;
+		return this.leftBoundary;
 	}
 	public void setLeftBoundary(double leftBoundary) {
 		this.leftBoundary = leftBoundary;
 	}
 	public double getRightBoundary() {
-		return rightBoundary;
+		return this.rightBoundary;
 	}
 	public void setRightBoundary(double rightBoundary) {
 		this.rightBoundary = rightBoundary;

@@ -78,8 +78,8 @@ public class Function {
     
     private void buildCFG(boolean visitFunCalls){
     	CFGBuilder.initial();
-		FunctionVisitor expressionVisitor = new FunctionVisitor(funcName);
-		expressionVisitor.build(declarator);
+		FunctionVisitor expressionVisitor = new FunctionVisitor(this.funcName);
+		expressionVisitor.build(this.declarator);
 		this.startNode = expressionVisitor.getStartNode();
 		
 		this.lastNodeNum = CFGBuilder.nodeNumber;
@@ -304,12 +304,12 @@ public class Function {
     	for(Call call : this.getFunctionCalls()){
     		CFGNode fcNode = this.findFunctionCallIndex(call);
     		int nodeNumber = fcNode.getNodeNumber();
-    		if(!branchWithCall.containsKey(nodeNumber)){
+    		if(!this.branchWithCall.containsKey(nodeNumber)){
     			List<Call> calls = new ArrayList<Call>();
     			calls.add(call);
-    			branchWithCall.put(nodeNumber, calls);
+    			this.branchWithCall.put(nodeNumber, calls);
     		}else{
-    			branchWithCall.get(nodeNumber).add(call);
+    			this.branchWithCall.get(nodeNumber).add(call);
     		}
     	}
     }
@@ -574,23 +574,23 @@ public class Function {
     }
     
 	public int getOffset() {
-		return offset;
+		return this.offset;
 	}
 
 	public String getFuncName() {
-		return funcName;
+		return this.funcName;
 	}
 
 	public String getFuncType() {
-		return funcType;
+		return this.funcType;
 	}
 
 	public CFGNode getStartNode() {
-		return startNode;
+		return this.startNode;
 	}
 
 	public IASTStandardFunctionDeclarator getDeclarator() {
-		return declarator;
+		return this.declarator;
 	}
 
 	public void setStartNode(CFGNode startNode) {
@@ -598,27 +598,27 @@ public class Function {
 	}
 
 	public List<CFGNode> getEndNodes() {
-		return endNodes;
+		return this.endNodes;
 	}
 
 	public String getFunctionId() {
-		return functionId;
+		return this.functionId;
 	}
 
 	public boolean isExistBranchNode() {
-		return existBranchNode;
+		return this.existBranchNode;
 	}
 
 	public boolean isExistFunctionCall() {
-		return existFunctionCall;
+		return this.existFunctionCall;
 	}
 
 	public boolean isBuilt() {
-		return isBuilt;
+		return this.isBuilt;
 	}
 
 	public CFGNode getEntry() {
-		return entry;
+		return this.entry;
 	}
 
 	public void setEntry(CFGNode entry) {
@@ -626,7 +626,7 @@ public class Function {
 	}
 
 	public CFGNode getExit() {
-		return exit;
+		return this.exit;
 	}
 
 	public void setExit(CFGNode exit) {
@@ -634,7 +634,7 @@ public class Function {
 	}
 
 	public int getFid() {
-		return fid;
+		return this.fid;
 	}
 
 	public void setFid(int fid) {

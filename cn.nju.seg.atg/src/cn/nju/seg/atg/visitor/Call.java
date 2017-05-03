@@ -25,7 +25,7 @@ public class Call{
 	 * @return
 	 */
 	public boolean isExistControlFlowJump() {
-		Function f = CFGBuilder.allFunctions.get(functionId);
+		Function f = CFGBuilder.allFunctions.get(this.functionId);
 		if(f.isExistBranchNode())
 			return true;
 		if(f.isExistFunctionCall()){
@@ -43,12 +43,12 @@ public class Call{
 	 * @param f
 	 */
 	public void skipCall(Function f){
-		callNode.addChild(nextNode);
-		nextNode.replaceParent(f.getExit().getOffset(), callNode);
+		this.callNode.addChild(this.nextNode);
+		this.nextNode.replaceParent(f.getExit().getOffset(), this.callNode);
 	}
 	
 	public CFGNode getCallNode() {
-		return callNode;
+		return this.callNode;
 	}
 
 	public void setCallNode(CFGNode callNode) {
@@ -56,7 +56,7 @@ public class Call{
 	}
 
 	public CFGNode getNextNode() {
-		return nextNode;
+		return this.nextNode;
 	}
 
 	public void setNextNode(CFGNode nextNode) {
@@ -64,10 +64,10 @@ public class Call{
 	}
 
 	public int getOffset() {
-		return offset;
+		return this.offset;
 	}
 
 	public String getFunctionId() {
-		return functionId;
+		return this.functionId;
 	}
 }
