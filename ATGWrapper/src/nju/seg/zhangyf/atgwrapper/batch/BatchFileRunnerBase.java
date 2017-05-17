@@ -179,20 +179,6 @@ public abstract class BatchFileRunnerBase<TBatchItem extends BatchItemConfigBase
                 // for debug, print the function
                 AtgWrapperPluginSettings.doIfDebug(() -> BatchFileRunnerBase.printProcessFunction(function));
 
-                // first check the test config is OK
-                final List<String> testErrors = BatchFileRunnerBase.this.checkTestConfig(function, batchConfig, batchItem);
-                if (!testErrors.isEmpty()) {
-                  // if there are some errors, show the errors and stop processing the function
-                  final StringBuilder errorMessageBuilder = new StringBuilder();
-                  Util.appendAllWithNewLine(errorMessageBuilder,
-                                            "There are some errors in the batch item: ", batchItem.toString());
-                  Joiner.on(Util.LINE_SEPATATOR).appendTo(errorMessageBuilder, testErrors);
-
-                  SwtUtil.createErrorMessageBoxWithActiveShell(errorMessageBuilder.toString())
-                         .open();
-                  return false;
-                }
-
                 // used to record the `workTask`
                 final SettableFuture<ListenableFuture<TTestOutcome>> workTaskFuture = SettableFuture.create();
 
@@ -245,8 +231,27 @@ public abstract class BatchFileRunnerBase<TBatchItem extends BatchItemConfigBase
                   });
                   collectTaskOutcomeList.add(resultTask);
 
-                  return BatchFileRunnerBase.this.runTest(function, batchConfig, batchItem);
+                  // check the test config is OK
+                  // Note: This check is moved from visiting the `ITranslationUnit` into here (just before running the test),
+                  // since both the check and the test running require to build the CFG and use the CFG info,
+                  // and the `AbstractAST` class stores some data in static fields,
+                  // it is error to let the two processes (i.e. check for function A and test for function B) interleave with each other.
+                  final List<String> testErrors = BatchFileRunnerBase.this.checkTestConfig(function, batchConfig, batchItem);
+                  if (testErrors.isEmpty()) {
+                    // if no error, run the test
+                    return BatchFileRunnerBase.this.runTest(function, batchConfig, batchItem);
+                  } else {
+                    // if there are some errors, show the errors and stop processing the function
+                    final StringBuilder errorMessageBuilder = new StringBuilder();
+                    Util.appendAllWithNewLine(errorMessageBuilder,
+                                              "There are some errors in the batch item: ", batchItem.toString());
+                    Joiner.on(Util.LINE_SEPATATOR).appendTo(errorMessageBuilder, testErrors);
+                    final String errorMessage = errorMessageBuilder.toString();
 
+                    SwtUtil.createErrorMessageBoxWithActiveShell(errorMessage)
+                           .open();
+                    throw new IllegalArgumentException(errorMessage);
+                  }
                 });
                 workTaskFuture.set(workTask);
                 workTaskList.add(workTask);
@@ -264,7 +269,9 @@ public abstract class BatchFileRunnerBase<TBatchItem extends BatchItemConfigBase
             }
           }
         });
-      } catch (Throwable e) {
+      } catch (
+
+      Throwable e) {
         AtgWrapperPluginSettings.doIfDebug(() -> e.printStackTrace());
 
         // handle exception happened in processing a batch item
@@ -482,8 +489,8 @@ public abstract class BatchFileRunnerBase<TBatchItem extends BatchItemConfigBase
    */
   public static class TaskOutcome<TSingleTestOutcome extends TestOutcome> implements Serializable {
     public final String testFunctionSignuature;
-    
-    /** 
+
+    /**
      * The type of this filed is changed from Java {@link Optional} to Guava {@link com.google.common.base.Optional},
      * since Java {@code Optional} is not serializable.
      */
@@ -512,7 +519,7 @@ public abstract class BatchFileRunnerBase<TBatchItem extends BatchItemConfigBase
 
       return new TaskOutcome<>(testFunctionSignuature, Optional.of(result));
     }
-    
+
     private static final long serialVersionUID = 1L;
   }
 

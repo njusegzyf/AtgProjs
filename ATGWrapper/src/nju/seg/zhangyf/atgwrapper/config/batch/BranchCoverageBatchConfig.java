@@ -98,9 +98,10 @@ public class BranchCoverageBatchConfig extends BatchConfigBase<BranchCoverageBat
 
     BranchCoverageBatchItemConfig(final Optional<String> project,
                                   final String batchFile,
+                                  final Optional<AtgConfig> atgConfig,
                                   final String batchFunction,
                                   final Optional<List<TargetNodeConfig>> targetNodes) {
-      super(project, batchFile);
+      super(project, batchFile, atgConfig);
       assert !Strings.isNullOrEmpty(batchFunction);
       assert targetNodes != null;
 
@@ -126,8 +127,11 @@ public class BranchCoverageBatchConfig extends BatchConfigBase<BranchCoverageBat
     public BranchCoverageBatchItemConfig build() {
       this.checkVaild();
 
-      final BranchCoverageBatchItemConfig result =
-          new BranchCoverageBatchItemConfig(this.project, this.batchFile, this.batchFunction, this.targetNodes);
+      final BranchCoverageBatchItemConfig result = new BranchCoverageBatchItemConfig(super.project,
+                                                                                     super.batchFile,
+                                                                                     super.atgConfig,
+                                                                                     this.batchFunction,
+                                                                                     this.targetNodes);
 
       this.reset();
       return result;
@@ -175,6 +179,10 @@ public class BranchCoverageBatchConfig extends BatchConfigBase<BranchCoverageBat
 
       BatchItemConfigBase.parse(builder, rawBatchItem);
       builder.batchFunction = rawBatchItem.getString(ConfigTags.BATCH_FUNCTION_TAG);
+
+      if (rawBatchItem.hasPath(ConfigTags.ATG_CONFIG_TAG)) {
+        builder.atgConfig = Optional.of(AtgConfig.parse(rawBatchItem.getConfig(ConfigTags.ATG_CONFIG_TAG)));
+      }
 
       if (rawBatchItem.hasPath(ConfigTags.TARGET_NODES_TAG)) {
         final List<? extends Config> rawTargetNodeConfigs = rawBatchItem.getConfigList(ConfigTags.TARGET_NODES_TAG);

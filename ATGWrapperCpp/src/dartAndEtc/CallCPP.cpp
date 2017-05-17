@@ -15,6 +15,8 @@
 #include <iostream>
 using namespace std;
 
+#define TOLERANCE 0.0000001
+
 char* jstringTostring(JNIEnv* env, jstring jstr) {
 	char* rtn = NULL;
 	jclass clsstring = env->FindClass("java/lang/String");
@@ -199,10 +201,8 @@ double normAngle(double angle) {
  * Method:    callTurnLogic
  * Signature: (DDDDDDDDLjava/lang/String;)D
  */
-JNIEXPORT jdouble JNICALL Java_cn_nju_seg_atg_callCPP_CallCPP_callTurnLogic(
-		JNIEnv *env, jobject, jdouble x0, jdouble y0, jdouble gspeed,
-		jdouble x1, jdouble y1, jdouble x2, jdouble y2, jdouble dt,
-		jstring pathFile) {
+// JNIEXPORT jdouble JNICALL Java_cn_nju_seg_atg_callCPP_CallCPP_callTurnLogic(JNIEnv *env, jobject, jdouble x0, jdouble y0, jdouble gspeed, jdouble x1, jdouble y1, jdouble x2, jdouble y2, jdouble dt, jstring pathFile) {
+JNIEXPORT jdouble JNICALL Java_cn_nju_seg_atg_callCPP_CallCPP_callTurnLogic(JNIEnv *env, jobject, jdouble x0, jdouble x1, jdouble y0, jdouble y1, jdouble gspeed, jdouble x2, jdouble y2, jdouble dt, jstring pathFile) {
 	char* path = jstringTostring(env, pathFile);
 	ofstream bFile(path);
 	bFile << setiosflags(ios::scientific);
@@ -210,16 +210,17 @@ JNIEXPORT jdouble JNICALL Java_cn_nju_seg_atg_callCPP_CallCPP_callTurnLogic(
 	bFile << "node1@turnLogic\n";
 	double dx = x0 - x1;
 	double dy = y0 - y1;
-	if ((bFile << "node2@turnLogic " << dx - 0 << " expression@2\n", dx == 0)
-			&& (bFile << "node2@turnLogic " << dy - 0 << " expression@3\n", dy
-					== 0)) {
+	if ((bFile << "node2@turnLogic " << dx << " expression@2\n",  dx == 0.0 ) && (bFile << "node2@turnLogic " << dy << " expression@3\n", dy == 0.0)) {
+	// if ((bFile << "node2@turnLogic " << dx << " expression@2\n",  dx <= TOLERANCE && dx >= -TOLERANCE) && (bFile << "node2@turnLogic " << dy - 0.0 << " expression@3\n", dy <= TOLERANCE && dy >= -TOLERANCE)) {
+	// if ((bFile << "node2@turnLogic " << dx << " expression@3\n",  dx <= TOLERANCE) && (bFile << "node2@turnLogic " << dx << " expression@4\n",  dx >= -TOLERANCE) && (bFile << "node2@turnLogic " << dx << " expression@5\n",  dy <= TOLERANCE) && (bFile << "node2@turnLogic " << dx << " expression@6\n",  dy >= -TOLERANCE)) {
+	// if (bFile << "node2@turnLogic " << fabs(dx) + fabs(dy) - TOLERANCE << " expression@2\n",  fabs(dx) + fabs(dy) < TOLERANCE ) {
 		bFile << "node3@turnLogic\n";
 		return 0.0;
 	}
 	bFile << "node4@turnLogic\n";
 	double instHdg = 90 * deg - atan2(dy, dx);
-	if (bFile << "node5@turnLogic " << instHdg - 0. << " expression@6\n", instHdg
-			< 0.) {
+	if (bFile << "node5@turnLogic " << instHdg - 0.0 << " expression@6\n", instHdg
+			< 0.0) {
 		bFile << "node6@turnLogic\n";
 		instHdg += 360 * deg;
 	}
@@ -233,8 +234,7 @@ JNIEXPORT jdouble JNICALL Java_cn_nju_seg_atg_callCPP_CallCPP_callTurnLogic(
 	dx = x1 - x2;
 	dy = y1 - y2;
 	if ((bFile << "node10@turnLogic " << dx - 0 << " expression@10\n", dx == 0)
-			&& (bFile << "node10@turnLogic " << dy - 0 << " expression@11\n", dy
-					== 0)) {
+			&& (bFile << "node10@turnLogic " << dy - 0 << " expression@11\n", dy == 0)) {
 		bFile << "node11@turnLogic\n";
 		return 0.0;
 	}

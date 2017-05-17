@@ -7,6 +7,8 @@ import java.util.Map;
 
 import org.eclipse.cdt.core.dom.ast.IASTBinaryExpression;
 
+import com.google.common.base.Objects;
+
 import cn.nju.seg.atg.model.Condition;
 import cn.nju.seg.atg.model.constraint.BinaryExpression;
 import cn.nju.seg.atg.model.constraint.BinaryExpressionUtil;
@@ -19,7 +21,9 @@ import cn.nju.seg.atg.util.ConstantValue;
  * represent a node in CFG
  * 取消复合节点内部的控制流连接
  * 
+ * @since 0.1 Add {@link #hashCode()}.
  * @author zy
+ * @author Zhang Yifan
  */
 public class CFGNode {
   private List<CFGNode> parents = null;
@@ -572,7 +576,15 @@ public class CFGNode {
     return this.splitCompoundExprs;
   }
 
-  public boolean equals(CFGNode node) {
+  public boolean equals(final CFGNode node) {
     return this.nodeId == node.getNodeId();
+  }
+
+  /** @since 0.1 */
+  @Override
+  public int hashCode() {
+    // use `Objects.hashCode` to avoid null pointer in `this.nodeId`
+    return Objects.hashCode(this.nodeId);
+    // return this.nodeId.hashCode();
   }
 }

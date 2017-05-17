@@ -12,7 +12,8 @@ import org.eclipse.cdt.core.dom.ast.IASTExpression;
  */
 public class ArraySubscriptVisitor extends ASTVisitor {
 	
-	public int visit(IASTExpression expression) {
+	@Override
+  public int visit(IASTExpression expression) {
 		if(expression instanceof IASTArraySubscriptExpression){
 			System.out.println(((IASTArraySubscriptExpression) expression).getArgument().getRawSignature());
 		}

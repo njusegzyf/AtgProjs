@@ -1,7 +1,14 @@
 package cn.nju.seg.atg.util;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+
+import com.google.common.base.Preconditions;
+
+// import com.google.common.io.Files;
 
 import cn.nju.seg.atg.callCPP.CallCPP;
 import cn.nju.seg.atg.model.Interval;
@@ -30,6 +37,7 @@ public abstract class ATG {
   public static double START_POINT = 0.0;
   // public static double[] LEFT_BOUNDARY = {-Double.MAX_VALUE, 14, -Double.MAX_VALUE, -Double.MAX_VALUE, -Double.MAX_VALUE, -Double.MAX_VALUE};
   // public static double[] RIGHT_BOUNDARY = {Double.MAX_VALUE, 16, Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE};
+
   /**
    * 最大步长
    * <p>
@@ -38,10 +46,31 @@ public abstract class ATG {
    * 向外扩展的步长为(0,MAX_STEP)内的随机值
    */
   public static double MAX_STEP = 5.0;
+  
   /**
    * 用户定制的输入参数值
+   * 
+   * @since 0.1 Change to non-final to allow modification at run time.
    */
-  private static final double[] CUSTOMIZED_PARAMS = {};
+  private static double[] CUSTOMIZED_PARAMS = {};
+  
+  /**
+   * @since 0.1
+   */
+  public static void setCustomizedParams(final double[] v) {
+    Preconditions.checkNotNull(v);
+    
+    ATG.CUSTOMIZED_PARAMS = v;
+  }
+
+  // for Opti helicalValley, solutions are (0, -1, 0) and (0, 1, 0)
+  // private static final double[] CUSTOMIZED_PARAMS = { 0.0, 1.0, 0.0 };
+
+  // for Opti wood, solutions are (1.0, 1.0, 1.0, 1.0)
+  // private static final double[] CUSTOMIZED_PARAMS = { 1.0, 1.1, 1.1, 1.1 };
+
+  // for Tsafe TurnLogic, x0 == x1 && y0 == y1 (node3) can be solved by provide params
+  // private static final double[] CUSTOMIZED_PARAMS = { 0.0, 0.0, 0.0, 0.1, 0.0, 0.0, 0.0, 0.0};
 
   // public static String resultFolder_FSE = "CLFF-ATG(FSE)/T(100)/tsafe/";
   // public static final int MAX_NUM_OF_PREDICT_PARAM = 100;
@@ -73,7 +102,11 @@ public abstract class ATG {
   // public static final int MAX_NUM_OF_GENERATE_CYCLE = 2;
   // public static final double PREDICT_BOUNDARY = 10.0;
 
-  public static String resultFolder = "CLFF-ATG(FSE)/baseline/coral_607_tmp/";
+  // @since 0.1 Change default result folder
+  public static String resultFolder = "lffResult/tempResult";
+
+  public static String tempFolder = "lffResult/temp";
+
   /**
    * 结束一次查找前，预测出的参数个数的上限(100,200,400) --- T
    */
@@ -81,7 +114,7 @@ public abstract class ATG {
   /**
    * 预测的轮数上限(1,2,4) --- N
    */
-  public static int MAX_NUM_OF_GENERATE_CYCLE = 4; // 12;
+  public static int MAX_NUM_OF_GENERATE_CYCLE = 50; // 12;
   /**
    * 生成预测值的小区间大小(2,5,10)) --- I
    */
@@ -178,18 +211,23 @@ public abstract class ATG {
     try {
       c = Class.forName("cn.nju.seg.atg.callCPP.CallCPP");
       callCPP = (CallCPP) c.newInstance();
-    } catch (ClassNotFoundException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
-    } catch (InstantiationException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
-    } catch (IllegalAccessException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
+    } catch (final ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+      // @since 0.1 return if error occurs
+      // FIXME
+      return -1;
     }
-    pathFilePrefix = "/home/zy/atg_data/" + CFGBuilder.funcName.substring(0, CFGBuilder.funcName.indexOf("("));
-    String pathFile = pathFilePrefix + ".dat";
+    // @since 0.1
+    // pathFilePrefix = "/home/zy/atg_data/" + CFGBuilder.funcName.substring(0, CFGBuilder.funcName.indexOf("("));
+    // String pathFile = pathFilePrefix + ".dat";
+    // is changed to
+    final Path tempPathFolder = Paths.get(ATG.tempFolder);
+    try {
+      Files.createDirectories(tempPathFolder);
+    } catch (final Exception e) {
+      return -1;
+    }
+    final Path tempPathFile = tempPathFolder.resolve(CFGBuilder.funcName.substring(0, CFGBuilder.funcName.indexOf("(")) + ".dat");
+    final String pathFile = tempPathFile.toAbsolutePath().toString();
 
     int isCovered = -1;
 

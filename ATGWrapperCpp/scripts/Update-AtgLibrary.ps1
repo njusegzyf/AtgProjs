@@ -18,7 +18,8 @@ Class LibraryInfo{
     [LibraryInfo]::new('/root/eclipseWorkspace/ATGWrapperCpp/src/coral', 'CallCPP.cpp', 'Coral'),
     # [LibraryInfo]::new('/root/eclipseWorkspace/ATGWrapperCpp/src/stat', 'CallCPP_Stat.cpp', 'Stat'),
     [LibraryInfo]::new('/root/eclipseWorkspace/ATGWrapperCpp/src/blindHashOpti', 'CallCPP.cpp', 'BlindHashOpti'),
-    [LibraryInfo]::new('/root/eclipseWorkspace/ATGWrapperCpp/src/dartAndEtc', 'CallCPP.cpp', 'DartAndEtc')
+    [LibraryInfo]::new('/root/eclipseWorkspace/ATGWrapperCpp/src/dartAndEtc', 'CallCPP.cpp', 'DartAndEtc'),
+    [LibraryInfo]::new('/root/eclipseWorkspace/ATGWrapperCpp/src/tcas', 'CallCPP_Tcas.cpp', 'Tcas')
 )
 $libPrefix = 'CallCPP'
 $jdkPath = '/usr/java/jdk1.8.0_121'

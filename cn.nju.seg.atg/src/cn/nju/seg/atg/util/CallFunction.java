@@ -42,8 +42,7 @@ public class CallFunction {
     // 开始计时
     double start_time = System.currentTimeMillis();
 
-    // Modified by ZYF.
-    // Check for cancellation.
+    // @since 0.1, check for cancellation
     if (Thread.interrupted()) {
       throw new CancellationException();
     }

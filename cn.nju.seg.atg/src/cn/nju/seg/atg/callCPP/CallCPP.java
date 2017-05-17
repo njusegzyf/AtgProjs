@@ -1,10 +1,13 @@
 package cn.nju.seg.atg.callCPP;
 
+/**
+ * @version 0.1
+ * @author zy
+ * @author Zhang Yifan
+ */
 public class CallCPP {
 
-  public CallCPP() {
-
-  }
+  public CallCPP() {}
 
   public native double callEi(double x, String pathFile);
 
@@ -334,15 +337,23 @@ public class CallCPP {
 
   public native int callTest(int a, int b, String pathFile);
 
+  // @since 0.1
+  // for Tcas.
+  public native void callTcasRun(int cur_vertical_sep, int high_confidence, int two_of_three_reports_valid, int own_tracked_alt,
+                                 int own_tracked_alt_rate, int other_tracked_alt, int alt_layer_value, int up_separation,
+                                 int down_separation, int other_rac, int other_capability, int climb_inhibit,
+                                 String pathFile);
+
   static {
+    // @since 0.1, use `CallCPPLibLoader` to load libraries
     CallCPPLibLoader.loadLibs();
-    
-//    try {
-//      // 加载本地方法所在的链接库名
-//      System.loadLibrary("callCPP");
-//    } catch (UnsatisfiedLinkError e) {
-//      System.err.println("Cannot load callCPP library:\n" + e.toString());
-//    }
+
+    // try {
+    // // 加载本地方法所在的链接库名
+    // System.loadLibrary("callCPP");
+    // } catch (UnsatisfiedLinkError e) {
+    // System.err.println("Cannot load callCPP library:\n" + e.toString());
+    // }
   }
 
 }

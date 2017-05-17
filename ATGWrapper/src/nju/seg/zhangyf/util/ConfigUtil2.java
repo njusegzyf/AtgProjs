@@ -81,6 +81,10 @@ public final class ConfigUtil2 {
     return ConfigUtil2.getOptional(config, path, Config::getDouble);
   }
   
+  public static Optional<List<Double>> getOptionalDoubleList(final Config config, final String path) {
+    return ConfigUtil2.getOptional(config, path, Config::getDoubleList);
+  }
+  
   public static Optional<Duration> getOptionalDuration(final Config config, final String path) {
     return ConfigUtil2.getOptional(config, path, Config::getDuration);
   }

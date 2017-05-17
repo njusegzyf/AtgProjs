@@ -11,10 +11,12 @@ public final class AtgWrapperPluginSettings {
   public static final boolean IS_DEBUG = true;
 
   public static final void doIfDebug(final ThrowableAction act) {
+    assert act != null;
+
     if (AtgWrapperPluginSettings.IS_DEBUG) {
       try {
         act.apply();
-      } catch (Exception e) {}
+      } catch (final Exception ignored) {} // ignore any exception for debug action
     }
   }
 

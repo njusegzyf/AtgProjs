@@ -40,12 +40,12 @@ public abstract class AbstractAST {
 	 * @param ifd
 	 */
 	protected void staticParse(IFunctionDeclaration ifd){
-		findTargetFunction(ifd);
+		this.findTargetFunction(ifd);
 		//寻找与待测程序相关联的函数调用（仅考虑在同一文件中的函数）
 		CFGBuilder.allFunctions = new HashMap<String, Function>();
-    FunctionCallVisitor fCallVisitor = new FunctionCallVisitor(this.index, CFGBuilder.function);
+    final FunctionCallVisitor fCallVisitor = new FunctionCallVisitor(this.index, CFGBuilder.function);
 		CFGBuilder.allFunctions.put(CFGBuilder.function.getFunctionId(), CFGBuilder.function);
-		findFunctionCalls(fCallVisitor, CFGBuilder.function.getDeclarator());
+		this.findFunctionCalls(fCallVisitor, CFGBuilder.function.getDeclarator());
 	}
 	
 	/**

@@ -95,8 +95,7 @@ public final class NodeCoverages {
 
       // 获取目标路径编号
       final int pathIndex = PathCoverage.getPathNum(targetPath);
-      // Note: `PCATG` gets the target path from static field `CoverageCriteria`,
-      // so we must set the target path here.
+      // Note: `PCATG` gets the target path from static field `CoverageCriteria`, so we must set the target path here.
       CoverageCriteria.targetPath = targetPath;
 
       final boolean isCovered;

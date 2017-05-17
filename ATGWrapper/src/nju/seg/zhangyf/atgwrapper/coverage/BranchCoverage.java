@@ -54,6 +54,8 @@ public final class BranchCoverage extends CoverageCriteria {
     super(actionName);
   }
 
+  // FIXME A`lastBuiltFunction` just record the last built function use `buildCfgAndPaths` method,
+  // but other sub classes of `CoverageCriteria` also can build CFG, it will be wrong if we run BC and other coverage together.
   Optional<IFunctionDeclaration> lastBuiltFunction = Optional.empty();
 
   public void buildCfgAndPaths(final IFunctionDeclaration function) {
@@ -65,7 +67,7 @@ public final class BranchCoverage extends CoverageCriteria {
     }
 
     // 构建被测程序的CFG
-    this.buildCFG(function);
+    super.buildCFG(function);
 
     // 获取程序的路径集合
     // Note: Since we do not change paths, there is no need to rebuild paths for every run
@@ -75,17 +77,32 @@ public final class BranchCoverage extends CoverageCriteria {
   }
 
   /**
+   * @deprecated use {@link #buildCfgAndPaths(IFunctionDeclaration)}
+   */
+  @Deprecated
+  @Override
+  public void buildCFG(final IFunctionDeclaration ifd) {
+    Preconditions.checkNotNull(ifd);
+
+    this.buildCfgAndPaths(ifd);
+    // super.buildCFG(ifd);
+  }
+
+  /**
    * Note: The framework of this function refers to {@link cn.nju.seg.atg.parse.PathCoverage#run(IFunctionDeclaration)}
    * 
    * @return
    */
   public CoverageResult[] run(final IFunctionDeclaration function,
-                                    final Function<IFunctionDeclaration, List<String>> targetNodesProvider,
-                                    final Optional<Function<List<String>, List<String>>> targetNodeSorter,
-                                    final BiFunction<IFunctionDeclaration, String, List<CFGPath>> targetPathsProvider,
-                                    final Optional<Function<List<CFGPath>, List<CFGPath>>> pathSortFunc) {
+                              final Function<IFunctionDeclaration, List<String>> targetNodesProvider,
+                              final Optional<Function<List<String>, List<String>>> targetNodeSorter,
+                              final BiFunction<IFunctionDeclaration, String, List<CFGPath>> targetPathsProvider,
+                              final Optional<Function<List<CFGPath>, List<CFGPath>>> pathSortFunc) {
     Preconditions.checkNotNull(function);
+    Preconditions.checkNotNull(targetNodesProvider);
     Preconditions.checkNotNull(targetNodeSorter);
+    Preconditions.checkNotNull(targetPathsProvider);
+    Preconditions.checkNotNull(pathSortFunc);
 
     this.buildCfgAndPaths(function);
 
@@ -227,7 +244,7 @@ public final class BranchCoverage extends CoverageCriteria {
     for (int i = 0; i < TestBuilder.repetitionNum; i++) {
       joinerOnTab.appendTo(result,
                            "Run " + (i + 1) + ":",
-                           branchCoverages[i].coverdNum + " / " + branchCoverages[i].coverdNum,
+                           branchCoverages[i].coverdNum + " / " + branchCoverages[i].totalNum,
                            TestBuilder.algorithmTime[i],
                            df.format(TestBuilder.totalTime[i] - TestBuilder.algorithmTime[i]),
                            TestBuilder.totalTime[i]);

@@ -2,6 +2,7 @@ package nju.seg.zhangyf.atgwrapper.config;
 
 import java.io.IOException;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.Optional;
 
 import com.google.common.base.Preconditions;
@@ -53,6 +54,11 @@ public final class AtgConfig extends StorageConfig {
    */
   public final Optional<Double> startPoint;
 
+  /**
+   * @see cn.nju.seg.atg.util.ATG#CUSTOMIZED_PARAMS
+   */
+  public final Optional<List<Double>> customizedParmas;
+
   // TODO handle other settings
 
   // /**
@@ -87,7 +93,8 @@ public final class AtgConfig extends StorageConfig {
                     final Optional<Integer> maxNumOfGenerateCycle,
                     final Optional<Double> predictBoundary,
                     final Optional<Double> maxStep,
-                    final Optional<Double> startPoint) {
+                    final Optional<Double> startPoint,
+                    final Optional<List<Double>> customizedParmas) {
     super(resultFolder, isCopyConfigToResultFolder);
 
     assert action != null;
@@ -97,6 +104,7 @@ public final class AtgConfig extends StorageConfig {
     assert predictBoundary != null;
     assert maxStep != null;
     assert startPoint != null;
+    assert customizedParmas != null;
 
     this.action = action;
     this.countOfRepeation = countOfRepeation;
@@ -105,6 +113,7 @@ public final class AtgConfig extends StorageConfig {
     this.predictBoundary = predictBoundary;
     this.maxStep = maxStep;
     this.startPoint = startPoint;
+    this.customizedParmas = customizedParmas;
   }
 
   public static class AtgConfigBuilder extends StorageConfig.StrorageConfigBuilder {
@@ -116,6 +125,7 @@ public final class AtgConfig extends StorageConfig {
     public Optional<Double> predictBoundary;
     public Optional<Double> maxStep;
     public Optional<Double> startPoint;
+    public Optional<List<Double>> customizedParmas;
 
     public AtgConfigBuilder() {
       this.reset();
@@ -132,7 +142,8 @@ public final class AtgConfig extends StorageConfig {
                                              this.maxNumOfGenerateCycle,
                                              this.predictBoundary,
                                              this.maxStep,
-                                             this.startPoint);
+                                             this.startPoint,
+                                             this.customizedParmas);
       this.reset();
       return result;
     }
@@ -154,6 +165,7 @@ public final class AtgConfig extends StorageConfig {
       Preconditions.checkState(this.maxStep != null);
       this.maxStep.ifPresent(i -> Preconditions.checkState(i > 0.0));
       Preconditions.checkState(this.startPoint != null);
+      Preconditions.checkState(this.customizedParmas != null);
     }
 
     @Override
@@ -168,6 +180,7 @@ public final class AtgConfig extends StorageConfig {
       this.predictBoundary = Optional.empty();
       this.maxStep = Optional.empty();
       this.startPoint = Optional.empty();
+      this.customizedParmas = Optional.empty();
     }
   }
 
@@ -186,6 +199,7 @@ public final class AtgConfig extends StorageConfig {
     builder.predictBoundary = ConfigUtil2.getOptionalDouble(rawConfig, ConfigTags.PREDICT_BOUNDARY_TAG);
     builder.maxStep = ConfigUtil2.getOptionalDouble(rawConfig, ConfigTags.MAX_STEP_TAG);
     builder.startPoint = ConfigUtil2.getOptionalDouble(rawConfig, ConfigTags.START_POINT_TAG);
+    builder.customizedParmas = ConfigUtil2.getOptionalDoubleList(rawConfig, ConfigTags.CUSTOMIZED_PARAMS_TAG);
 
     return builder.build();
   }
@@ -222,5 +236,11 @@ public final class AtgConfig extends StorageConfig {
     atgConfig.startPoint.ifPresent(v -> {
       ATG.START_POINT = v;
     });
+
+    final double[] customizedParmas = atgConfig.customizedParmas.map(v -> v.stream().mapToDouble(Double::doubleValue).toArray())
+                                                                .orElse(AtgConfig.DEFAULT_EMPTY_CUSTOMIZED_PARMAS);
+    ATG.setCustomizedParams(customizedParmas);
   }
+
+  public static final double[] DEFAULT_EMPTY_CUSTOMIZED_PARMAS = {};
 }

@@ -5,7 +5,11 @@
  *      Author: zy
  */
 
+#include <cmath>
+
 #define PI 3.14159265358979323846
+#define TOLERANCE 0.0000001
+
 //class TurnLogic {
 //private:
 	static double twoPi = PI * 2;
@@ -17,6 +21,9 @@
 		double dx = x0 - x1;
 		double dy = y0 - y1;
 		if (dx == 0 && dy == 0)
+        // if (abs(dx) <= TOLERANCE && abs(dy) <= TOLERANCE)
+        // if (dx <= TOLERANCE && dx >= -TOLERANCE && dy <= TOLERANCE && dy >= -TOLERANCE)
+		// if (fabs(dx) + fabs(dy) <= TOLERANCE)
 			return 0.0;
 		double instHdg = 90 * deg - atan2(dy, dx);
 		if (instHdg < 0.) instHdg += 360 * deg;

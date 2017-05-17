@@ -11,6 +11,7 @@ test-output/
 
 #### ignore some type of files
 *.log
+*.so
 *.class
 *.exe
 *.dll

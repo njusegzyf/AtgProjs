@@ -177,8 +177,9 @@ public class ShowCFG extends AbstractAST {
     }
     drawCFG(this.getStartNode(), false);
 
-    TreeLayoutAlgorithm treeLayoutAlgorithm = new TreeLayoutAlgorithm(LayoutStyles.NO_LAYOUT_NODE_RESIZING);
-    Filter filter = new Filter() {
+    final TreeLayoutAlgorithm treeLayoutAlgorithm = new TreeLayoutAlgorithm(LayoutStyles.NO_LAYOUT_NODE_RESIZING);
+    final Filter filter = new Filter() {
+      @Override
       public boolean isObjectFiltered(LayoutItem item) {
         // Get the "Connection" from the Layout Item
         // and use this connection to get the "Graph Data"
@@ -188,10 +189,12 @@ public class ShowCFG extends AbstractAST {
           if (connection.getData() != null && connection.getData() instanceof Boolean) {
             // If the data is false, don't filter, otherwise, filter.
             return ((Boolean) connection.getData()).booleanValue();
+          } else {
+            return false;
           }
+        } else {
           return false;
         }
-        return false;
       }
     };
     treeLayoutAlgorithm.setFilter(filter);

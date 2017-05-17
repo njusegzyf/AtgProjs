@@ -45,7 +45,8 @@ public final class ConfigTags {
   public static final String PREDICT_BOUNDARY_TAG = "PredictBoundary";
   public static final String MAX_STEP_TAG = "MaxStep";
   public static final String START_POINT_TAG = "StartPoint";
-
+  public static final String CUSTOMIZED_PARAMS_TAG = "CustomizedParams";
+  
   // tags for `ExecutorConfig`
 
   public static final String EXECUTOR_TAG = "Executor";

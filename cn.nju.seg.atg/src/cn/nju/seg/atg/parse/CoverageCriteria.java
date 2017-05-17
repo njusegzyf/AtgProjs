@@ -1,6 +1,7 @@
 package cn.nju.seg.atg.parse;
 
 import java.io.IOException;
+import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -12,6 +13,7 @@ import org.eclipse.cdt.core.model.IFunctionDeclaration;
 
 import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
+import com.google.common.base.Preconditions;
 
 import cn.nju.seg.atg.gui.AtgConsole;
 import cn.nju.seg.atg.model.SimpleCFGNode;
@@ -26,7 +28,7 @@ import cn.nju.seg.atg.util.MathFunc;
  */
 public abstract class CoverageCriteria extends AbstractAST {
 
-  // FIXME This variable is used to fix PCATG problem.
+  // FIXME This variable is used to fix PCATG problem temporarily.
   /**
    * @since 0.1
    */
@@ -50,8 +52,12 @@ public abstract class CoverageCriteria extends AbstractAST {
   public CoverageCriteria(String actionName) {
     this.actionName = actionName;
 
+    // @since 0.1 record the action name to fix PCATG problem. 
     CoverageCriteria.lastAction = this.actionName;
   }
+
+  /** Runs a test on the given function. */
+  public abstract void run(final IFunctionDeclaration ifd);
 
   /**
    * 借助CDT提供的AST,构建被测程序的CFG
@@ -102,8 +108,8 @@ public abstract class CoverageCriteria extends AbstractAST {
       return;
     }
 
+    // use Guava `FIles` to write a `CharSequence` to a file
     final Path resultPath = resultFolderPath.resolve(ATG.callFunctionName + ".result.txt").toAbsolutePath();
-
     try {
       com.google.common.io.Files.asCharSink(resultPath.toFile(), Charsets.US_ASCII)
                                 .write(resultStr);
@@ -159,27 +165,60 @@ public abstract class CoverageCriteria extends AbstractAST {
    * 
    * @param path
    */
-  public static void printPath(CFGPath path) {
+  public static void printPath(final CFGPath path) {
+    Preconditions.checkNotNull(path);
+
+    CoverageCriteria.printPath(path, System.out);
+
+    // if (path.getPath().get(0).isBranchNode()) {
+    // SimpleCFGNode node = path.getPath().get(0);
+    // System.out.print(node.getName());
+    // char isTrue = node.isTrue() ? 'T' : 'F';
+    // System.out.print("(isTrue:" + isTrue + ", ");
+    // System.out.print("constraint:" + node.getConstraint().getExpression() + ")");
+    // } else {
+    // System.out.print(path.getPath().get(0).getName());
+    // }
+    // for (int j = 1; j < path.getPath().size(); j++) {
+    // SimpleCFGNode node = path.getPath().get(j);
+    // System.out.print("->" + node.getName());
+    // if (node.isBranchNode()) {
+    // char isTrue = node.isTrue() ? 'T' : 'F';
+    // System.out.print("(isTrue:" + isTrue + ", ");
+    // System.out.print("constraint:" + node.getConstraint().getExpression() + ")");
+    // }
+    // }
+    //
+    // System.out.println();
+  }
+
+  /**
+   * @since 0.1
+   */
+  public static void printPath(final CFGPath path, final PrintStream out) {
+    Preconditions.checkNotNull(path);
+    Preconditions.checkNotNull(out);
+
     if (path.getPath().get(0).isBranchNode()) {
       SimpleCFGNode node = path.getPath().get(0);
-      System.out.print(node.getName());
+      out.print(node.getName());
       char isTrue = node.isTrue() ? 'T' : 'F';
-      System.out.print("(isTrue:" + isTrue + ", ");
-      System.out.print("constraint:" + node.getConstraint().getExpression() + ")");
+      out.print("(isTrue:" + isTrue + ", ");
+      out.print("constraint:" + node.getConstraint().getExpression() + ")");
     } else {
-      System.out.print(path.getPath().get(0).getName());
+      out.print(path.getPath().get(0).getName());
     }
     for (int j = 1; j < path.getPath().size(); j++) {
       SimpleCFGNode node = path.getPath().get(j);
-      System.out.print("->" + node.getName());
+      out.print("->" + node.getName());
       if (node.isBranchNode()) {
         char isTrue = node.isTrue() ? 'T' : 'F';
-        System.out.print("(isTrue:" + isTrue + ", ");
-        System.out.print("constraint:" + node.getConstraint().getExpression() + ")");
+        out.print("(isTrue:" + isTrue + ", ");
+        out.print("constraint:" + node.getConstraint().getExpression() + ")");
       }
     }
 
-    System.out.println();
+    out.println();
   }
 
   public static String printPath_simply(CFGPath path) {
@@ -189,7 +228,4 @@ public abstract class CoverageCriteria extends AbstractAST {
     }
     return pathStr;
   }
-
-  public abstract void run(IFunctionDeclaration ifd);
-
 }
