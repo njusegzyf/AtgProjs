@@ -145,9 +145,8 @@ public class ZpathUtil {
           if (this.nextNodeIndex[0] == pathSize) {
             this.addNode_Z(node, parameter);
             this.updateNextNodeIndex(node[0], this.path.getPath().size());
-          } else
-          // 循环次数超过一次时，不关注分支函数值，只更新下一节点集合
-          {
+          } else {
+            // 循环次数超过一次时，不关注分支函数值，只更新下一节点集合
             this.updateNextNodeIndex(node[0], pathSize);
           }
         } else {

@@ -16,7 +16,7 @@ Class LibraryInfo{
 
 [LibraryInfo[]]$libraries = @(
     [LibraryInfo]::new('/root/eclipseWorkspace/ATGWrapperCpp/src/coral', 'CallCPP.cpp', 'Coral'),
-    # [LibraryInfo]::new('/root/eclipseWorkspace/ATGWrapperCpp/src/stat', 'CallCPP_Stat.cpp', 'Stat'),
+    [LibraryInfo]::new('/root/eclipseWorkspace/ATGWrapperCpp/src/stat', 'CallCPP_Stat.cpp', 'Stat'),
     [LibraryInfo]::new('/root/eclipseWorkspace/ATGWrapperCpp/src/blindHashOpti', 'CallCPP.cpp', 'BlindHashOpti'),
     [LibraryInfo]::new('/root/eclipseWorkspace/ATGWrapperCpp/src/dartAndEtc', 'CallCPP.cpp', 'DartAndEtc'),
     [LibraryInfo]::new('/root/eclipseWorkspace/ATGWrapperCpp/src/tcas', 'CallCPP_Tcas.cpp', 'Tcas')
@@ -27,7 +27,7 @@ $jdkPath = '/usr/java/jdk1.8.0_121'
 foreach ($library in $libraries){
   Set-Location -Path $library.libraryPath
   $libraryName = "lib$libPrefix$( $library.librarySuffix ).so"
-  g++ "-I$jdkPath/include" "-I$jdkPath/include/linux" -fPIC -shared -o $libraryName $library.librarySource
+  g++ "-I$jdkPath/include" "-I$jdkPath/include/linux" -fPIC -shared -o $libraryName $library.librarySource -std=c++11
   Copy-Item $libraryName -Destination $sysLibDirPath
 }
 

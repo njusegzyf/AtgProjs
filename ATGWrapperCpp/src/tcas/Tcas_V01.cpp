@@ -1,9 +1,7 @@
 //
-//Tcas.cpp
+// Tcas.cpp
 //
-//Created by zhou yan on 15/5/14.
-//Copyright (c) 2015�� zhou yan. All rights reserved.
-//
+// @author Zhang Yifan
 
 #include <iostream>
 using namespace std;
@@ -68,14 +66,15 @@ public:
     return Positive_RA_Alt_Thresh[Alt_Layer_Value];
   }
 
+  // Not expanded
   static int Inhibit_Biased_Climb() {
 
-    // return ((Climb_Inhibit == 1) ? Up_Separation + Const::MINSEP /* operand mutation NOZCROSS */ : Up_Separation);
-    if (Climb_Inhibit == 1) {
-      return Up_Separation + Const::MINSEP; /* operand mutation NOZCROSS */
-    } else {
-      return Up_Separation;
-    }
+    return ((Climb_Inhibit == 1) ? Up_Separation + Const::MINSEP /* operand mutation NOZCROSS */: Up_Separation);
+//    if (Climb_Inhibit == 1) {
+//      return Up_Separation + Const::MINSEP; /* operand mutation NOZCROSS */
+//    } else {
+//      return Up_Separation;
+//    }
   }
 
 
@@ -84,48 +83,47 @@ public:
     int upward_crossing_situation;
     int result;
 
-    // upward_preferred = (Inhibit_Biased_Climb() > Down_Separation) ? 1 : 0;
-    if (Inhibit_Biased_Climb() > Down_Separation) {
-      upward_preferred = 1;
-    } else {
-      upward_preferred = 0;
-    }
+    upward_preferred = (Inhibit_Biased_Climb() > Down_Separation) ? 1 : 0;
+//    if (Inhibit_Biased_Climb() > Down_Separation) {
+//      upward_preferred = 1;
+//    } else {
+//      upward_preferred = 0;
+//    }
 
     if (upward_preferred != 0) {
 
-
-      // result = (Own_Below_Threat() != 1 || ((Own_Below_Threat() == 1) && (!(Down_Separation >= ALIM())))) ? 1 : 0;
-      if (Own_Below_Threat() != 1) {
-        result = 1;
-      } else {
-        if (Own_Below_Threat() == 1) {
-          // Note: current program has bug if writes as "!(Down_Separation >= ALIM())",
-          // which cause a `ClassCastException` of CPPASTIdExpression cannot be cast to IASTBinaryExpression
-          // see `IfStatementVisitor` line 376
-          if (Down_Separation < ALIM()) {
-            result = 1;
-          } else {
-            result = 0;
-          }
-        } else {
-          result = 0;
-        }
-      }
+      result = (Own_Below_Threat() != 1 || ((Own_Below_Threat() == 1) && (!(Down_Separation >= ALIM())))) ? 1 : 0;
+//      if (Own_Below_Threat() != 1) {
+//        result = 1;
+//      } else {
+//        if (Own_Below_Threat() == 1) {
+//          // Note: current program has bug if writes as "!(Down_Separation >= ALIM())",
+//          // which cause a `ClassCastException` of CPPASTIdExpression cannot be cast to IASTBinaryExpression
+//          // see `IfStatementVisitor` line 376
+//          if (Down_Separation < ALIM()) {
+//            result = 1;
+//          } else {
+//            result = 0;
+//          }
+//        } else {
+//          result = 0;
+//        }
+//      }
     } else {
-      // result = (Own_Above_Threat() == 1 && (Cur_Vertical_Sep >= Const::MINSEP) && (Up_Separation >= ALIM())) ? 1 : 0;
-      if (Own_Above_Threat() == 1) {
-        if (Cur_Vertical_Sep >= Const::MINSEP) {
-          if (Up_Separation >= ALIM()) {
-            result = 1;
-          } else {
-            result = 0;
-          }
-        } else {
-          result = 0;
-        }
-      } else {
-        result = 0;
-      }
+      result = (Own_Above_Threat() == 1 && (Cur_Vertical_Sep >= Const::MINSEP) && (Up_Separation >= ALIM())) ? 1 : 0;
+//      if (Own_Above_Threat() == 1) {
+//        if (Cur_Vertical_Sep >= Const::MINSEP) {
+//          if (Up_Separation >= ALIM()) {
+//            result = 1;
+//          } else {
+//            result = 0;
+//          }
+//        } else {
+//          result = 0;
+//        }
+//      } else {
+//        result = 0;
+//      }
     }
     return result;
   }
@@ -135,43 +133,43 @@ public:
     int upward_crossing_situation;
     int result;
 
-    // upward_preferred = (Inhibit_Biased_Climb() > Down_Separation) ? 1 : 0;
-    if (Inhibit_Biased_Climb() > Down_Separation) {
-      upward_preferred = 1;
-    } else {
-      upward_preferred = 0;
-    }
+    upward_preferred = (Inhibit_Biased_Climb() > Down_Separation) ? 1 : 0;
+//    if (Inhibit_Biased_Climb() > Down_Separation) {
+//      upward_preferred = 1;
+//    } else {
+//      upward_preferred = 0;
+//    }
 
     if (upward_preferred != 0) {
-      // result = (Own_Below_Threat() == 1 && (Cur_Vertical_Sep >= Const::MINSEP) && (Down_Separation >= ALIM())) ? 1 : 0;
-      if (Own_Below_Threat() == 1) {
-        if (Cur_Vertical_Sep >= Const::MINSEP) {
-          if (Down_Separation >= Positive_RA_Alt_Thresh[Alt_Layer_Value]) { // Down_Separation >= ALIM()
-            result = 1;
-          } else {
-            result = 0;
-          }
-        } else {
-          result = 0;
-        }
-      } else {
-        result = 0;
-      }
+      result = (Own_Below_Threat() == 1 && (Cur_Vertical_Sep >= Const::MINSEP) && (Down_Separation >= ALIM())) ? 1 : 0;
+//      if (Own_Below_Threat() == 1) {
+//        if (Cur_Vertical_Sep >= Const::MINSEP) {
+//          if (Down_Separation >= Positive_RA_Alt_Thresh[Alt_Layer_Value]) { // Down_Separation >= ALIM()
+//            result = 1;
+//          } else {
+//            result = 0;
+//          }
+//        } else {
+//          result = 0;
+//        }
+//      } else {
+//        result = 0;
+//      }
     } else {
-      // result = (Own_Above_Threat() != 1 || ((Own_Above_Threat() == 1) && (Up_Separation >= ALIM()))) ? 1 : 0;
-      if (Own_Above_Threat() != 1) {
-        result = 1;
-      } else {
-        if (Own_Above_Threat() == 1) {
-          if (Up_Separation >= Positive_RA_Alt_Thresh[Alt_Layer_Value] ) { // >= ALIM()
-            result = 1;
-          } else {
-            result = 0;
-          }
-        } else {
-          result = 0;
-        }
-      }
+      result = (Own_Above_Threat() != 1 || ((Own_Above_Threat() == 1) && (Up_Separation >= ALIM()))) ? 1 : 0;
+//      if (Own_Above_Threat() != 1) {
+//        result = 1;
+//      } else {
+//        if (Own_Above_Threat() == 1) {
+//          if (Up_Separation >= Positive_RA_Alt_Thresh[Alt_Layer_Value]) { // >= ALIM()
+//            result = 1;
+//          } else {
+//            result = 0;
+//          }
+//        } else {
+//          result = 0;
+//        }
+//      }
     }
     return result;
   }
@@ -198,53 +196,58 @@ public:
   static int alt_sep_test_helper1() {
 
     // need_upward_RA = (Non_Crossing_Biased_Climb() == 1 && Own_Below_Threat() == 1) ? 1 : 0;
-    if (Non_Crossing_Biased_Climb() == 1) {
-      if (Own_Below_Threat() == 1) {
-        need_upward_RA = 1;
-      } else {
-        need_upward_RA = 0;
-      }
-    } else {
-      need_upward_RA = 0;
-    }
+     int temp1 = Non_Crossing_Biased_Climb();
+     int temp2 = Own_Below_Threat;
+     if (temp1 == 1) {
+       if (temp2 == 1) {
+         need_upward_RA = 1;
+       } else {
+         need_upward_RA = 0;
+       }
+     } else {
+       need_upward_RA = 0;
+     }
 
-    // need_downward_RA = (Non_Crossing_Biased_Descend() == 1 && Own_Above_Threat() == 1) ? 1 : 0;
-    if (Non_Crossing_Biased_Descend() == 1) {
-      if (Own_Above_Threat() == 1) {
-        need_downward_RA = 1;
-      } else {
-        need_downward_RA = 0;
-      }
-    } else {
-      need_downward_RA = 0;
-    }
+     // need_downward_RA = (Non_Crossing_Biased_Descend() == 1 && Own_Above_Threat() == 1) ? 1 : 0;
+     int temp3 = Non_Crossing_Biased_Descend();
+     int temp4 = Own_Above_Threat;
+     if (temp3 == 1) {
+       if (temp4 == 1) {
+         need_downward_RA = 1;
+       } else {
+         need_downward_RA = 0;
+       }
+     } else {
+       need_downward_RA = 0;
+     }
 
-//    if (need_upward_RA == 1 && need_downward_RA == 1)
-//      return Const::UNRESOLVED;
-//    else if (need_upward_RA == 1)
-//      return Const::UPWARD_RA;
-//    else if (need_downward_RA == 1)
-//      return Const::DOWNWARD_RA;
-//    else
-//      return Const::UNRESOLVED;
-    int returnValue = 0;
-    if (need_upward_RA == 1) {
-      if (need_downward_RA == 1) {
-        return Const::UNRESOLVED;
-      } else {
-        // leave statement for simple branch coverage
-        returnValue = Const::UNRESOLVED;
-      }
-    } else {
-      returnValue = Const::UNRESOLVED;
-    }
+ //    if (need_upward_RA == 1 && need_downward_RA == 1)
+ //      return Const::UNRESOLVED;
+ //    else if (need_upward_RA == 1)
+ //      return Const::UPWARD_RA;
+ //    else if (need_downward_RA == 1)
+ //      return Const::DOWNWARD_RA;
+ //    else
+ //      return Const::UNRESOLVED;
+     bool tempIfExprVar0 = false;
+     if (need_upward_RA == 1) {
+       if (need_downward_RA == 1) {
+         tempIfExprVar0 = true;
+       } else {
+         tempIfExprVar0 = false;
+       }
+     } else {
+       tempIfExprVar0 = false;
+     }
 
-    if (need_upward_RA == 1)
-      return Const::UPWARD_RA;
-    else if (need_downward_RA == 1)
-      return Const::DOWNWARD_RA;
-    else
-      return Const::UNRESOLVED;
+     if (tempIfExprVar0 == true)
+       return Const::UNRESOLVED;
+     else if (need_upward_RA == 1)
+       return Const::UPWARD_RA;
+     else if (need_downward_RA == 1)
+       return Const::DOWNWARD_RA;
+     else
+       return Const::UNRESOLVED;
   }
 
   /**

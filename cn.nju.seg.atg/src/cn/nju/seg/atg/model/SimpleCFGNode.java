@@ -14,7 +14,10 @@ import cn.nju.seg.atg.util.ConstantValue;
 /**
  * 简单CFG节点
  * 
+ * @version 0.1
+ * 
  * @author zy
+ * @author Zhang Yifan
  */
 public class SimpleCFGNode {
   /**
@@ -717,4 +720,9 @@ public class SimpleCFGNode {
   public double getOptimal() {
     return this.optimal;
   }
+
+  @Override
+  public String toString() {
+    return "SimpleCFGNode [name=" + this.name + ", type=" + this.type + ", id=" + this.id + "]";
+  } 
 }

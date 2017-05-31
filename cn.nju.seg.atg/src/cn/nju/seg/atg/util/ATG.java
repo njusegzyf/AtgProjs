@@ -46,20 +46,20 @@ public abstract class ATG {
    * 向外扩展的步长为(0,MAX_STEP)内的随机值
    */
   public static double MAX_STEP = 5.0;
-  
+
   /**
    * 用户定制的输入参数值
    * 
    * @since 0.1 Change to non-final to allow modification at run time.
    */
   private static double[] CUSTOMIZED_PARAMS = {};
-  
+
   /**
    * @since 0.1
    */
   public static void setCustomizedParams(final double[] v) {
     Preconditions.checkNotNull(v);
-    
+
     ATG.CUSTOMIZED_PARAMS = v;
   }
 
@@ -160,8 +160,25 @@ public abstract class ATG {
 
   /**
    * 为callFunction中的函数调用做准备
+   * 
+   * @since 0.1 init `ATG.CallCPP` statically
    */
-  public static CallCPP callCPP = null;
+  public static final CallCPP callCPP = ATG.createCallCpp();
+
+  /**
+   *  @since 0.1
+   */
+  private static CallCPP createCallCpp() {
+    try {
+      c = Class.forName("cn.nju.seg.atg.callCPP.CallCPP");
+      return (CallCPP) c.newInstance();
+    } catch (final ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+      // @since 0.1 return if error occurs
+      // FIXME
+      return null;
+    }
+  }
+
   /**
    * CallCPP中需要执行的函数名
    */
@@ -208,14 +225,16 @@ public abstract class ATG {
     final long startTime = System.currentTimeMillis();
     // final long startFunctionTime = TestBuilder.function_time;
 
-    try {
-      c = Class.forName("cn.nju.seg.atg.callCPP.CallCPP");
-      callCPP = (CallCPP) c.newInstance();
-    } catch (final ClassNotFoundException | InstantiationException | IllegalAccessException e) {
-      // @since 0.1 return if error occurs
-      // FIXME
-      return -1;
-    }
+    // @since 0.1 move init `ATG.CallCPP` code into static init expression
+    // try {
+    // c = Class.forName("cn.nju.seg.atg.callCPP.CallCPP");
+    // callCPP = (CallCPP) c.newInstance();
+    // } catch (final ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+    // // @since 0.1 return if error occurs
+    // // FIXME
+    // return -1;
+    // }
+
     // @since 0.1
     // pathFilePrefix = "/home/zy/atg_data/" + CFGBuilder.funcName.substring(0, CFGBuilder.funcName.indexOf("("));
     // String pathFile = pathFilePrefix + ".dat";

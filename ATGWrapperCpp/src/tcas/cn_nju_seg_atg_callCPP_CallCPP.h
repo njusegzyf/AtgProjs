@@ -793,6 +793,14 @@ JNIEXPORT void JNICALL Java_cn_nju_seg_atg_callCPP_CallCPP_callStat
 
 /*
  * Class:     cn_nju_seg_atg_callCPP_CallCPP
+ * Method:    prepareStat
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_cn_nju_seg_atg_callCPP_CallCPP_prepareStat
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     cn_nju_seg_atg_callCPP_CallCPP
  * Method:    callBenchmark28
  * Signature: (DLjava/lang/String;)V
  */

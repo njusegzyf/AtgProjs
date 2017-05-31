@@ -2,10 +2,14 @@ package cn.nju.seg.atg.util;
 
 import java.util.concurrent.CancellationException;
 
+import cn.nju.seg.atg.callCPP.CallCPP;
+
 /**
  * 用于函数执行的类
  * 
+ * @version 0.1
  * @author zy
+ * @author Zhang Yifan
  */
 public class CallFunction {
   /**
@@ -551,6 +555,16 @@ public class CallFunction {
     case "benchmark69":
       ATG.callCPP.callBenchmark69(parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], pathFile);
       break;
+
+    // @since 0.1 for tcas
+    case CallCPP.TCAS_TEST_FUNCTION_NAME:
+      ATG.callCPP.callTcasRun((int) parameters[0], (int) parameters[1], (int) parameters[2], (int) parameters[3], (int) parameters[4], (int) parameters[5],
+                              (int) parameters[6], (int) parameters[7], (int) parameters[8], (int) parameters[9], (int) parameters[10], (int) parameters[11], pathFile);
+      break;
+
+      // @since 0.1 throw for unknown methods
+    default:
+      throw new IllegalArgumentException();
     }
 
     // 结束计时

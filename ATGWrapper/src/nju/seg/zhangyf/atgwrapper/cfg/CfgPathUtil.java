@@ -187,6 +187,10 @@ public final class CfgPathUtil {
     }).findFirst();
   }
 
+  /**
+   * @deprecated Use {@link CFGPath#getPathNodeNames()} instead.
+   */
+  @Deprecated
   public static Stream<String> cfgPathNodeNames(final CFGPath cfgPath) {
     Preconditions.checkNotNull(cfgPath);
 

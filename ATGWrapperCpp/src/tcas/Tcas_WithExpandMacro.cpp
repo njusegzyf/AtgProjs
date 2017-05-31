@@ -8,6 +8,8 @@
 #include <iostream>
 using namespace std;
 
+#define EXPAND_AS_JVM
+
 class Const {
 public:
   static const int OLEV; /* in feets/minute */
@@ -69,40 +71,42 @@ public:
   }
 
   static int Inhibit_Biased_Climb() {
-
-    // return ((Climb_Inhibit == 1) ? Up_Separation + Const::MINSEP /* operand mutation NOZCROSS */ : Up_Separation);
+#ifdef EXPAND_AS_JVM
     if (Climb_Inhibit == 1) {
       return Up_Separation + Const::MINSEP; /* operand mutation NOZCROSS */
     } else {
       return Up_Separation;
     }
+#else
+    return ((Climb_Inhibit == 1) ?
+        Up_Separation + Const::MINSEP /* operand mutation NOZCROSS */:
+        Up_Separation);
+#endif
   }
-
 
   static int Non_Crossing_Biased_Climb() {
     int upward_preferred;
     int upward_crossing_situation;
     int result;
 
-    // upward_preferred = (Inhibit_Biased_Climb() > Down_Separation) ? 1 : 0;
+#ifdef EXPAND_AS_JVM
     if (Inhibit_Biased_Climb() > Down_Separation) {
       upward_preferred = 1;
     } else {
       upward_preferred = 0;
     }
+#else
+    upward_preferred = (Inhibit_Biased_Climb() > Down_Separation) ? 1 : 0;
+#endif
 
     if (upward_preferred != 0) {
 
-
-      // result = (Own_Below_Threat() != 1 || ((Own_Below_Threat() == 1) && (!(Down_Separation >= ALIM())))) ? 1 : 0;
+#ifdef EXPAND_AS_JVM
       if (Own_Below_Threat() != 1) {
         result = 1;
       } else {
         if (Own_Below_Threat() == 1) {
-          // Note: current program has bug if writes as "!(Down_Separation >= ALIM())",
-          // which cause a `ClassCastException` of CPPASTIdExpression cannot be cast to IASTBinaryExpression
-          // see `IfStatementVisitor` line 376
-          if (Down_Separation < ALIM()) {
+          if (!(Down_Separation >= ALIM())) {
             result = 1;
           } else {
             result = 0;
@@ -111,8 +115,13 @@ public:
           result = 0;
         }
       }
+#else
+      result = (Own_Below_Threat() != 1 || ((Own_Below_Threat() == 1) && (!(Down_Separation >= ALIM())))) ? 1 : 0;
+#endif
+
     } else {
-      // result = (Own_Above_Threat() == 1 && (Cur_Vertical_Sep >= Const::MINSEP) && (Up_Separation >= ALIM())) ? 1 : 0;
+
+#ifdef EXPAND_AS_JVM
       if (Own_Above_Threat() == 1) {
         if (Cur_Vertical_Sep >= Const::MINSEP) {
           if (Up_Separation >= ALIM()) {
@@ -126,6 +135,10 @@ public:
       } else {
         result = 0;
       }
+#else
+      result = (Own_Above_Threat() == 1 && (Cur_Vertical_Sep >= Const::MINSEP) && (Up_Separation >= ALIM())) ? 1 : 0;
+#endif
+
     }
     return result;
   }
@@ -135,18 +148,22 @@ public:
     int upward_crossing_situation;
     int result;
 
-    // upward_preferred = (Inhibit_Biased_Climb() > Down_Separation) ? 1 : 0;
+#ifdef EXPAND_AS_JVM
     if (Inhibit_Biased_Climb() > Down_Separation) {
       upward_preferred = 1;
     } else {
       upward_preferred = 0;
     }
+#else
+    upward_preferred = (Inhibit_Biased_Climb() > Down_Separation) ? 1 : 0;
+#endif
 
     if (upward_preferred != 0) {
-      // result = (Own_Below_Threat() == 1 && (Cur_Vertical_Sep >= Const::MINSEP) && (Down_Separation >= ALIM())) ? 1 : 0;
+
+#ifdef EXPAND_AS_JVM
       if (Own_Below_Threat() == 1) {
         if (Cur_Vertical_Sep >= Const::MINSEP) {
-          if (Down_Separation >= Positive_RA_Alt_Thresh[Alt_Layer_Value]) { // Down_Separation >= ALIM()
+          if (Down_Separation >= ALIM()) {
             result = 1;
           } else {
             result = 0;
@@ -157,13 +174,18 @@ public:
       } else {
         result = 0;
       }
+#else
+      result = (Own_Below_Threat() == 1 && (Cur_Vertical_Sep >= Const::MINSEP) && (Down_Separation >= ALIM())) ? 1 : 0;
+#endif
+
     } else {
-      // result = (Own_Above_Threat() != 1 || ((Own_Above_Threat() == 1) && (Up_Separation >= ALIM()))) ? 1 : 0;
+
+#ifdef EXPAND_AS_JVM
       if (Own_Above_Threat() != 1) {
         result = 1;
       } else {
         if (Own_Above_Threat() == 1) {
-          if (Up_Separation >= Positive_RA_Alt_Thresh[Alt_Layer_Value] ) { // >= ALIM()
+          if (Up_Separation >= ALIM()) {
             result = 1;
           } else {
             result = 0;
@@ -172,79 +194,36 @@ public:
           result = 0;
         }
       }
+#else
+      result = (Own_Above_Threat() != 1 || ((Own_Above_Threat() == 1) && (Up_Separation >= ALIM()))) ? 1 : 0;
+#endif
+
     }
     return result;
   }
 
   static int Own_Below_Threat() {
-    // return ((Own_Tracked_Alt < Other_Tracked_Alt) ? 1 : 0);
+#ifdef EXPAND_AS_JVM
     if (Own_Tracked_Alt < Other_Tracked_Alt) {
       return 1;
     } else {
       return 0;
     }
+#else
+    return ((Own_Tracked_Alt < Other_Tracked_Alt) ? 1 : 0);
+#endif
   }
 
   static int Own_Above_Threat() {
-    // return ((Other_Tracked_Alt < Own_Tracked_Alt) ? 1 : 0);
+#ifdef EXPAND_AS_JVM
     if (Other_Tracked_Alt < Own_Tracked_Alt) {
       return 1;
     } else {
       return 0;
     }
-  }
-
-  // Added by ZYF
-  static int alt_sep_test_helper1() {
-
-    // need_upward_RA = (Non_Crossing_Biased_Climb() == 1 && Own_Below_Threat() == 1) ? 1 : 0;
-    if (Non_Crossing_Biased_Climb() == 1) {
-      if (Own_Below_Threat() == 1) {
-        need_upward_RA = 1;
-      } else {
-        need_upward_RA = 0;
-      }
-    } else {
-      need_upward_RA = 0;
-    }
-
-    // need_downward_RA = (Non_Crossing_Biased_Descend() == 1 && Own_Above_Threat() == 1) ? 1 : 0;
-    if (Non_Crossing_Biased_Descend() == 1) {
-      if (Own_Above_Threat() == 1) {
-        need_downward_RA = 1;
-      } else {
-        need_downward_RA = 0;
-      }
-    } else {
-      need_downward_RA = 0;
-    }
-
-//    if (need_upward_RA == 1 && need_downward_RA == 1)
-//      return Const::UNRESOLVED;
-//    else if (need_upward_RA == 1)
-//      return Const::UPWARD_RA;
-//    else if (need_downward_RA == 1)
-//      return Const::DOWNWARD_RA;
-//    else
-//      return Const::UNRESOLVED;
-    int returnValue = 0;
-    if (need_upward_RA == 1) {
-      if (need_downward_RA == 1) {
-        return Const::UNRESOLVED;
-      } else {
-        // leave statement for simple branch coverage
-        returnValue = Const::UNRESOLVED;
-      }
-    } else {
-      returnValue = Const::UNRESOLVED;
-    }
-
-    if (need_upward_RA == 1)
-      return Const::UPWARD_RA;
-    else if (need_downward_RA == 1)
-      return Const::DOWNWARD_RA;
-    else
-      return Const::UNRESOLVED;
+#else
+    return ((Other_Tracked_Alt < Own_Tracked_Alt) ? 1 : 0);
+#endif
   }
 
   /**
@@ -256,9 +235,9 @@ public:
     int enabled, tcas_equipped, intent_not_known;
     int alt_sep;
 
-    // enabled = (High_Confidence == 1 && (Own_Tracked_Alt_Rate <= Const::OLEV) && (Cur_Vertical_Sep > Const::MAXALTDIFF)) ? 1 : 0;
+#ifdef EXPAND_AS_JVM
     if (High_Confidence == 1) {
-      if (Own_Tracked_Alt_Rate <= Const::OLEV) {
+      if ((Own_Tracked_Alt_Rate <= Const::OLEV)) {
         if (Cur_Vertical_Sep > Const::MAXALTDIFF) {
           enabled = 1;
         } else {
@@ -270,15 +249,21 @@ public:
     } else {
       enabled = 0;
     }
+#else
+    enabled = (High_Confidence == 1 && (Own_Tracked_Alt_Rate <= Const::OLEV) && (Cur_Vertical_Sep > Const::MAXALTDIFF)) ? 1 : 0;
+#endif
 
-    // tcas_equipped = (Other_Capability == Const::TCAS_TA) ? 1 : 0;
+#ifdef EXPAND_AS_JVM
     if (Other_Capability == Const::TCAS_TA) {
       tcas_equipped = 1;
     } else {
       tcas_equipped = 0;
     }
+#else
+    tcas_equipped = (Other_Capability == Const::TCAS_TA) ? 1 : 0;
+#endif
 
-    // intent_not_known = (Two_of_Three_Reports_Valid == 1 && Other_RAC == Const::NO_INTENT) ? 1 : 0;
+#ifdef EXPAND_AS_JVM
     if (Two_of_Three_Reports_Valid == 1) {
       if (Other_RAC == Const::NO_INTENT) {
         intent_not_known = 1;
@@ -288,32 +273,26 @@ public:
     } else {
       intent_not_known = 0;
     }
+#else
+    intent_not_known = (Two_of_Three_Reports_Valid == 1 && Other_RAC == Const::NO_INTENT) ? 1 : 0;
+#endif
 
     alt_sep = Const::UNRESOLVED;
+    if (enabled == 1 && ((tcas_equipped == 1 && intent_not_known == 1) || tcas_equipped == 0)) {
 
-    //    if (enabled == 1 && ((tcas_equipped == 1 && intent_not_known == 1) || tcas_equipped == 0)) {
-    //      alt_sep = alt_sep_test_helper1();
-    //    }
-    // Note: change ((tcas_equipped == 1 && intent_not_known == 1) || tcas_equipped == 0) to
-    // (tcas_equipped == 0 || (tcas_equipped == 1 && intent_not_known == 1)) for simple expansion
-    if (enabled == 1) {
-      if (tcas_equipped == 0) {
-        alt_sep = alt_sep_test_helper1();
-      } else {
-        if (tcas_equipped == 1) {
-          if (intent_not_known == 1) {
-            alt_sep = alt_sep_test_helper1();
-          } else {
-            alt_sep = Const::UNRESOLVED;
-          }
-        } else {
-          alt_sep = Const::UNRESOLVED;
-        }
-      }
-    } else {
-      alt_sep = Const::UNRESOLVED;
+      need_upward_RA = (Non_Crossing_Biased_Climb() == 1 && Own_Below_Threat() == 1) ? 1 : 0;
+
+      need_downward_RA = (Non_Crossing_Biased_Descend() == 1 && Own_Above_Threat() == 1) ? 1 : 0;
+
+      if (need_upward_RA == 1 && need_downward_RA == 1)
+        alt_sep = Const::UNRESOLVED;
+      else if (need_upward_RA == 1)
+        alt_sep = Const::UPWARD_RA;
+      else if (need_downward_RA == 1)
+        alt_sep = Const::DOWNWARD_RA;
+      else
+        alt_sep = Const::UNRESOLVED;
     }
-
     return alt_sep;
   }
 
@@ -368,7 +347,6 @@ void tcasRun(int cur_vertical_sep, int high_confidence,
 }
 
 int main(int argc, const char * argv[]) {
-  Tcas::start_symbolic(601, 1, 1, -999999, -1000000, -1000000, 0, -1000000,
-      -999700, 0, 1, 1);
+  Tcas::start_symbolic(601, 1, 1, -999999, -1000000, -1000000, 0, -1000000, -999700, 0, 1, 1);
   return 0;
 }

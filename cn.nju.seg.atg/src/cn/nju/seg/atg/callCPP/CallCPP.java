@@ -1,7 +1,8 @@
 package cn.nju.seg.atg.callCPP;
 
 /**
- * @version 0.1
+ * @version 0.1 Add native methods for preparations for tests.
+ * 
  * @author zy
  * @author Zhang Yifan
  */
@@ -294,6 +295,13 @@ public class CallCPP {
 
   public native void callStat(int val, String pathFile);
 
+  /**
+   * Prepares for running tests of `stat`.
+   * 
+   * @since 0.1
+   */
+  public native void prepareStat();
+
   /*************************
    * | 补充实验coral/JPFBenchmark |
    *************************/
@@ -337,8 +345,11 @@ public class CallCPP {
 
   public native int callTest(int a, int b, String pathFile);
 
-  // @since 0.1
-  // for Tcas.
+  /**
+   * Runs tcas method.
+   * 
+   * @since 0.1
+   */
   public native void callTcasRun(int cur_vertical_sep, int high_confidence, int two_of_three_reports_valid, int own_tracked_alt,
                                  int own_tracked_alt_rate, int other_tracked_alt, int alt_layer_value, int up_separation,
                                  int down_separation, int other_rac, int other_capability, int climb_inhibit,
@@ -356,4 +367,10 @@ public class CallCPP {
     // }
   }
 
+  /**
+   * The test function name of `tcas`.
+   * 
+   * @since 0.1
+   */
+  public static final String TCAS_TEST_FUNCTION_NAME = "tcasRun";
 }

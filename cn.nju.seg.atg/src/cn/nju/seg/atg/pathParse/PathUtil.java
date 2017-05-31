@@ -132,6 +132,7 @@ public class PathUtil {
     List<Integer> nodeTraversed = new ArrayList<Integer>();
 
     searchPaths(allPaths, path, nodeTraversed, cfgStartNode, false);
+    // searchFullPaths(allPaths, path, nodeTraversed, cfgStartNode, false);
 
     List<CFGPath> newAllPaths = new ArrayList<CFGPath>();
     int size = allPaths.size();
@@ -490,10 +491,9 @@ public class PathUtil {
   }
 
   /**
-   * 递归函数
-   * 找出当前CFG树的所有路径
-   * <p>
-   * （注：循环节点第二次加入路径时，标记为普通节点，不参与线性拟合运算）
+   * Modified version of {@link #searchPaths(List, CFGPath, List, CFGNode, boolean)},
+   * which expands a function call and then search its successor of the function call.
+   * It also do not add `call@method` nodes to paths.
    * 
    * @param allPaths
    *          路径集合
@@ -505,8 +505,11 @@ public class PathUtil {
    *          当前节点
    * @param endFlag
    *          记录是否是循环结束节点
+   *          
+   *          @see #searchPaths(List, CFGPath, List, CFGNode, boolean)
+   *          @since 0.1
    */
-  private static void searchPaths(List<CFGPath> allPaths, CFGPath path, List<Integer> nodeTraversed, CFGNode node, boolean endFlag) {
+  private static void searchFullPaths(List<CFGPath> allPaths, CFGPath path, List<Integer> nodeTraversed, CFGNode node, boolean endFlag) {
     CFGPath pathTemp = path.clonePath();
     List<Integer> nodeTraversedTemp = copyNodeTraversed(nodeTraversed);
 
@@ -538,7 +541,7 @@ public class PathUtil {
           // 处理if分支
           if (nodeTraversedTemp.contains(node.getIfChild().getNodeIndex())) {
             if (node.getNodeIndex() > node.getIfChild().getNodeIndex()) {
-              searchPaths(allPaths, pathTemp, nodeTraversedTemp, node.getIfChild(), endFlag);
+              searchFullPaths(allPaths, pathTemp, nodeTraversedTemp, node.getIfChild(), endFlag);
             } else {
               if (node.getElseChild() == null && node.getChildren() == null) {
                 allPaths.add(pathTemp);
@@ -547,28 +550,28 @@ public class PathUtil {
                 if (node.getElseChild() != null) {
                   if (nodeTraversedTemp.contains(node.getElseChild().getNodeIndex())) {
                     if (node.getNodeIndex() > node.getElseChild().getNodeIndex()) {
-                      searchPaths(allPaths, pathTemp, nodeTraversedTemp, node.getElseChild(), endFlag);
+                      searchFullPaths(allPaths, pathTemp, nodeTraversedTemp, node.getElseChild(), endFlag);
                     } else {
                       allPaths.add(pathTemp);
                     }
                   } else {
-                    searchPaths(allPaths, pathTemp, nodeTraversedTemp, node.getElseChild(), endFlag);
+                    searchFullPaths(allPaths, pathTemp, nodeTraversedTemp, node.getElseChild(), endFlag);
                   }
                 } else {
                   if (nodeTraversedTemp.contains(node.getChildren().get(0).getNodeIndex())) {
                     if (node.getNodeIndex() > node.getChildren().get(0).getNodeIndex()) {
-                      searchPaths(allPaths, pathTemp, nodeTraversedTemp, node.getChildren().get(0), endFlag);
+                      searchFullPaths(allPaths, pathTemp, nodeTraversedTemp, node.getChildren().get(0), endFlag);
                     } else {
                       allPaths.add(pathTemp);
                     }
                   } else {
-                    searchPaths(allPaths, pathTemp, nodeTraversedTemp, node.getChildren().get(0), endFlag);
+                    searchFullPaths(allPaths, pathTemp, nodeTraversedTemp, node.getChildren().get(0), endFlag);
                   }
                 }
               }
             }
           } else {
-            searchPaths(allPaths, pathTemp, nodeTraversedTemp, node.getIfChild(), endFlag);
+            searchFullPaths(allPaths, pathTemp, nodeTraversedTemp, node.getIfChild(), endFlag);
           }
 
           // 处理else分支
@@ -577,12 +580,12 @@ public class PathUtil {
 
             if (nodeTraversedTemp.contains(node.getElseChild().getNodeIndex())) {
               if (node.getNodeIndex() > node.getElseChild().getNodeIndex()) {
-                searchPaths(allPaths, pathTemp, nodeTraversedTemp, node.getElseChild(), endFlag);
+                searchFullPaths(allPaths, pathTemp, nodeTraversedTemp, node.getElseChild(), endFlag);
               } else {
                 allPaths.add(pathTemp);
               }
             } else {
-              searchPaths(allPaths, pathTemp, nodeTraversedTemp, node.getElseChild(), endFlag);
+              searchFullPaths(allPaths, pathTemp, nodeTraversedTemp, node.getElseChild(), endFlag);
             }
 
           } else if (node.getChildren() != null)	// 处理if-else中只有if的情况
@@ -591,12 +594,12 @@ public class PathUtil {
 
             if (nodeTraversedTemp.contains(node.getChildren().get(0).getNodeIndex())) {
               if (node.getNodeIndex() > node.getChildren().get(0).getNodeIndex()) {
-                searchPaths(allPaths, pathTemp, nodeTraversedTemp, node.getChildren().get(0), true);
+                searchFullPaths(allPaths, pathTemp, nodeTraversedTemp, node.getChildren().get(0), true);
               } else {
                 allPaths.add(pathTemp);
               }
             } else {
-              searchPaths(allPaths, pathTemp, nodeTraversedTemp, node.getChildren().get(0), endFlag);
+              searchFullPaths(allPaths, pathTemp, nodeTraversedTemp, node.getChildren().get(0), endFlag);
             }
           }
         }
@@ -607,7 +610,7 @@ public class PathUtil {
             // 嵌套循环
             if (node.getNodeIndex() > node.getChildren().get(0).getNodeIndex()) {
               pathTemp.getPath().get(pathTemp.getPath().size() - 1).setTrue(false);
-              searchPaths(allPaths, pathTemp, nodeTraversedTemp, node.getChildren().get(0), true);
+              searchFullPaths(allPaths, pathTemp, nodeTraversedTemp, node.getChildren().get(0), true);
             } else {
               if (node.getChildren().size() == 1) {
                 allPaths.add(pathTemp);
@@ -615,17 +618,17 @@ public class PathUtil {
                 pathTemp.getPath().get(pathTemp.getPath().size() - 1).setTrue(false);
                 if (nodeTraversedTemp.contains(node.getChildren().get(1).getNodeIndex())) {
                   if (node.getNodeIndex() > node.getChildren().get(1).getNodeIndex()) {
-                    searchPaths(allPaths, pathTemp, nodeTraversedTemp, node.getChildren().get(1), endFlag);
+                    searchFullPaths(allPaths, pathTemp, nodeTraversedTemp, node.getChildren().get(1), endFlag);
                   } else {
                     allPaths.add(pathTemp);
                   }
                 } else {
-                  searchPaths(allPaths, pathTemp, nodeTraversedTemp, node.getChildren().get(1), endFlag);
+                  searchFullPaths(allPaths, pathTemp, nodeTraversedTemp, node.getChildren().get(1), endFlag);
                 }
               }
             }
           } else {   // 进入循环体
-            searchPaths(allPaths, pathTemp, nodeTraversedTemp, node.getChildren().get(0), endFlag);
+            searchFullPaths(allPaths, pathTemp, nodeTraversedTemp, node.getChildren().get(0), endFlag);
           }
 
           // 条件不成立
@@ -634,12 +637,222 @@ public class PathUtil {
 
             if (nodeTraversedTemp.contains(node.getChildren().get(1).getNodeIndex())) {
               if (node.getNodeIndex() > node.getChildren().get(1).getNodeIndex()) {
-                searchPaths(allPaths, pathTemp, nodeTraversedTemp, node.getChildren().get(1), endFlag);
+                searchFullPaths(allPaths, pathTemp, nodeTraversedTemp, node.getChildren().get(1), endFlag);
               } else {
                 allPaths.add(pathTemp);
               }
             } else {
-              searchPaths(allPaths, pathTemp, nodeTraversedTemp, node.getChildren().get(1), endFlag);
+              searchFullPaths(allPaths, pathTemp, nodeTraversedTemp, node.getChildren().get(1), endFlag);
+            }
+          } else {
+            pathTemp.getPath().get(pathTemp.getPath().size() - 1).setTrue(false);
+            allPaths.add(pathTemp);
+          }
+        }
+        // 处理do-while
+        else if (node.getType() == ConstantValue.BRANCH_DO) {
+
+        }
+      } else {
+        // @since 0.1 Change search for function call
+        if (node.getSign() == ConstantValue.STATEMENT_CALL && CFGBuilder.shouldBuildCCFG) {
+          // use `addNormalNodeForce` to allow add multiple `call@method` nodes to the path
+          // pathTemp.addNormalNodeForce(node.getNodeId(), ConstantValue.NORMAL_NODE);
+          // if (!nodeTraversedTemp.contains(node.getNodeIndex())) {
+          // nodeTraversedTemp.add(node.getNodeIndex());
+          // }
+
+          // node.getChildren().get(0) returns the entry node of the calling function
+          // here we get all paths of the function
+          final List<CFGPath> callFunctionPaths = getAllPaths(node.getChildren().get(0));
+          for (CFGPath callFunctionPath : callFunctionPaths) {
+            // for each path of the calling function, we first merge the current path with the function path
+            final CFGPath pathTempMergerd = CFGPath.mergePaths(pathTemp, callFunctionPath);
+            final List<Integer> nodeTraversedTempMergerd = copyNodeTraversed(nodeTraversed);
+
+            // then we continue to search the successor of the function call
+            CFGNode functionCallSuccessor = node.getChildren().get(1);
+            if (nodeTraversedTempMergerd.contains(functionCallSuccessor.getNodeIndex())) {
+              if (node.getNodeIndex() > functionCallSuccessor.getNodeIndex()) {
+                searchFullPaths(allPaths, pathTempMergerd, nodeTraversedTempMergerd, functionCallSuccessor, true);
+              } else {
+                allPaths.add(pathTemp);
+              }
+            } else {
+              searchFullPaths(allPaths, pathTempMergerd, nodeTraversedTempMergerd, functionCallSuccessor, endFlag);
+            }
+          }
+        } else {
+          pathTemp.addNormalNode(node.getNodeId(), ConstantValue.NORMAL_NODE);
+
+          if (!nodeTraversedTemp.contains(node.getNodeIndex())) {
+            nodeTraversedTemp.add(node.getNodeIndex());
+          }
+          if (nodeTraversedTemp.contains(node.getChildren().get(0).getNodeIndex())) {
+            if (node.getNodeIndex() > node.getChildren().get(0).getNodeIndex()) {
+              searchFullPaths(allPaths, pathTemp, nodeTraversedTemp, node.getChildren().get(0), true);
+            } else {
+              allPaths.add(pathTemp);
+            }
+          } else {
+            searchFullPaths(allPaths, pathTemp, nodeTraversedTemp, node.getChildren().get(0), endFlag);
+          }
+        }
+      }
+    }
+  }
+
+  /**
+   * 递归函数
+   * 找出当前CFG树的所有路径
+   * <p>
+   * （注：循环节点第二次加入路径时，标记为普通节点，不参与线性拟合运算）
+   * 
+   * @param allPaths
+   *          路径集合
+   * @param path
+   *          当前路径
+   * @param nodeTraversed
+   *          已搜索节点
+   * @param node
+   *          当前节点
+   * @param endFlag
+   *          记录是否是循环结束节点
+   */
+  private static void searchPaths(List<CFGPath> allPaths, CFGPath path, List<Integer> nodeTraversed, CFGNode node, boolean endFlag) {
+    CFGPath pathTemp = path.clonePath();
+    List<Integer> nodeTraversedTemp = copyNodeTraversed(nodeTraversed);
+
+    if (node.getChildren() == null && node.getIfChild() == null && node.getElseChild() == null) {
+      pathTemp.addNormalNode(node.getNodeId(), ConstantValue.NORMAL_NODE);
+      if (!nodeTraversedTemp.contains(node.getNodeIndex())) {
+        nodeTraversedTemp.add(node.getNodeIndex());
+      }
+      allPaths.add(pathTemp);
+    } else {
+      if (node.getBinaryExpression() != null) // 条件节点(if-else/for/while/do-while)
+      {
+        if (endFlag) {
+          SimpleCFGNode tempNode = new SimpleCFGNode();
+          tempNode.setName(node.getNodeId());
+          tempNode.setType(ConstantValue.NORMAL_NODE);
+          pathTemp.addNode(tempNode);
+          endFlag = false;
+        } else {
+          Constraint constraintTemp = new Constraint(node.getBinaryExpression());
+          SimpleCFGNode snode = new SimpleCFGNode(node.getNodeId(), node.getType(), constraintTemp, true);
+          pathTemp.addNode(snode);
+        }
+        if (!nodeTraversedTemp.contains(node.getNodeIndex())) {
+          nodeTraversedTemp.add(node.getNodeIndex());
+        }
+        // 处理if-else
+        if (node.getIfChild() != null) {
+          // 处理if分支
+          if (nodeTraversedTemp.contains(node.getIfChild().getNodeIndex())) {
+            if (node.getNodeIndex() > node.getIfChild().getNodeIndex()) {
+              searchFullPaths(allPaths, pathTemp, nodeTraversedTemp, node.getIfChild(), endFlag);
+            } else {
+              if (node.getElseChild() == null && node.getChildren() == null) {
+                allPaths.add(pathTemp);
+              } else {
+                pathTemp.getPath().get(pathTemp.getPath().size() - 1).setTrue(false);
+                if (node.getElseChild() != null) {
+                  if (nodeTraversedTemp.contains(node.getElseChild().getNodeIndex())) {
+                    if (node.getNodeIndex() > node.getElseChild().getNodeIndex()) {
+                      searchFullPaths(allPaths, pathTemp, nodeTraversedTemp, node.getElseChild(), endFlag);
+                    } else {
+                      allPaths.add(pathTemp);
+                    }
+                  } else {
+                    searchFullPaths(allPaths, pathTemp, nodeTraversedTemp, node.getElseChild(), endFlag);
+                  }
+                } else {
+                  if (nodeTraversedTemp.contains(node.getChildren().get(0).getNodeIndex())) {
+                    if (node.getNodeIndex() > node.getChildren().get(0).getNodeIndex()) {
+                      searchFullPaths(allPaths, pathTemp, nodeTraversedTemp, node.getChildren().get(0), endFlag);
+                    } else {
+                      allPaths.add(pathTemp);
+                    }
+                  } else {
+                    searchFullPaths(allPaths, pathTemp, nodeTraversedTemp, node.getChildren().get(0), endFlag);
+                  }
+                }
+              }
+            }
+          } else {
+            searchFullPaths(allPaths, pathTemp, nodeTraversedTemp, node.getIfChild(), endFlag);
+          }
+
+          // 处理else分支
+          if (node.getElseChild() != null) {
+            pathTemp.getPath().get(pathTemp.getPath().size() - 1).setTrue(false);
+
+            if (nodeTraversedTemp.contains(node.getElseChild().getNodeIndex())) {
+              if (node.getNodeIndex() > node.getElseChild().getNodeIndex()) {
+                searchFullPaths(allPaths, pathTemp, nodeTraversedTemp, node.getElseChild(), endFlag);
+              } else {
+                allPaths.add(pathTemp);
+              }
+            } else {
+              searchFullPaths(allPaths, pathTemp, nodeTraversedTemp, node.getElseChild(), endFlag);
+            }
+
+          } else if (node.getChildren() != null)  // 处理if-else中只有if的情况
+          {
+            pathTemp.getPath().get(pathTemp.getPath().size() - 1).setTrue(false);
+
+            if (nodeTraversedTemp.contains(node.getChildren().get(0).getNodeIndex())) {
+              if (node.getNodeIndex() > node.getChildren().get(0).getNodeIndex()) {
+                searchFullPaths(allPaths, pathTemp, nodeTraversedTemp, node.getChildren().get(0), true);
+              } else {
+                allPaths.add(pathTemp);
+              }
+            } else {
+              searchFullPaths(allPaths, pathTemp, nodeTraversedTemp, node.getChildren().get(0), endFlag);
+            }
+          }
+        }
+        // 处理for/while
+        else if (node.getType() == ConstantValue.BRANCH_FOR || node.getType() == ConstantValue.BRANCH_WHILE) {
+          // 条件成立
+          if (nodeTraversedTemp.contains(node.getChildren().get(0).getNodeIndex())) {
+            // 嵌套循环
+            if (node.getNodeIndex() > node.getChildren().get(0).getNodeIndex()) {
+              pathTemp.getPath().get(pathTemp.getPath().size() - 1).setTrue(false);
+              searchFullPaths(allPaths, pathTemp, nodeTraversedTemp, node.getChildren().get(0), true);
+            } else {
+              if (node.getChildren().size() == 1) {
+                allPaths.add(pathTemp);
+              } else if (node.getChildren().size() > 1) {
+                pathTemp.getPath().get(pathTemp.getPath().size() - 1).setTrue(false);
+                if (nodeTraversedTemp.contains(node.getChildren().get(1).getNodeIndex())) {
+                  if (node.getNodeIndex() > node.getChildren().get(1).getNodeIndex()) {
+                    searchFullPaths(allPaths, pathTemp, nodeTraversedTemp, node.getChildren().get(1), endFlag);
+                  } else {
+                    allPaths.add(pathTemp);
+                  }
+                } else {
+                  searchFullPaths(allPaths, pathTemp, nodeTraversedTemp, node.getChildren().get(1), endFlag);
+                }
+              }
+            }
+          } else {   // 进入循环体
+            searchFullPaths(allPaths, pathTemp, nodeTraversedTemp, node.getChildren().get(0), endFlag);
+          }
+
+          // 条件不成立
+          if (node.getChildren().size() > 1) {
+            pathTemp.getPath().get(pathTemp.getPath().size() - 1).setTrue(false);
+
+            if (nodeTraversedTemp.contains(node.getChildren().get(1).getNodeIndex())) {
+              if (node.getNodeIndex() > node.getChildren().get(1).getNodeIndex()) {
+                searchFullPaths(allPaths, pathTemp, nodeTraversedTemp, node.getChildren().get(1), endFlag);
+              } else {
+                allPaths.add(pathTemp);
+              }
+            } else {
+              searchFullPaths(allPaths, pathTemp, nodeTraversedTemp, node.getChildren().get(1), endFlag);
             }
           } else {
             pathTemp.getPath().get(pathTemp.getPath().size() - 1).setTrue(false);

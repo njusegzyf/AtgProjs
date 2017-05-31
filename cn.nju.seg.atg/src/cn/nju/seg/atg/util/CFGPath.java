@@ -1,9 +1,16 @@
 package cn.nju.seg.atg.util;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import com.google.common.base.Joiner;
+import com.google.common.base.Preconditions;
+import com.google.common.collect.Lists;
 
 import cn.nju.seg.atg.model.Condition;
 import cn.nju.seg.atg.model.Coodinate;
@@ -15,11 +22,12 @@ import cn.nju.seg.atg.parse.LineChart;
 import cn.nju.seg.atg.parse.TestBuilder;
 
 /**
+ * @version 0.1
  * 
  * @author zy
  * @author Zhang Yifan
  */
-public class CFGPath {
+public final class CFGPath {
 
   /**
    * 一条路径
@@ -53,6 +61,15 @@ public class CFGPath {
    */
   public CFGPath() {
     this.path = new ArrayList<SimpleCFGNode>();
+    this.numOfCoveredNodes = 0;
+    this.isCovered = false;
+  }
+
+  /**
+   * @since 0.1
+   */
+  private CFGPath(final ArrayList<SimpleCFGNode> pathArg) {
+    this.path = pathArg;
     this.numOfCoveredNodes = 0;
     this.isCovered = false;
   }
@@ -248,11 +265,24 @@ public class CFGPath {
       }
     }
     if (index == -1 || index == pathSize) {
-      SimpleCFGNode tempNode = new SimpleCFGNode();
-      tempNode.setName(nodeName);
-      tempNode.setType(nodeType);
-      this.path.add(tempNode);
+      // @since 0.1
+      this.addNormalNodeForce(nodeName, nodeType);
+      // SimpleCFGNode tempNode = new SimpleCFGNode();
+      // tempNode.setName(nodeName);
+      // tempNode.setType(nodeType);
+      // this.path.add(tempNode);
     }
+  }
+
+  /**
+   * @see #addNormalNode(String, int)
+   * @since 0.1
+   */
+  public void addNormalNodeForce(String nodeName, int nodeType) {
+    SimpleCFGNode tempNode = new SimpleCFGNode();
+    tempNode.setName(nodeName);
+    tempNode.setType(nodeType);
+    this.path.add(tempNode);
   }
 
   /**
@@ -377,7 +407,7 @@ public class CFGPath {
     if (this.pathCoverageEvaluation() < newPath.pathCoverageEvaluation()) {
       // FIXME @since 0.1, In some cases, `pathSize` > `newPathSize`, and `newPath.getPath().get(i)` out of bound
       // is it right to simply change `i < pathSize` to `i < pathSize && i < newPathSize` ?
-      for (int i = 0; i < pathSize && i < newPathSize ; i++) {
+      for (int i = 0; i < pathSize && i < newPathSize; i++) {
         tempNode = newPath.getPath().get(i);
         if (tempNode.isBranchNode()) {
           atomicConstraintGroups = newPath.getPath().get(i).getConstraint().getAtomicConstraintGroups();
@@ -820,5 +850,61 @@ public class CFGPath {
     }
 
     return effectiveIntervalList;
+  }
+
+  /**
+   * Gets all nodes in the path as a {@link java.util.stream.Stream}.
+   * 
+   * @since 0.1
+   */
+  public final Stream<SimpleCFGNode> getPathNodes() {
+    return this.getPath().stream();
+  }
+  
+  /**
+   * Gets all node names in the path as a {@link java.util.stream.Stream}.
+   * 
+   * @since 0.1
+   */
+  public final Stream<String> getPathNodeNames() {
+    return this.getPathNodes()
+               .map(node -> node.getName());
+  }
+  
+  /**
+   * @since 0.1
+   */
+  public final String getJoinedPathNodeNamesAsString(final char separator) {
+    return Joiner.on(separator).join(this.getPathNodeNames().collect(Collectors.toList()));
+  }
+  
+  /**
+   * @since 0.1
+   */
+  public final String getJoinedPathNodeNamesAsString() {
+    return this.getJoinedPathNodeNamesAsString(',');
+  }
+  
+  /**
+   * @since 0.1
+   */
+  @Override
+  public final String toString() {
+    return "CFGPath [path=" + this.getJoinedPathNodeNamesAsString() + "]";
+  }
+
+  // Static methods
+
+  /**
+   * @since 0.1
+   */
+  public static CFGPath mergePaths(final CFGPath path1, final CFGPath path2) {
+    Preconditions.checkNotNull(path1);
+    Preconditions.checkNotNull(path2);
+
+    ArrayList<SimpleCFGNode> nodes = Lists.newArrayList(path1.path);
+    nodes.addAll(path2.path);
+    return new CFGPath(nodes);
+
   }
 }

@@ -50,6 +50,7 @@ import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.SettableFuture;
 import com.typesafe.config.Config;
 
+import cn.nju.seg.atg.callCPP.TestPreparations;
 import cn.nju.seg.atg.parse.TestBuilder;
 import cn.nju.seg.atg.util.ATG;
 import nju.seg.zhangyf.atgwrapper.AtgWrapperPluginSettings;
@@ -237,8 +238,10 @@ public abstract class BatchFileRunnerBase<TBatchItem extends BatchItemConfigBase
                   // and the `AbstractAST` class stores some data in static fields,
                   // it is error to let the two processes (i.e. check for function A and test for function B) interleave with each other.
                   final List<String> testErrors = BatchFileRunnerBase.this.checkTestConfig(function, batchConfig, batchItem);
-                  if (testErrors.isEmpty()) {
-                    // if no error, run the test
+                  if (testErrors.isEmpty()) { // if no error, run the test
+                    // first prepare for the test
+                    TestPreparations.prepareTest(function.getElementName(), ATG.callCPP);
+                    // and then run the test, which is defined in sub classes
                     return BatchFileRunnerBase.this.runTest(function, batchConfig, batchItem);
                   } else {
                     // if there are some errors, show the errors and stop processing the function
@@ -291,12 +294,10 @@ public abstract class BatchFileRunnerBase<TBatchItem extends BatchItemConfigBase
     // we should use `Futures.transform` to append the work and returns the transformed future,
     // which ensures that the returned future is done until the result processing is done.
     return Futures.transform(resultListFuture, result -> {
-      final List<TaskOutcome<TTestOutcome>> succeedResults = result.stream()
-                                                                   .filter(v -> v.isTestSucceed())
-                                                                   .collect(Collectors.toList());
-      final List<TaskOutcome<TTestOutcome>> failedResults = result.stream()
-                                                                  .filter(v -> !v.isTestSucceed())
-                                                                  .collect(Collectors.toList());
+      final List<TaskOutcome<TTestOutcome>> succeedResults =
+          result.stream().filter(v -> v.isTestSucceed()).collect(Collectors.toList());
+      final List<TaskOutcome<TTestOutcome>> failedResults =
+          result.stream().filter(v -> !v.isTestSucceed()).collect(Collectors.toList());
 
       final BatchFileOutcome<TTestOutcome> batchFileOutcome =
           new BatchFileOutcome<TTestOutcome>(succeedResults, failedResults);

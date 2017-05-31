@@ -25,7 +25,7 @@ public class CFGBuilder {
   /**
    * 是否需要构建CCFG
    */
-  public final static boolean shouldBuildCCFG = true;
+  public final static boolean shouldBuildCCFG =  true;
 
   /**
    * 显示CFG时需要分离复合约束，生成路径时则不需要

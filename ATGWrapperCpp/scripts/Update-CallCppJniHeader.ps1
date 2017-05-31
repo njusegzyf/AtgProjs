@@ -12,7 +12,7 @@ $currentLocation = Get-Location
 javah -classpath $binPath -jni $targetClassName
 
 # move generated cpp header file
-Move-Item -Path "./$targetHeaderFileName"  -Destination $moveToFolderPath
+Move-Item -Path "./$targetHeaderFileName" -Destination $moveToFolderPath -Force
 
 # restore location
 # $currentLocation | Set-Location

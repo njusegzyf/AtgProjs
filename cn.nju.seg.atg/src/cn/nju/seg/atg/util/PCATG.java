@@ -202,8 +202,10 @@ public class PCATG extends ATG {
 
     // @since 0.1 record execution time in {@link cn.nju.seg.atg.parse.TestBuilder#totalIoTime}.
     final long startTime = System.currentTimeMillis();
+    
     // 读取路径
     CFGPath excutedPath = ZpathUtil.readPath_Z(parameters[paramIndex], pathFile);
+    
     TestBuilder.ioTime += System.currentTimeMillis() - startTime;
 
     // 计算目标路径被当前输入向量覆盖到的部分

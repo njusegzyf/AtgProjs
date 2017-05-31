@@ -10,16 +10,22 @@ import java.util.stream.Collectors;
 
 import org.eclipse.cdt.core.model.IFunctionDeclaration;
 
+import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
+import com.google.common.util.concurrent.CycleDetectingLockFactory.WithExplicitOrdering;
 
+import cn.nju.seg.atg.gui.AtgConsole;
 import cn.nju.seg.atg.parse.CoverageCriteria;
 import cn.nju.seg.atg.parse.PathCoverage;
 import cn.nju.seg.atg.parse.TestBuilder;
 import cn.nju.seg.atg.util.ATG;
 import cn.nju.seg.atg.util.CFGPath;
 import cn.nju.seg.atg.util.PCATG;
+import nju.seg.zhangyf.atgwrapper.AtgWrapperPluginSettings;
+import nju.seg.zhangyf.atgwrapper.cfg.CfgPathUtil;
+import nju.seg.zhangyf.atgwrapper.config.AtgConfig;
 
 /**
  * Uses {@link PCATG} to run node coverage.
@@ -107,18 +113,31 @@ public final class NodeCoverages {
         if (isCovered) { // if we find a new path that covers the target node
           newCoveredPathHandler.accept(targetPath);
         }
-      } else { // if the path has been run, just get the covered result from the path
+      } else { // if the path has been run, just get the coverage result from the path
         isCovered = targetPath.isCovered();
       }
 
-      if (isCovered) {
-        // find the path covered target node
+      if (isCovered) {// find the path covered target node
+        
+        // print debug info
+        AtgWrapperPluginSettings.doIfDebug(() -> {
+          AtgConsole.consoleStream.println("Cover node " + targetNodeName + " with path:");
+          AtgConsole.consoleStream.println(targetPath.getJoinedPathNodeNamesAsString());
+        });
+        
         return new NodeCoverageOutcome(ATG.callFunctionName, targetNodeName, Optional.of(targetPath), failedPaths);
       } else {
+        
+     // print debug info
+        AtgWrapperPluginSettings.doIfDebug(() -> {
+          AtgConsole.consoleStream.println("Can not cover node " + targetNodeName + " with path:");
+          AtgConsole.consoleStream.println(targetPath.getJoinedPathNodeNamesAsString());
+        });
+        
         failedPaths.add(targetPath);
       }
     }
-
+    
     // after run all paths, we still can not find a path that can cover the target node
     return new NodeCoverageOutcome(ATG.callFunctionName, targetNodeName, Optional.empty(), failedPaths);
   }

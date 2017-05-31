@@ -23,9 +23,9 @@ public:
     static const int UPWARD_RA;
     static const int DOWNWARD_RA;
 };
-const int Const::OLEV = 600; 
-const int Const::MAXALTDIFF = 600; 
-const int Const::MINSEP = 300; 
+const int Const::OLEV = 600;
+const int Const::MAXALTDIFF = 600;
+const int Const::MINSEP = 300;
 const int Const::NOZCROSS = 100;
 const int Const::NO_INTENT = 0;
 const int Const::DO_NOT_CLIMB = 1;
@@ -113,7 +113,7 @@ static int Own_Above_Threat(){
                 Own_Tracked_Alt)?1:0);
 }
 
-/** 
+/**
  * @assert
  * LOCATION[RAsComputed] noRAconflict:
  * !(need_upward_RA == 1 && need_downward_RA==1);
@@ -184,7 +184,7 @@ int Tcas::Other_Tracked_Alt;
 int Tcas::Alt_Layer_Value;
 int Tcas::Up_Separation;
 int Tcas::Down_Separation;
-int Tcas::Other_RAC; 
+int Tcas::Other_RAC;
 int Tcas::Other_Capability;
 int Tcas::Climb_Inhibit;
 int Tcas::need_upward_RA;

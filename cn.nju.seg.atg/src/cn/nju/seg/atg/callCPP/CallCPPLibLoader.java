@@ -11,8 +11,8 @@ public class CallCPPLibLoader {
       "Coral",
       "Stat",
       "DartAndEtc",
-      "BlindHashOpti" //,
-      //"Tcas"
+      "BlindHashOpti",
+      "Tcas"
   };
 
   public static void loadLibs() {
