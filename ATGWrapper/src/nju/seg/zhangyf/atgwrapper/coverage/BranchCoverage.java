@@ -10,7 +10,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.DoubleStream;
@@ -25,13 +27,14 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
+import cn.nju.seg.atg.gui.AtgConsole;
 import cn.nju.seg.atg.model.SimpleCFGNode;
 import cn.nju.seg.atg.parse.CoverageCriteria;
 import cn.nju.seg.atg.parse.PathCoverage;
 import cn.nju.seg.atg.parse.TestBuilder;
 import cn.nju.seg.atg.util.ATG;
 import cn.nju.seg.atg.util.CFGPath;
-import nju.seg.zhangyf.atgwrapper.cfg.CfgPathUtil;
+import nju.seg.zhangyf.atgwrapper.AtgWrapperPluginSettings;
 import nju.seg.zhangyf.atgwrapper.coverage.NodeCoverages.NodeCoverageOutcome;
 import nju.seg.zhangyf.atgwrapper.outcome.CoverageResult;
 import nju.seg.zhangyf.util.Util;
@@ -97,12 +100,12 @@ public final class BranchCoverage extends CoverageCriteria {
                               final Function<IFunctionDeclaration, List<String>> targetNodesProvider,
                               final Optional<Function<List<String>, List<String>>> targetNodeSorter,
                               final BiFunction<IFunctionDeclaration, String, List<CFGPath>> targetPathsProvider,
-                              final Optional<Function<List<CFGPath>, List<CFGPath>>> pathSortFunc) {
+                              final Optional<Function<List<CFGPath>, List<CFGPath>>> pathSorter) {
     Preconditions.checkNotNull(function);
     Preconditions.checkNotNull(targetNodesProvider);
     Preconditions.checkNotNull(targetNodeSorter);
     Preconditions.checkNotNull(targetPathsProvider);
-    Preconditions.checkNotNull(pathSortFunc);
+    Preconditions.checkNotNull(pathSorter);
 
     this.buildCfgAndPaths(function);
 
@@ -118,11 +121,14 @@ public final class BranchCoverage extends CoverageCriteria {
     /* final */ Path folderPath = null;
     try {
       folderPath = Files.createDirectories(Paths.get(ATG.resultFolder).resolve(functionName).toAbsolutePath());
-    } catch (final IOException ignored) {}
+    } catch (final IOException ignored) {
+      // throw new IllegalStateException();
+    }
 
     // record all run's branch coverage
     final CoverageResult[] branchCoverages = new CoverageResult[TestBuilder.repetitionNum];
     final int totalBranchNum = targetNodeNames.size();
+    final int totalPathNum = TestBuilder.allPaths.size();
 
     // reused result string builder
     final StringBuilder result = new StringBuilder();
@@ -132,6 +138,7 @@ public final class BranchCoverage extends CoverageCriteria {
     // Note: `indexOfRun` starts from 1
     for (int indexOfRun = 1; indexOfRun <= TestBuilder.repetitionNum; indexOfRun++) {
       // record a map of target node -> covered paths
+      // Note: `HashMultimap` behaves like a `Map<String, HashMap<CFGPath>>`
       final HashMultimap<String, CFGPath> coveredTargetNodesMap = HashMultimap.create();
       // record all paths that have run
       final HashSet<CFGPath> completedPaths = Sets.newHashSetWithExpectedSize(TestBuilder.allPaths.size());
@@ -140,28 +147,64 @@ public final class BranchCoverage extends CoverageCriteria {
       TestBuilder.resetForNewTestRepeation();
       final long start_time = System.currentTimeMillis();
 
+      // use `AtomicInteger` to record tested node number, so that it is `final` and can be used in lambdas
+      final AtomicInteger testedNodeNum = new AtomicInteger(0);
       for (final String targetNodeName : sortedTargetNodeNames) {
+        // run node/branch coverage for each node/branch
         assert !Strings.isNullOrEmpty(targetNodeName);
 
         if (coveredTargetNodesMap.containsKey(targetNodeName)) {
           // if we have covered the target node in previous runs
+          testedNodeNum.incrementAndGet();
+
+          // print progress for debug
+          AtgWrapperPluginSettings.doIfDebug(() -> {
+            AtgConsole.consoleStream.println(targetNodeName + " is coverd in previous run.");
+            AtgConsole.consoleStream.println("Complete " + testedNodeNum.get() + "/" + totalBranchNum + " branches.");
+          });
+
           continue;
         }
+        
+        final Consumer<CFGPath> executedPathHandler = cfgPath -> {
+          // when we get an executed path, mark all its nodes as covered
+          for (final SimpleCFGNode coveredNode : cfgPath.getPath()) {
+            final String coveredNodeName = coveredNode.getName();
+            // for an executed path, only add to the `coveredTargetNodesMap` it is not covered before,
+            // otherwise we may add too much paths to the `coveredTargetNodesMap`
+            if (targetNodeNamesSet.contains(coveredNodeName) 
+                && (!coveredTargetNodesMap.containsKey(coveredNodeName))) {
+              coveredTargetNodesMap.put(coveredNodeName, cfgPath);
+            }
+          }
+        };
+
+        final Consumer<CFGPath> newCoveredPathHandler = cfgPath -> {
+          // when a new path is covered, always mark all its nodes as covered
+          for (final SimpleCFGNode coveredNode : cfgPath.getPath()) {
+            final String coveredNodeName = coveredNode.getName();
+            if (targetNodeNamesSet.contains(coveredNodeName)) {
+              coveredTargetNodesMap.put(coveredNodeName, cfgPath);
+            }
+          }
+        };
 
         // run node coverage
         final NodeCoverageOutcome targetNodeCoverage =
             NodeCoverages.runNodeCoverageInAtg(targetNodeName,
                                                nodeName -> targetPathsProvider.apply(function, nodeName),
-                                               pathSortFunc,
+                                               pathSorter,
                                                completedPaths,
-                                               cfgPath -> { // when a new path is covered, mark all its nodes as covered
-                                                 for (final SimpleCFGNode coveredNode : cfgPath.getPath()) {
-                                                   final String coveredNodeName = coveredNode.getName();
-                                                   if (targetNodeNamesSet.contains(coveredNodeName)) {
-                                                     coveredTargetNodesMap.put(coveredNodeName, cfgPath);
-                                                   }
-                                                 }
-                                               });
+                                               newCoveredPathHandler,
+                                               executedPathHandler);
+
+        testedNodeNum.incrementAndGet();
+
+        // print progress for debug
+        AtgWrapperPluginSettings.doIfDebug(() -> {
+          AtgConsole.consoleStream.println("Complete " + testedNodeNum.get() + "/" + totalBranchNum + " branches.");
+          AtgConsole.consoleStream.println("Complete " + completedPaths.size() + "/" + totalPathNum + " paths.");
+        });
 
         // since the target node may be a virtual node that does not exist in code, we must add it by hand
         if (targetNodeCoverage.isTargetNodeCovered()) {
@@ -220,7 +263,7 @@ public final class BranchCoverage extends CoverageCriteria {
           Util.appendAllWithNewLine(result, "Covered target branch node: ", coveredNodeName, " with paths:");
 
           for (final CFGPath cfgPath : coveredTargetNodesMap.get(coveredNodeName)) {
-            joinerOnComma.appendTo(result, CfgPathUtil.cfgPathNodeNames(cfgPath).collect(Collectors.toList()));
+            joinerOnComma.appendTo(result, cfgPath.getPathNodeNames().collect(Collectors.toList()));
             result.append('\n');
           }
         }

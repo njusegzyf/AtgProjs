@@ -721,8 +721,50 @@ public class SimpleCFGNode {
     return this.optimal;
   }
 
+  /**
+   * @since 0.1
+   */
   @Override
   public String toString() {
     return "SimpleCFGNode [name=" + this.name + ", type=" + this.type + ", id=" + this.id + "]";
-  } 
+  }
+
+  // // Generated `hashCode` and `equals` according to `id`, `name` and `type` field. 
+  //
+  // /**
+  // * @since 0.1
+  // */
+  // @Override
+  // public int hashCode() {
+  // final int prime = 31;
+  // int result = 1;
+  // result = prime * result + this.id;
+  // result = prime * result + ((this.name == null) ? 0 : this.name.hashCode());
+  // result = prime * result + this.type;
+  // return result;
+  // }
+  //
+  // /**
+  // * @since 0.1
+  // */
+  // @Override
+  // public boolean equals(Object obj) {
+  // if (this == obj)
+  // return true;
+  // if (obj == null)
+  // return false;
+  // if (getClass() != obj.getClass())
+  // return false;
+  // SimpleCFGNode other = (SimpleCFGNode) obj;
+  // if (this.id != other.id)
+  // return false;
+  // if (this.name == null) {
+  // if (other.name != null)
+  // return false;
+  // } else if (!this.name.equals(other.name))
+  // return false;
+  // if (this.type != other.type)
+  // return false;
+  // return true;
+  // } 
 }

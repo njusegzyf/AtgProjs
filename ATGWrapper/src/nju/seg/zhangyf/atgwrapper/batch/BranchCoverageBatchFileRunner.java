@@ -86,8 +86,20 @@ public final class BranchCoverageBatchFileRunner extends BatchFileRunnerBase<Bra
                                        .collect(Collectors.toList());
         } else if (nodeConfig.targetPathFragments.isPresent()) {
           // if `targetPathFragements` is defined, get all paths that matches any path fragment in the `PathFragmentListConfig`
-          return TestBuilder.allPaths.stream().filter(nodeConfig.targetPathFragments.get()::isMatchPath)
-                                     .collect(Collectors.toList());
+          // Note: The following code traverse `targetPathFragments` once,
+          // and for each target path fragment, it collects all paths that matches this target path fragment,
+          // and at last it the distinct paths.
+          // This may be less efficient then the below one, since it must traverse `allPaths` multiple times and need more intermediate storage,
+          // but it can get paths in the order of `targetPathFragments`.
+          return nodeConfig.targetPathFragments.get().pathFragments.stream().flatMap(pf -> {
+            // for each path fragment, collect all paths that match it in `allPaths`
+            return TestBuilder.allPaths.stream().filter(pf::isMatchPath);
+          }).distinct().collect(Collectors.toList()); // `distinct` is used to remove duplicate paths since one path may match multiple target path fragment 
+
+          // Note: The following code traverse `allPaths` once, and for each path it checks if any `targetPathFragments` matches the path.
+          // It is more efficient when there are lots of paths but only a few target path fragments.
+          // return TestBuilder.allPaths.stream().filter(nodeConfig.targetPathFragments.get()::isMatchPath)
+          // .collect(Collectors.toList());
         } else {
           // if no information is provided, get all paths that covered the node
           return BranchCoverage.getAllCoveredPaths(ignoredFunction, nodeName);

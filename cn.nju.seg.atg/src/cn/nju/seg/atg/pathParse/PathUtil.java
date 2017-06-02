@@ -505,9 +505,8 @@ public class PathUtil {
    *          当前节点
    * @param endFlag
    *          记录是否是循环结束节点
-   *          
-   *          @see #searchPaths(List, CFGPath, List, CFGNode, boolean)
-   *          @since 0.1
+   * @see #searchPaths(List, CFGPath, List, CFGNode, boolean)
+   * @since 0.1
    */
   private static void searchFullPaths(List<CFGPath> allPaths, CFGPath path, List<Integer> nodeTraversed, CFGNode node, boolean endFlag) {
     CFGPath pathTemp = path.clonePath();
@@ -656,11 +655,15 @@ public class PathUtil {
       } else {
         // @since 0.1 Change search for function call
         if (node.getSign() == ConstantValue.STATEMENT_CALL && CFGBuilder.shouldBuildCCFG) {
-          // use `addNormalNodeForce` to allow add multiple `call@method` nodes to the path
-          // pathTemp.addNormalNodeForce(node.getNodeId(), ConstantValue.NORMAL_NODE);
-          // if (!nodeTraversedTemp.contains(node.getNodeIndex())) {
-          // nodeTraversedTemp.add(node.getNodeIndex());
-          // }
+
+          // @since 0.1 do not add `call@xxx` node if `IS_EMIT_CALL_NODE` is `true`
+          if (!IS_EMIT_CALL_NODE) {
+            // use `addNormalNodeForce` to allow add multiple `call@method` nodes to the path
+            pathTemp.addNormalNodeForce(node.getNodeId(), ConstantValue.NORMAL_NODE);
+            if (!nodeTraversedTemp.contains(node.getNodeIndex())) {
+              nodeTraversedTemp.add(node.getNodeIndex());
+            }
+          }
 
           // node.getChildren().get(0) returns the entry node of the calling function
           // here we get all paths of the function
@@ -864,7 +867,15 @@ public class PathUtil {
 
         }
       } else {
-        pathTemp.addNormalNode(node.getNodeId(), ConstantValue.NORMAL_NODE);
+        // @since 0.1 do not add `call@xxx` node if `IS_EMIT_CALL_NODE` is `true`
+        if (!IS_EMIT_CALL_NODE) {
+          pathTemp.addNormalNode(node.getNodeId(), ConstantValue.NORMAL_NODE);
+        } else {
+          // should emit call node
+          if (node.getSign() != ConstantValue.STATEMENT_CALL) {
+            pathTemp.addNormalNode(node.getNodeId(), ConstantValue.NORMAL_NODE);
+          }
+        }
 
         if (!nodeTraversedTemp.contains(node.getNodeIndex())) {
           nodeTraversedTemp.add(node.getNodeIndex());
@@ -878,6 +889,7 @@ public class PathUtil {
         } else {
           searchPaths(allPaths, pathTemp, nodeTraversedTemp, node.getChildren().get(0), endFlag);
         }
+        // search node after function call
         if (node.getSign() == ConstantValue.STATEMENT_CALL && CFGBuilder.shouldBuildCCFG) {
           searchPaths(allPaths, pathTemp, nodeTraversedTemp, node.getChildren().get(1), endFlag);
         }
@@ -899,4 +911,6 @@ public class PathUtil {
     }
     return nodeTraversedTemp;
   }
+
+  public static final boolean IS_EMIT_CALL_NODE = true;
 }

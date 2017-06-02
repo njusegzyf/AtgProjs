@@ -5,6 +5,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
 import com.google.common.base.Preconditions;
 
@@ -166,7 +167,7 @@ public abstract class ATG {
   public static final CallCPP callCPP = ATG.createCallCpp();
 
   /**
-   *  @since 0.1
+   * @since 0.1
    */
   private static CallCPP createCallCpp() {
     try {
@@ -349,6 +350,141 @@ public abstract class ATG {
   }
 
   /**
+   * Adds a handler for processing executed paths.
+   * 
+   * @since 0.1
+   * @see #generateTestData(int)
+   */
+  public int generateTestData(int pathIndex,
+                              Consumer<CFGPath> executedPathHandler) {
+    // @since 0.1 record time used for uncovered paths
+    final long startTime = System.currentTimeMillis();
+    // final long startFunctionTime = TestBuilder.function_time;
+
+    // @since 0.1 move init `ATG.CallCPP` code into static init expression
+    // try {
+    // c = Class.forName("cn.nju.seg.atg.callCPP.CallCPP");
+    // callCPP = (CallCPP) c.newInstance();
+    // } catch (final ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+    // // @since 0.1 return if error occurs
+    // // FIXME
+    // return -1;
+    // }
+
+    // @since 0.1
+    // pathFilePrefix = "/home/zy/atg_data/" + CFGBuilder.funcName.substring(0, CFGBuilder.funcName.indexOf("("));
+    // String pathFile = pathFilePrefix + ".dat";
+    // is changed to
+    final Path tempPathFolder = Paths.get(ATG.tempFolder);
+    try {
+      Files.createDirectories(tempPathFolder);
+    } catch (final Exception e) {
+      return -1;
+    }
+    final Path tempPathFile = tempPathFolder.resolve(CFGBuilder.funcName.substring(0, CFGBuilder.funcName.indexOf("(")) + ".dat");
+    final String pathFile = tempPathFile.toAbsolutePath().toString();
+
+    int isCovered = -1;
+
+    parameters = new double[NUM_OF_PARAM];
+    NumOfCoveredNodes = new int[NUM_OF_PARAM];
+    // 添加路径约束的变量相关性信息
+    // table = new TableData();
+    // table.data_for_caldat();;
+
+    if (NUM_OF_PARAM > 6)
+      SEARCH_STRATEGY = ConstantValue.SEARCH_STRATEGY_ONE_BY_ONE;
+    else
+      SEARCH_STRATEGY = ConstantValue.SEARCH_STRATEGY_ALL;
+
+    if (SEARCH_STRATEGY == ConstantValue.SEARCH_STRATEGY_ALL) {
+      int round = 0;
+      while (round < MAX_NUM_OF_GENERATE_CYCLE && isCovered <= -1) {
+        int paramIndex;
+        // 第一轮，以随机值与指定值开始搜索
+        if (round == 0) {
+          int max_num_of_predict_param = MAX_NUM_OF_PREDICT_PARAM;
+          if (CUSTOMIZED_PARAMS.length != 0) {
+            max_num_of_predict_param /= 2;
+          }
+          seeds = new SearchTask[NUM_OF_PARAM];
+          paramIndex = 0;
+          // 对所有参数执行ATG
+          while (paramIndex < NUM_OF_PARAM && isCovered <= -1) {
+            isCovered = generateTestDataForParam(pathIndex, paramIndex, pathFile, null, round, paramIndex, max_num_of_predict_param, executedPathHandler);
+            if (isCovered == -1 && CUSTOMIZED_PARAMS.length != 0) {
+              double[] initParams = new double[NUM_OF_PARAM];
+              for (int i = 0; i < CUSTOMIZED_PARAMS.length; i++) {
+                for (int j = 0; j < NUM_OF_PARAM; j++) {
+                  initParams[j] = CUSTOMIZED_PARAMS[i];
+                }
+                isCovered = generateTestDataForParam(pathIndex, paramIndex, pathFile, initParams, round, paramIndex, max_num_of_predict_param, executedPathHandler);
+                if (isCovered > -1) {
+                  break;
+                }
+              }
+            }
+            paramIndex++;
+            // break;
+          }
+        }
+        // 其余轮，以上一轮生成的最优点开始搜索
+        else {
+          // 计算本轮生成的种子数
+          int seedsNum = (int) (NUM_OF_PARAM * Math.pow((NUM_OF_PARAM - 1), round - 1));
+          int nextRoundSeedsNum = seedsNum * (NUM_OF_PARAM - 1);
+          nextSeeds = new SearchTask[nextRoundSeedsNum];
+
+          int seedIndex = 0;
+          int nextRoundSeedIndex = 0;
+          while (seedIndex < seedsNum && isCovered <= -1) {
+            paramIndex = 0;
+            while (paramIndex < NUM_OF_PARAM && isCovered <= -1) {
+              // 判断目标路径是否与搜索变量相关
+              // if(isRelevant(Builder.targetPath,paramIndex) && paramIndex != seedIndex){
+              if (paramIndex != seeds[seedIndex].getSearchIndex()) {
+                // 以给定值为初始参数进行ATG
+                isCovered = generateTestDataForParam(pathIndex, paramIndex, pathFile, seeds[seedIndex].getInitInputs(), round, nextRoundSeedIndex, MAX_NUM_OF_PREDICT_PARAM, executedPathHandler);
+                nextRoundSeedIndex++;
+              }
+              // }
+              paramIndex++;
+            }
+            seedIndex++;
+          }
+          // 将新生成的最优点作为下一轮的初始种子
+          seeds = nextSeeds;
+        }
+        round++;
+      }
+    } else {
+      int round = 0;
+      while (round < MAX_NUM_OF_GENERATE_CYCLE && isCovered <= -1) {
+        int paramIndex = 0;
+        // 对所有参数执行ATG
+        double[] seed;
+        while (paramIndex < NUM_OF_PARAM && isCovered <= -1) {
+          if (round == 0 && paramIndex == 0) {
+            seed = null;
+          } else {
+            seed = seedArray;
+          }
+          isCovered = generateTestDataForParam(pathIndex, paramIndex, pathFile, seed, -1, paramIndex, MAX_NUM_OF_PREDICT_PARAM, executedPathHandler);
+          paramIndex++;
+        }
+        round++;
+      }
+    }
+
+    if (isCovered < 0) {
+      // final long endFunctionTime = TestBuilder.function_time;
+      TestBuilder.uncoverdPathsTime += System.currentTimeMillis() - startTime /* - (endFunctionTime - startFunctionTime) */ ;
+    }
+
+    return isCovered;
+  }
+
+  /**
    * 以第paramIndex个参数为自变参数，预测可用测试数据
    * 
    * @param pathIndex
@@ -359,6 +495,15 @@ public abstract class ATG {
    */
   protected abstract int generateTestDataForParam(int pathIndex, int paramIndex, String pathFile,
                                                   double[] seed, int round, int nextRoundSeedIndex, int max_num_of_predict_param);
+
+  /**
+   * @since 0.1
+   */
+  protected int generateTestDataForParam(int pathIndex, int paramIndex, String pathFile,
+                                         double[] seed, int round, int nextRoundSeedIndex, int max_num_of_predict_param,
+                                         Consumer<CFGPath> executedPathHandler) {
+    throw new UnsupportedOperationException();
+  }
 
   /**
    * 初始化参数值

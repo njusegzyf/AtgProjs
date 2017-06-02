@@ -11,97 +11,98 @@ import org.osgi.framework.BundleContext;
  */
 public class Activator extends AbstractUIPlugin {
 
-	// The plug-in ID
-	public static final String PLUGIN_ID = "cn.nju.seg.atg"; //$NON-NLS-1$
+  // The plug-in ID
+  public static final String PLUGIN_ID = "cn.nju.seg.atg"; //$NON-NLS-1$
 
-	// The shared instance
-	private static Activator plugin;
-	
-	/**
-	 * The constructor
-	 */
-	public Activator() {
-	}
+  // The shared instance
+  private static Activator plugin;
 
-	/*
-	 * (non-Javadoc)
-	 * @see org.eclipse.ui.plugin.AbstractUIPlugin#start(org.osgi.framework.BundleContext)
-	 */
-	public void start(BundleContext context) throws Exception {
-		super.start(context);
-		plugin = this;
-	}
+  /**
+   * The constructor
+   */
+  public Activator() {}
 
-	/*
-	 * (non-Javadoc)
-	 * @see org.eclipse.ui.plugin.AbstractUIPlugin#stop(org.osgi.framework.BundleContext)
-	 */
-	public void stop(BundleContext context) throws Exception {
-		plugin = null;
-		super.stop(context);
-	}
+  /*
+   * (non-Javadoc)
+   * @see org.eclipse.ui.plugin.AbstractUIPlugin#start(org.osgi.framework.BundleContext)
+   */
+  @Override
+  public void start(BundleContext context) throws Exception {
+    super.start(context);
+    plugin = this;
+  }
 
-	/**
-	 * Returns the shared instance
-	 *
-	 * @return the shared instance
-	 */
-	public static Activator getDefault() {
-		return plugin;
-	}
+  /*
+   * (non-Javadoc)
+   * @see org.eclipse.ui.plugin.AbstractUIPlugin#stop(org.osgi.framework.BundleContext)
+   */
+  @Override
+  public void stop(BundleContext context) throws Exception {
+    plugin = null;
+    super.stop(context);
+  }
 
-	/**
-	 * Logs the specified status with this plug-in's log.
-	 *
-	 * @param status
-	 *        status to log
-	 */
-	public static void log(IStatus status) {
-		getDefault().getLog().log(status);
-	}
+  /**
+   * Returns the shared instance
+   *
+   * @return the shared instance
+   */
+  public static Activator getDefault() {
+    return plugin;
+  }
 
-	/**
-	 * Logs an internal error with the specified {@code Throwable}.
-	 *
-	 * @param t
-	 *        the {@code Throwable} to be logged
-	 */
-	public static void log(Throwable t) {
-		log(new Status(IStatus.ERROR, PLUGIN_ID, 1, "Internal Error", t)); //$NON-NLS-1$
-	}
+  /**
+   * Logs the specified status with this plug-in's log.
+   *
+   * @param status
+   *          status to log
+   */
+  public static void log(IStatus status) {
+    getDefault().getLog().log(status);
+  }
 
-	/**
-	 * Logs an internal error with the specified message.
-	 *
-	 * @param message
-	 *        the error message to log
-	 */
-	public static void log(String message) {
-		log(new Status(IStatus.ERROR, PLUGIN_ID, 1, message, null));
-	}
+  /**
+   * Logs an internal error with the specified {@code Throwable}.
+   *
+   * @param t
+   *          the {@code Throwable} to be logged
+   */
+  public static void log(Throwable t) {
+    log(new Status(IStatus.ERROR, PLUGIN_ID, 1, "Internal Error", t)); //$NON-NLS-1$
+  }
 
-	/**
-	 * Logs an internal error with the specified message and {@code Throwable}.
-	 *
-	 * @param message
-	 *        the error message to log
-	 * @param t
-	 *        the {@code Throwable} to be logged
-	 *
-	 * @since 2.1
-	 */
-	public static void log(String message, Throwable t) {
-		log(new Status(IStatus.ERROR, PLUGIN_ID, 1, message, t));
-	}
-	
-	/**
-	 * Returns an image descriptor for the image file at the given
-	 * plug-in relative path
-	 *
-	 * @param path the path
-	 * @return the image descriptor
-	 */
-	public static ImageDescriptor getImageDescriptor(String path) {
-		return imageDescriptorFromPlugin(PLUGIN_ID, path);
-	}
+  /**
+   * Logs an internal error with the specified message.
+   *
+   * @param message
+   *          the error message to log
+   */
+  public static void log(String message) {
+    log(new Status(IStatus.ERROR, PLUGIN_ID, 1, message, null));
+  }
+
+  /**
+   * Logs an internal error with the specified message and {@code Throwable}.
+   *
+   * @param message
+   *          the error message to log
+   * @param t
+   *          the {@code Throwable} to be logged
+   * @since 2.1
+   */
+  public static void log(String message, Throwable t) {
+    log(new Status(IStatus.ERROR, PLUGIN_ID, 1, message, t));
+  }
+
+  /**
+   * Returns an image descriptor for the image file at the given
+   * plug-in relative path
+   *
+   * @param path
+   *          the path
+   * @return the image descriptor
+   */
+  public static ImageDescriptor getImageDescriptor(String path) {
+    return imageDescriptorFromPlugin(PLUGIN_ID, path);
+  }
 }

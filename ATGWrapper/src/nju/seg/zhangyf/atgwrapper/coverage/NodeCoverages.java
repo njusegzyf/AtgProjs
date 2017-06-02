@@ -10,13 +10,13 @@ import java.util.stream.Collectors;
 
 import org.eclipse.cdt.core.model.IFunctionDeclaration;
 
-import com.google.common.base.Joiner;
+import com.google.common.base.FinalizablePhantomReference;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
-import com.google.common.util.concurrent.CycleDetectingLockFactory.WithExplicitOrdering;
 
 import cn.nju.seg.atg.gui.AtgConsole;
+import cn.nju.seg.atg.model.SimpleCFGNode;
 import cn.nju.seg.atg.parse.CoverageCriteria;
 import cn.nju.seg.atg.parse.PathCoverage;
 import cn.nju.seg.atg.parse.TestBuilder;
@@ -24,8 +24,6 @@ import cn.nju.seg.atg.util.ATG;
 import cn.nju.seg.atg.util.CFGPath;
 import cn.nju.seg.atg.util.PCATG;
 import nju.seg.zhangyf.atgwrapper.AtgWrapperPluginSettings;
-import nju.seg.zhangyf.atgwrapper.cfg.CfgPathUtil;
-import nju.seg.zhangyf.atgwrapper.config.AtgConfig;
 
 /**
  * Uses {@link PCATG} to run node coverage.
@@ -77,12 +75,13 @@ public final class NodeCoverages {
    */
   static NodeCoverageOutcome runNodeCoverageInAtg(final String targetNodeName,
                                                   final Function<String, List<CFGPath>> targetPathsProvider,
-                                                  final Optional<Function<List<CFGPath>, List<CFGPath>>> pathSortFunc,
+                                                  final Optional<Function<List<CFGPath>, List<CFGPath>>> pathSorter,
                                                   final HashSet<CFGPath> completedPaths,
-                                                  final Consumer<CFGPath> newCoveredPathHandler) {
+                                                  final Consumer<CFGPath> newCoveredPathHandler,
+                                                  final Consumer<CFGPath> executedPathHandler) {
     Preconditions.checkArgument(!Strings.isNullOrEmpty(targetNodeName));
     Preconditions.checkNotNull(targetPathsProvider);
-    Preconditions.checkNotNull(pathSortFunc);
+    Preconditions.checkNotNull(pathSorter);
 
     // Note: We do not use `TestBuilder.targetNode` like `atg-tsc` in `PathCoverage`.
     // TestBuilder.targetNode = targetNodeName;
@@ -91,8 +90,8 @@ public final class NodeCoverages {
     final List<CFGPath> filteredPaths = targetPathsProvider.apply(targetNodeName);
 
     // get the path to be searched in order (apply the `pathSortFunc` if present)
-    final List<CFGPath> orderedTargetPaths = pathSortFunc.map(func -> func.apply(filteredPaths))
-                                                         .orElse(filteredPaths);
+    final List<CFGPath> orderedTargetPaths = pathSorter.map(func -> func.apply(filteredPaths))
+                                                       .orElse(filteredPaths);
 
     final ArrayList<CFGPath> failedPaths = Lists.newArrayListWithCapacity(orderedTargetPaths.size());
 
@@ -107,7 +106,7 @@ public final class NodeCoverages {
       final boolean isCovered;
       if (!completedPaths.contains(targetPath)) { // if we have not run the path, run the paths
         // 执行ATG过程
-        isCovered = new PCATG().generateTestData(pathIndex - 1) > -1;
+        isCovered = new PCATG().generateTestData(pathIndex - 1, executedPathHandler) > -1;
         // mark the path as has been run
         completedPaths.add(targetPath);
         if (isCovered) { // if we find a new path that covers the target node
@@ -117,27 +116,26 @@ public final class NodeCoverages {
         isCovered = targetPath.isCovered();
       }
 
-      if (isCovered) {// find the path covered target node
-        
+      if (isCovered) { // the target path (which covers the target node) is covered
         // print debug info
         AtgWrapperPluginSettings.doIfDebug(() -> {
           AtgConsole.consoleStream.println("Cover node " + targetNodeName + " with path:");
           AtgConsole.consoleStream.println(targetPath.getJoinedPathNodeNamesAsString());
         });
-        
+
+        // report that we can cover the target node with the target path
         return new NodeCoverageOutcome(ATG.callFunctionName, targetNodeName, Optional.of(targetPath), failedPaths);
-      } else {
-        
-     // print debug info
+      } else { // the target path is not covered
+        // print debug info
         AtgWrapperPluginSettings.doIfDebug(() -> {
           AtgConsole.consoleStream.println("Can not cover node " + targetNodeName + " with path:");
           AtgConsole.consoleStream.println(targetPath.getJoinedPathNodeNamesAsString());
         });
-        
+
         failedPaths.add(targetPath);
       }
     }
-    
+
     // after run all paths, we still can not find a path that can cover the target node
     return new NodeCoverageOutcome(ATG.callFunctionName, targetNodeName, Optional.empty(), failedPaths);
   }

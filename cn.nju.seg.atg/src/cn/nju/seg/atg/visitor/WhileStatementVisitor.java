@@ -23,6 +23,7 @@ import cn.nju.seg.atg.parse.CFGBuilder;
 public class WhileStatementVisitor extends ASTVisitor {
     public WhileStatementVisitor(){  }
     
+    @Override
     public int visit(IASTStatement node) {
     	if (node instanceof IASTWhileStatement) {
 			IASTWhileStatement iafs = (IASTWhileStatement)node;

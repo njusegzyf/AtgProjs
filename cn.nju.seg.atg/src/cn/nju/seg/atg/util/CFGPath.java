@@ -1,7 +1,6 @@
 package cn.nju.seg.atg.util;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -23,7 +22,6 @@ import cn.nju.seg.atg.parse.TestBuilder;
 
 /**
  * @version 0.1
- * 
  * @author zy
  * @author Zhang Yifan
  */
@@ -860,7 +858,7 @@ public final class CFGPath {
   public final Stream<SimpleCFGNode> getPathNodes() {
     return this.getPath().stream();
   }
-  
+
   /**
    * Gets all node names in the path as a {@link java.util.stream.Stream}.
    * 
@@ -870,21 +868,21 @@ public final class CFGPath {
     return this.getPathNodes()
                .map(node -> node.getName());
   }
-  
+
   /**
    * @since 0.1
    */
   public final String getJoinedPathNodeNamesAsString(final char separator) {
     return Joiner.on(separator).join(this.getPathNodeNames().collect(Collectors.toList()));
   }
-  
+
   /**
    * @since 0.1
    */
   public final String getJoinedPathNodeNamesAsString() {
     return this.getJoinedPathNodeNamesAsString(',');
   }
-  
+
   /**
    * @since 0.1
    */
@@ -892,6 +890,39 @@ public final class CFGPath {
   public final String toString() {
     return "CFGPath [path=" + this.getJoinedPathNodeNamesAsString() + "]";
   }
+
+//  // Generated `hashCode` and `equals` according to `path` field.
+//
+//  /**
+//   * @since 0.1
+//   */
+//  @Override
+//  public int hashCode() {
+//    final int prime = 31;
+//    int result = 1;
+//    result = prime * result + ((this.path == null) ? 0 : this.path.hashCode());
+//    return result;
+//  }
+//
+//  /**
+//   * @since 0.1
+//   */
+//  @Override
+//  public boolean equals(Object obj) {
+//    if (this == obj)
+//      return true;
+//    if (obj == null)
+//      return false;
+//    if (getClass() != obj.getClass())
+//      return false;
+//    final CFGPath other = (CFGPath) obj;
+//    if (this.path == null) {
+//      if (other.path != null)
+//        return false;
+//    } else if (!this.path.equals(other.path))
+//      return false;
+//    return true;
+//  }
 
   // Static methods
 
@@ -905,6 +936,5 @@ public final class CFGPath {
     ArrayList<SimpleCFGNode> nodes = Lists.newArrayList(path1.path);
     nodes.addAll(path2.path);
     return new CFGPath(nodes);
-
   }
 }

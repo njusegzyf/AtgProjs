@@ -23,6 +23,7 @@ import cn.nju.seg.atg.parse.CFGBuilder;
 public class DoStatementVisitor extends ASTVisitor {
     public DoStatementVisitor(){  }
     
+    @Override
     public int visit(IASTStatement node) {
     	if (node instanceof IASTDoStatement) {
     		IASTDoStatement iads = (IASTDoStatement)node;
