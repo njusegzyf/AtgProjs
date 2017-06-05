@@ -168,23 +168,25 @@ public final class CfgPathUtil {
     }
   }
 
+  public static boolean isPathMatchPathNodeNames(final CFGPath cfgPath, final Collection<String> pathNodeNames) {
+    final int pathLength = pathNodeNames.size();
+    final ArrayList<SimpleCFGNode> path = cfgPath.getPath();
+    if (pathLength == path.size()) {
+      return Streams.zip(pathNodeNames.stream(), path.stream(), // zip node names and actual nodes
+                         (nodeName, cfgNode) -> nodeName.equals(cfgNode.getName())) // returns a new element indicates whether their names are equal
+                    .allMatch(b -> b); // the path matches the node name seqs if all node names are equal
+    } else {
+      return false;
+    }
+  }
+
   public static Optional<CFGPath> getRelatedCfgPath(final Collection<String> pathNodeNames,
                                                     final Collection<CFGPath> searchPaths) {
     Preconditions.checkNotNull(pathNodeNames);
     Preconditions.checkNotNull(searchPaths);
 
-    final int pathLength = pathNodeNames.size();
-
-    return searchPaths.stream().filter(cfgPath -> {
-      final ArrayList<SimpleCFGNode> path = cfgPath.getPath();
-      if (pathLength == path.size()) {
-        return Streams.zip(pathNodeNames.stream(), path.stream(), // zip node names and actual nodes
-                           (nodeName, cfgNode) -> nodeName.equals(cfgNode.getName())) // returns a new element indicates whether their names are equal
-                      .allMatch(b -> b); // the path matches the node name seqs if all node names are equal
-      } else {
-        return false;
-      }
-    }).findFirst();
+    return searchPaths.stream().filter(cfgPath -> CfgPathUtil.isPathMatchPathNodeNames(cfgPath, pathNodeNames))
+                      .findFirst();
   }
 
   /**

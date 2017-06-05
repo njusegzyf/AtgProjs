@@ -217,6 +217,7 @@ public class Function {
    * 
    * @param function
    */
+  @SuppressWarnings("null")
   private void connectCFG(Function function) {
     if (function != null && function.getFunctionCalls() != null) {
       for (Call call : function.getFunctionCalls()) {

@@ -14,7 +14,13 @@ public class GlobalRandomNumber {
 	 * @param high
 	 * @return float
 	 */
-	public static float generateRandomFloat(int low, int high){
+	/**
+	 * @param low
+	 * @param high
+	 * @return
+	 */
+	@SuppressWarnings("null")
+  public static float generateRandomFloat(int low, int high){
 		boolean flag = false;
 		StringBuilder str = null;
 		while(!flag){
@@ -37,7 +43,8 @@ public class GlobalRandomNumber {
 	 * @param high
 	 * @return double
 	 */
-	public static double generateRandomDouble(int low, int high){
+	@SuppressWarnings("null")
+  public static double generateRandomDouble(int low, int high){
 		boolean flag = false;
 		StringBuilder str = null;
 		while(!flag){

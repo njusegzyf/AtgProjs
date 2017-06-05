@@ -10,13 +10,11 @@ import java.util.stream.Collectors;
 
 import org.eclipse.cdt.core.model.IFunctionDeclaration;
 
-import com.google.common.base.FinalizablePhantomReference;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 
 import cn.nju.seg.atg.gui.AtgConsole;
-import cn.nju.seg.atg.model.SimpleCFGNode;
 import cn.nju.seg.atg.parse.CoverageCriteria;
 import cn.nju.seg.atg.parse.PathCoverage;
 import cn.nju.seg.atg.parse.TestBuilder;
@@ -34,6 +32,11 @@ import nju.seg.zhangyf.atgwrapper.AtgWrapperPluginSettings;
  */
 public final class NodeCoverages {
 
+  /**
+   * Represents the result of node coverage.
+   * 
+   * @author Zhang Yifan
+   */
   final static class NodeCoverageOutcome {
     final String function;
     final String targetNodeName;

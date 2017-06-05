@@ -230,7 +230,7 @@ public class CLF {
 	 * 为==计算可用区间
 	 * @return 一个区间
 	 */
-	private Interval getEqualInterval()
+	private static Interval getEqualInterval()
 	{	
 		return new Interval();
 	}

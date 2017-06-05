@@ -20,6 +20,7 @@ import cn.nju.seg.atg.model.SimpleCFGNode;
 import cn.nju.seg.atg.util.ATG;
 import cn.nju.seg.atg.util.CFGPath;
 import cn.nju.seg.atg.util.MathFunc;
+import nju.seg.zhangyf.atg.AtgPluginSettings;
 
 /**
  * @version 0.1
@@ -101,7 +102,7 @@ public abstract class CoverageCriteria extends AbstractAST {
     // output path is changed from
     // String resultPath = "/home/zy/Desktop/" + ATG.resultFolder + ATG.callFunctionName + ".result";
     // to
-    final Path resultFolderPath = Paths.get(ATG.resultFolder);
+    final Path resultFolderPath = Paths.get(AtgPluginSettings.resultFolderPathString);
     try {
       Files.createDirectories(resultFolderPath);
     } catch (final IOException ignored) {

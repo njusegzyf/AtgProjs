@@ -390,7 +390,7 @@ public class PathCoverage extends CoverageCriteria {
     // @since 0.1
     // String folderPath = "/home/zy/Desktop/" + ATG.resultFolder + "/result/" + ATG.callFunctionName;
     // is change to:
-    final String folderPath = Paths.get(ATG.resultFolder).resolve(ATG.callFunctionName).toAbsolutePath().toString();
+    final String folderPath = Paths.get(AtgPluginSettings.resultFolderPathString).resolve(ATG.callFunctionName).toAbsolutePath().toString();
 
     final File folder = new File(folderPath);
     if (!folder.exists()) {

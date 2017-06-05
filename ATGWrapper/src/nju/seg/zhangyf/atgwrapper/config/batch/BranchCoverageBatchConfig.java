@@ -8,6 +8,8 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.typesafe.config.Config;
 
+import cn.nju.seg.atg.util.CFGPath;
+import nju.seg.zhangyf.atgwrapper.cfg.CfgPathUtil;
 import nju.seg.zhangyf.atgwrapper.config.AtgConfig;
 import nju.seg.zhangyf.atgwrapper.config.ConfigTags;
 import nju.seg.zhangyf.atgwrapper.config.ExecutorConfig;
@@ -34,6 +36,7 @@ public class BranchCoverageBatchConfig extends BatchConfigBase<BranchCoverageBat
                             final List<BranchCoverageBatchItemConfig> batchItems) {
     super(libraries, atgConfig, executorConfig);
 
+    Preconditions.checkNotNull(batchItems);
     this.batchItems = batchItems;
   }
 
@@ -67,6 +70,21 @@ public class BranchCoverageBatchConfig extends BatchConfigBase<BranchCoverageBat
       this(nodeId, Optional.of(targetPaths), Optional.empty());
     }
 
+    public boolean isMatchPath(final CFGPath cfgPath) {
+      if (this.targetPaths.isPresent()) {
+        // if `targetPaths` is defined
+        return this.targetPaths.get().stream()
+                               .anyMatch((List<String> pathNodeNames) -> CfgPathUtil.isPathMatchPathNodeNames(cfgPath, pathNodeNames));
+      } else if (this.targetPathFragments.isPresent()) {
+        // if `targetPathFragements` is defined
+        return this.targetPathFragments.get().isMatchPath(cfgPath);
+      } else {
+        // if no information is provided, return whether the `targetNode` is contained in the `cfgPath`
+        return cfgPath.getPath().stream()
+                      .anyMatch(node -> this.name.equalsIgnoreCase(node.getName()));
+      }
+    }
+
     public static TargetNodeConfig parse(final Config rawConfig) {
       Preconditions.checkNotNull(rawConfig);
       Preconditions.checkState(rawConfig.hasPath(ConfigTags.NAME_TAG));
@@ -92,15 +110,15 @@ public class BranchCoverageBatchConfig extends BatchConfigBase<BranchCoverageBat
     }
   }
 
-  public static final class BranchCoverageBatchItemConfig extends BatchItemConfigBase {
+  public static class BranchCoverageBatchItemConfig extends BatchItemConfigBase {
     public final String batchFunction;
     public final Optional<List<TargetNodeConfig>> targetNodes;
 
-    BranchCoverageBatchItemConfig(final Optional<String> project,
-                                  final String batchFile,
-                                  final Optional<AtgConfig> atgConfig,
-                                  final String batchFunction,
-                                  final Optional<List<TargetNodeConfig>> targetNodes) {
+    protected BranchCoverageBatchItemConfig(final Optional<String> project,
+                                            final String batchFile,
+                                            final Optional<AtgConfig> atgConfig,
+                                            final String batchFunction,
+                                            final Optional<List<TargetNodeConfig>> targetNodes) {
       super(project, batchFile, atgConfig);
       assert !Strings.isNullOrEmpty(batchFunction);
       assert targetNodes != null;
@@ -115,7 +133,7 @@ public class BranchCoverageBatchConfig extends BatchConfigBase<BranchCoverageBat
     }
   }
 
-  public static final class BranchCoverageBatchItemConfigBuilder extends BatchItemConfigBuilderBase<BranchCoverageBatchItemConfig> {
+  public static class BranchCoverageBatchItemConfigBuilder extends BatchItemConfigBuilderBase<BranchCoverageBatchItemConfig> {
     public String batchFunction;
     public Optional<List<TargetNodeConfig>> targetNodes;
 
@@ -159,9 +177,9 @@ public class BranchCoverageBatchConfig extends BatchConfigBase<BranchCoverageBat
     Preconditions.checkNotNull(rawConfig);
 
     // check essential config items
+    Preconditions.checkArgument(rawConfig.hasPath(ConfigTags.LIBRARIES_TAG), "Illegal config file.");
 
     // check config of libraries
-    Preconditions.checkArgument(rawConfig.hasPath(ConfigTags.LIBRARIES_TAG), "Illegal config file.");
     final List<String> libraries = rawConfig.getStringList(ConfigTags.LIBRARIES_TAG);
 
     final Optional<AtgConfig> atgConfig = ConfigUtil2.getOptionalConfig(rawConfig, ConfigTags.ATG_CONFIG_TAG)
@@ -187,9 +205,8 @@ public class BranchCoverageBatchConfig extends BatchConfigBase<BranchCoverageBat
       if (rawBatchItem.hasPath(ConfigTags.TARGET_NODES_TAG)) {
         final List<? extends Config> rawTargetNodeConfigs = rawBatchItem.getConfigList(ConfigTags.TARGET_NODES_TAG);
 
-        final List<TargetNodeConfig> targetNodes =
-            rawTargetNodeConfigs.stream().map(TargetNodeConfig::parse)
-                                .collect(Collectors.toList());
+        final List<TargetNodeConfig> targetNodes = rawTargetNodeConfigs.stream().map(TargetNodeConfig::parse)
+                                                                       .collect(Collectors.toList());
         builder.targetNodes = Optional.of(targetNodes);
       }
 

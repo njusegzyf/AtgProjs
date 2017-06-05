@@ -9,7 +9,7 @@ import com.google.common.base.Preconditions;
  */
 public final class BranchCoverageTestOutcome extends TestOutcome implements Serializable {
 
-  public BranchCoverageTestOutcome(final String testFunctionSignuature, final CoverageResult[] coverage) {
+  public BranchCoverageTestOutcome(final String testFunctionSignuature, final CoverageOutcome[] coverage) {
     super(Preconditions.checkNotNull(testFunctionSignuature),
           Preconditions.checkNotNull(coverage));
   }

@@ -179,7 +179,7 @@ public final class BatchFileOutcome<TTestOutcome extends TestOutcome> implements
 
     final double averageCoverage =
         this.succeedFunctions.stream().map(outcome -> outcome.optioanlTestOutcome.get().coverage)
-                             .mapToDouble(covergaeArray -> Stream.of(covergaeArray).mapToDouble(CoverageResult::coverageRatio).average().getAsDouble())
+                             .mapToDouble(covergaeArray -> Stream.of(covergaeArray).mapToDouble(CoverageOutcome::coverageRatio).average().getAsDouble())
                              .average()
                              .getAsDouble();
     Util.appendAllWithNewLine(output, "Average coverage for one function: ", TestOutcome.DEFAULT_DECIMAL_FORMAT.format(averageCoverage));

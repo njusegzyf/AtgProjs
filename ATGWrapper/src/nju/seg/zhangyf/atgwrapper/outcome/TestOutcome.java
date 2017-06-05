@@ -64,13 +64,13 @@ public class TestOutcome implements Serializable {
    * Coverage for each tests
    * Note: It differs from {@link TestBuilder#coveredRatio} which records the covered path number.
    */
-  public final CoverageResult[] coverage;
+  public final CoverageOutcome[] coverage;
 
   public final String[] findResult;
 
   public final long[] totalUncoverdPathsTime;
 
-  private TestOutcome(final String testFunctionSignuature,
+  protected TestOutcome(final String testFunctionSignuature,
                       final int countOfRepeation,
                       final long functionTime,
                       final int functionFrequency,
@@ -79,11 +79,11 @@ public class TestOutcome implements Serializable {
                       final double[] algorithmTime,
                       final String[] findResult,
                       final long[] totalUncoverdPathsTime,
-                      final CoverageResult[] coverage) {
+                      final CoverageOutcome[] coverage) {
     assert !Strings.isNullOrEmpty(testFunctionSignuature);
     assert countOfRepeation > 0;
-    assert functionTime > 0L;
-    assert functionFrequency > 0;
+    assert functionTime >= 0L;
+    assert functionFrequency >= 0;
     assert totalTime != null && totalTime.length >= countOfRepeation;
     assert totalFrequency != null && totalFrequency.length >= countOfRepeation;
     assert algorithmTime != null && algorithmTime.length >= countOfRepeation;
@@ -111,14 +111,14 @@ public class TestOutcome implements Serializable {
   @Deprecated
   public TestOutcome(final String testFunctionSignuature) {
     this(testFunctionSignuature,
-         IntStream.of(TestBuilder.coveredRatio).mapToObj(coverdNum -> new CoverageResult(coverdNum, TestBuilder.pathsSize))
-                  .toArray(size -> new CoverageResult[size]));
+         IntStream.of(TestBuilder.coveredRatio).mapToObj(coverdNum -> new CoverageOutcome(coverdNum, TestBuilder.pathsSize))
+                  .toArray(size -> new CoverageOutcome[size]));
   }
 
   /**
    * Note: Since {@link TestBuilder} reuse arrays, we must create copies here like {@code Util.sameLengthCopyOfArray(TestBuilder.totalTime)}.
    */
-  protected TestOutcome(final String testFunctionSignuature, final CoverageResult[] coverage) {
+  protected TestOutcome(final String testFunctionSignuature, final CoverageOutcome[] coverage) {
     this(testFunctionSignuature,
          TestBuilder.repetitionNum,
          TestBuilder.function_time,
@@ -135,9 +135,9 @@ public class TestOutcome implements Serializable {
     Preconditions.checkNotNull(testFunctionSignuature);
     // Preconditions.checkArgument(!Strings.isNullOrEmpty(testFunctionSignuature));
 
-    final CoverageResult[] coverages =
-        IntStream.of(TestBuilder.coveredRatio).mapToObj(coverdNum -> new CoverageResult(coverdNum, TestBuilder.pathsSize))
-                 .toArray(CoverageResult[]::new);
+    final CoverageOutcome[] coverages =
+        IntStream.of(TestBuilder.coveredRatio).mapToObj(coverdNum -> new CoverageOutcome(coverdNum, TestBuilder.pathsSize))
+                 .toArray(CoverageOutcome[]::new);
 
     return new TestOutcome(testFunctionSignuature, coverages);
   }
@@ -153,13 +153,13 @@ public class TestOutcome implements Serializable {
     Preconditions.checkNotNull(testFunctionSignuature);
     // Preconditions.checkArgument(!Strings.isNullOrEmpty(testFunctionSignuature));
 
-    final CoverageResult[] coverages =
+    final CoverageOutcome[] coverages =
         Stream.of(TestBuilder.findResult)
               .map(coverdRes -> {
                 final int coverdNum = "Y".equals(coverdRes) ? 1 : 0;
-                return new CoverageResult(coverdNum, 1);
+                return new CoverageOutcome(coverdNum, 1);
               })
-              .toArray(CoverageResult[]::new);
+              .toArray(CoverageOutcome[]::new);
 
     return new TestOutcome(testFunctionSignuature, coverages);
   }

@@ -2,6 +2,8 @@ package cn.nju.seg.atg.util;
 
 import java.util.concurrent.CancellationException;
 
+import com.google.common.base.Preconditions;
+
 import cn.nju.seg.atg.callCPP.CallCPP;
 
 /**
@@ -11,7 +13,7 @@ import cn.nju.seg.atg.callCPP.CallCPP;
  * @author zy
  * @author Zhang Yifan
  */
-public class CallFunction {
+public final class CallFunction {
   /**
    * 当前执行参数
    */
@@ -562,7 +564,7 @@ public class CallFunction {
                               (int) parameters[6], (int) parameters[7], (int) parameters[8], (int) parameters[9], (int) parameters[10], (int) parameters[11], pathFile);
       break;
 
-      // @since 0.1 throw for unknown methods
+    // @since 0.1 throw for unknown methods
     default:
       throw new IllegalArgumentException();
     }
@@ -573,5 +575,15 @@ public class CallFunction {
 
   public double executeTime() {
     return this.execute_time;
+  }
+
+  /**
+   * @apiNote This method is added in order to be able to reuse a {@code CallFunction} instance for different inputs.
+   * @since 0.1
+   */
+  public void setParameters(final double[] parameters) {
+    Preconditions.checkNotNull(parameters);
+    
+    this.parameters = parameters;
   }
 }

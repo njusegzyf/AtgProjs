@@ -58,8 +58,14 @@ public final class ConfigTags {
   public static final String WORK_STEALING_POOL_TAG = "WorkStealingPool";
   public static final String SINGLE_FUNCTION_TIMEOUT_TAG = "SingleFunctionTimeout";
 
+  // tags for compute coverage with inputs
+  public static final String INPUTS_TAG = "Inputs";
+  public static final String INPUT_TAG = "Input";
+  public static final String COLLECT_BRANCH_COVERAGE_TAG = "CollectBranchCoverage";
+      
+  
   // paths
-  public static final String ATG_ACTION_PATH = "ATG.Action";
+  public static final String ATG_ACTION_PATH = ATG_CONFIG_TAG + "." + ACTION_TAG;
   
   @Deprecated
   private ConfigTags() {}

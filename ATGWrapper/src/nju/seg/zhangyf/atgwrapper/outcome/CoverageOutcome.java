@@ -5,12 +5,12 @@ import java.io.Serializable;
 /**
  * @author Zhang Yifan
  */
-public final class CoverageResult implements Serializable  {
+public final class CoverageOutcome implements Serializable  {
 
   public final int coverdNum;
   public final int totalNum;
 
-  public CoverageResult(final int coverdNum, final int totalNum) {
+  public CoverageOutcome(final int coverdNum, final int totalNum) {
     assert coverdNum >= 0 && coverdNum <= totalNum;
     // assert totalNum >= 0;
 

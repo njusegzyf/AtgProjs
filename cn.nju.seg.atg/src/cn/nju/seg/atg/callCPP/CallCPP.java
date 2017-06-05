@@ -368,7 +368,14 @@ public class CallCPP {
   }
 
   /**
-   * The test function name of `tcas`.
+   * The test function name of Stat.
+   * 
+   * @since 0.1
+   */
+  public static final String STAT_TEST_FUNCTION_NAME = "stat";
+  
+  /**
+   * The test function name of Tcas.
    * 
    * @since 0.1
    */

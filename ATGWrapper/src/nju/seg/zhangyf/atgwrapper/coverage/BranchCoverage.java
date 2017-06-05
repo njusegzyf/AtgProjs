@@ -32,11 +32,11 @@ import cn.nju.seg.atg.model.SimpleCFGNode;
 import cn.nju.seg.atg.parse.CoverageCriteria;
 import cn.nju.seg.atg.parse.PathCoverage;
 import cn.nju.seg.atg.parse.TestBuilder;
-import cn.nju.seg.atg.util.ATG;
 import cn.nju.seg.atg.util.CFGPath;
+import nju.seg.zhangyf.atg.AtgPluginSettings;
 import nju.seg.zhangyf.atgwrapper.AtgWrapperPluginSettings;
 import nju.seg.zhangyf.atgwrapper.coverage.NodeCoverages.NodeCoverageOutcome;
-import nju.seg.zhangyf.atgwrapper.outcome.CoverageResult;
+import nju.seg.zhangyf.atgwrapper.outcome.CoverageOutcome;
 import nju.seg.zhangyf.util.Util;
 
 /**
@@ -96,7 +96,7 @@ public final class BranchCoverage extends CoverageCriteria {
    * 
    * @return
    */
-  public CoverageResult[] run(final IFunctionDeclaration function,
+  public CoverageOutcome[] run(final IFunctionDeclaration function,
                               final Function<IFunctionDeclaration, List<String>> targetNodesProvider,
                               final Optional<Function<List<String>, List<String>>> targetNodeSorter,
                               final BiFunction<IFunctionDeclaration, String, List<CFGPath>> targetPathsProvider,
@@ -120,13 +120,13 @@ public final class BranchCoverage extends CoverageCriteria {
     // if failed to create, `folderPath` will be null and results will not be written to files
     /* final */ Path folderPath = null;
     try {
-      folderPath = Files.createDirectories(Paths.get(ATG.resultFolder).resolve(functionName).toAbsolutePath());
+      folderPath = Files.createDirectories(Paths.get(AtgPluginSettings.resultFolderPathString).resolve(functionName).toAbsolutePath());
     } catch (final IOException ignored) {
       // throw new IllegalStateException();
     }
 
     // record all run's branch coverage
-    final CoverageResult[] branchCoverages = new CoverageResult[TestBuilder.repetitionNum];
+    final CoverageOutcome[] branchCoverages = new CoverageOutcome[TestBuilder.repetitionNum];
     final int totalBranchNum = targetNodeNames.size();
     final int totalPathNum = TestBuilder.allPaths.size();
 
@@ -244,7 +244,7 @@ public final class BranchCoverage extends CoverageCriteria {
         result.append('\n');
 
         result.append("Branch node coverage: ");
-        branchCoverages[indexOfRun - 1] = new CoverageResult(coverdNodeNamesList.size(), totalBranchNum);
+        branchCoverages[indexOfRun - 1] = new CoverageOutcome(coverdNodeNamesList.size(), totalBranchNum);
         result.append(branchCoverages[indexOfRun - 1].toCoverageString());
         result.append('\n');
 
@@ -294,7 +294,7 @@ public final class BranchCoverage extends CoverageCriteria {
       result.append('\n');
     }
 
-    final double[] branchCoveragesRatio = Arrays.stream(branchCoverages).mapToDouble(CoverageResult::coverageRatio).toArray();
+    final double[] branchCoveragesRatio = Arrays.stream(branchCoverages).mapToDouble(CoverageOutcome::coverageRatio).toArray();
     Util.appendAllWithNewLine(result, "Best branch coverage ratio: ", String.valueOf(DoubleStream.of(branchCoveragesRatio).max().getAsDouble()));
     Util.appendAllWithNewLine(result, "Average branch coverage ratio: ", String.valueOf(DoubleStream.of(branchCoveragesRatio).average().getAsDouble()));
 

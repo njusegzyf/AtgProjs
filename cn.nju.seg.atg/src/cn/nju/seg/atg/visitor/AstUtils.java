@@ -187,7 +187,7 @@ public final class AstUtils {
 	 *        the index to use for name lookup
 	 * @return Either a type specifier or null
 	 */
-	public IASTCompositeTypeSpecifier getCompositeTypeFromFunction(final IASTFunctionDefinition function, final IIndex index) {
+	public static IASTCompositeTypeSpecifier getCompositeTypeFromFunction(final IASTFunctionDefinition function, final IIndex index) {
 		// return value to be set via visitor
 		final IASTCompositeTypeSpecifier returnSpecifier[] = { null };
 		final HashMap<ITranslationUnit, IASTTranslationUnit> astCache = new HashMap<ITranslationUnit, IASTTranslationUnit>();
@@ -244,7 +244,7 @@ public final class AstUtils {
 		return returnSpecifier[0];
 	}
 	
-	public IASTCompositeTypeSpecifier getEnclosingCompositeTypeSpecifier(IASTNode node) {
+	public static IASTCompositeTypeSpecifier getEnclosingCompositeTypeSpecifier(IASTNode node) {
 		while (node != null && !(node instanceof IASTCompositeTypeSpecifier)) {
 			node = node.getParent();
 		}

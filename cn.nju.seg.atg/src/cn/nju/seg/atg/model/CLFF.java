@@ -135,7 +135,7 @@ public class CLFF {
 	 * <p>为预测值，应该判断是否有用，并在下次搜索之前删除冗余值
 	 * @param (param, x1, x2, params, model)
 	 */
-	private void addAdjustValue(double param, double x1, double x2, List<Double> params, int model){
+	private static void addAdjustValue(double param, double x1, double x2, List<Double> params, int model){
 		if(CFGBuilder.parameterTypes[ATG.currentSearchParamIndex].equals("double")){
 		    if(Math.abs(param-0.0) <= Double.MIN_VALUE){
 			    double x = (model == ConstantValue.LEFT) ? x1 : x2;

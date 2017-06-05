@@ -146,11 +146,11 @@ public class ShowCFG extends AbstractAST {
     }
   }
 
-  private CFGNode getStartNode() {
+  private static CFGNode getStartNode() {
     return startNode;
   }
 
-  private void setStartNode(CFGNode startNode) {
+  private static void setStartNode(CFGNode startNode) {
     ShowCFG.startNode = startNode;
   }
 
@@ -175,7 +175,7 @@ public class ShowCFG extends AbstractAST {
         graphNodes[index].setBackgroundColor(ColorConstants.yellow);
       }
     }
-    drawCFG(this.getStartNode(), false);
+    drawCFG(ShowCFG.getStartNode(), false);
 
     final TreeLayoutAlgorithm treeLayoutAlgorithm = new TreeLayoutAlgorithm(LayoutStyles.NO_LAYOUT_NODE_RESIZING);
     final Filter filter = new Filter() {
@@ -217,6 +217,7 @@ public class ShowCFG extends AbstractAST {
     shell.open();
   }
 
+  @SuppressWarnings("unused")
   private static void drawCFG(CFGNode currentNode, boolean inFunctionCall) {
     if (currentNode != null) {
       if (currentNode.getOffset() != -1 && (!nodeShowed.contains(currentNode.getNodeIndex()) || inFunctionCall)) {

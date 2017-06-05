@@ -53,6 +53,7 @@ import com.typesafe.config.Config;
 import cn.nju.seg.atg.callCPP.TestPreparations;
 import cn.nju.seg.atg.parse.TestBuilder;
 import cn.nju.seg.atg.util.ATG;
+import nju.seg.zhangyf.atg.AtgPluginSettings;
 import nju.seg.zhangyf.atgwrapper.AtgWrapperPluginSettings;
 import nju.seg.zhangyf.atgwrapper.config.AtgConfig;
 import nju.seg.zhangyf.atgwrapper.config.batch.BatchConfigBase;
@@ -127,14 +128,14 @@ public abstract class BatchFileRunnerBase<TBatchItem extends BatchItemConfigBase
       if (atgConfig.isCopyConfigToResultFolder) {
         final File configFileAsSource = ResourceAndUiUtil.eclipseFileToJavaFile(configFile);
         final ByteSource source = Files.asByteSource(configFileAsSource);
-        final ByteSink sink = Files.asByteSink(Paths.get(ATG.resultFolder).resolve(configFile.getName()).toFile());
+        final ByteSink sink = Files.asByteSink(Paths.get(AtgPluginSettings.resultFolderPathString).resolve(configFile.getName()).toFile());
         try {
           // copy config file to result folder
           source.copyTo(sink);
         } catch (final IOException ex) {
           SwtUtil.createErrorMessageBoxWithActiveShell(
                                                        "Failed to copy config file from: " + configFileAsSource.toString()
-                                                           + "\nto folder: " + ATG.resultFolder
+                                                           + "\nto folder: " + AtgPluginSettings.resultFolderPathString
                                                            + "\nwith exception: " + ex.toString())
                  .open();
         }
@@ -357,26 +358,22 @@ public abstract class BatchFileRunnerBase<TBatchItem extends BatchItemConfigBase
       this.processBatchResultExtra(batchConfig, batchFileOutcome, result);
     } catch (final IOException ignored) {}
 
-    final File resultFile = Paths.get(ATG.resultFolder).resolve("batchResult.txt").toFile();
+    final File resultFile = Paths.get(AtgPluginSettings.resultFolderPathString).resolve("batchResult.txt").toFile();
     try {
       // write result to file
       Files.asCharSink(resultFile, Charsets.US_ASCII).write(result);
     } catch (final IOException ex) {
-      SwtUtil.createErrorMessageBoxWithActiveShell(
-                                                   "Failed to write batch result to: " + resultFile.toString()
-                                                       + "\nwith exception: " + ex.toString())
+      SwtUtil.createErrorMessageBoxWithActiveShell("Failed to write batch result to: " + resultFile.toString() + "\nwith exception: " + ex.toString())
              .open();
     }
 
-    final File resultBinaryFile = Paths.get(ATG.resultFolder).resolve("batchResultBinary").toFile();
+    final File resultBinaryFile = Paths.get(AtgPluginSettings.resultFolderPathString).resolve("batchResultBinary").toFile();
     try (final FileOutputStream fo = new FileOutputStream(resultBinaryFile);
         final ObjectOutputStream oo = new ObjectOutputStream(fo)) {
       // write result to file
       oo.writeObject(batchFileOutcome);
     } catch (final IOException ex) {
-      SwtUtil.createErrorMessageBoxWithActiveShell(
-                                                   "Failed to write binary batch otucome to: " + resultBinaryFile.toString()
-                                                       + "\nwith exception: " + ex.toString())
+      SwtUtil.createErrorMessageBoxWithActiveShell( "Failed to write binary batch otucome to: " + resultBinaryFile.toString() + "\nwith exception: " + ex.toString())
              .open();
     }
   }

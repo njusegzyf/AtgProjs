@@ -9,6 +9,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.typesafe.config.Config;
 
+import nju.seg.zhangyf.atg.AtgPluginSettings;
 import nju.seg.zhangyf.atgwrapper.AtgWrapperPluginSettings;
 import nju.seg.zhangyf.util.ConfigUtil2;
 import cn.nju.seg.atg.util.ATG;
@@ -210,7 +211,7 @@ public final class AtgConfig extends StorageConfig {
     atgConfig.resultFolder.ifPresent(resFolder -> {
       assert !Strings.isNullOrEmpty(resFolder);
 
-      ATG.resultFolder = resFolder;
+      AtgPluginSettings.resultFolderPathString = resFolder;
       AtgWrapperPluginSettings.doIfDebug(() -> System.out.println("Set ATG result folder to : " + resFolder));
       // create the folder
       try {

@@ -5,7 +5,7 @@ import java.util.Optional;
 public abstract class StorageConfig {
 
   /**
-   * @see cn.nju.seg.atg.util.ATG#resultFolder
+   * @see nju.seg.zhangyf.atg.AtgPluginSettings#resultFolderPathString
    */
   public final Optional<String> resultFolder;
 

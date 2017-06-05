@@ -1,5 +1,6 @@
 package cn.nju.seg.atg.util;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -17,6 +18,7 @@ import cn.nju.seg.atg.model.SearchTask;
 import cn.nju.seg.atg.parse.CFGBuilder;
 import cn.nju.seg.atg.parse.TestBuilder;
 import cn.nju.seg.atg.relevant.TableData;
+import nju.seg.zhangyf.atg.AtgPluginSettings;
 
 /**
  * Since 0.1, change some static final fields to be non-final, which allows to set them on the fly.
@@ -102,11 +104,6 @@ public abstract class ATG {
   // public static final int MAX_NUM_OF_PREDICT_PARAM = 200;
   // public static final int MAX_NUM_OF_GENERATE_CYCLE = 2;
   // public static final double PREDICT_BOUNDARY = 10.0;
-
-  // @since 0.1 Change default result folder
-  public static String resultFolder = "lffResult/tempResult";
-
-  public static String tempFolder = "lffResult/temp";
 
   /**
    * 结束一次查找前，预测出的参数个数的上限(100,200,400) --- T
@@ -240,7 +237,7 @@ public abstract class ATG {
     // pathFilePrefix = "/home/zy/atg_data/" + CFGBuilder.funcName.substring(0, CFGBuilder.funcName.indexOf("("));
     // String pathFile = pathFilePrefix + ".dat";
     // is changed to
-    final Path tempPathFolder = Paths.get(ATG.tempFolder);
+    final Path tempPathFolder = Paths.get(AtgPluginSettings.tempFolderPathString);
     try {
       Files.createDirectories(tempPathFolder);
     } catch (final Exception e) {
@@ -375,13 +372,12 @@ public abstract class ATG {
     // pathFilePrefix = "/home/zy/atg_data/" + CFGBuilder.funcName.substring(0, CFGBuilder.funcName.indexOf("("));
     // String pathFile = pathFilePrefix + ".dat";
     // is changed to
-    final Path tempPathFolder = Paths.get(ATG.tempFolder);
+    final Path tempPathFile;
     try {
-      Files.createDirectories(tempPathFolder);
-    } catch (final Exception e) {
+      tempPathFile = AtgPluginSettings.getTempPath(CFGBuilder.funcName.substring(0, CFGBuilder.funcName.indexOf("(")));
+    } catch (final IOException e) {
       return -1;
     }
-    final Path tempPathFile = tempPathFolder.resolve(CFGBuilder.funcName.substring(0, CFGBuilder.funcName.indexOf("(")) + ".dat");
     final String pathFile = tempPathFile.toAbsolutePath().toString();
 
     int isCovered = -1;
@@ -497,8 +493,11 @@ public abstract class ATG {
                                                   double[] seed, int round, int nextRoundSeedIndex, int max_num_of_predict_param);
 
   /**
+   * @apiNote This method is optional.
+   * 
    * @since 0.1
    */
+  @SuppressWarnings("unused")
   protected int generateTestDataForParam(int pathIndex, int paramIndex, String pathFile,
                                          double[] seed, int round, int nextRoundSeedIndex, int max_num_of_predict_param,
                                          Consumer<CFGPath> executedPathHandler) {

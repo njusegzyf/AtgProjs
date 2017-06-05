@@ -5,13 +5,13 @@ import com.google.common.base.Strings;
 
 public class TestPreparations {
 
-  public static void prepareTest(final String testFunctionName, final CallCPP proxy) {
+  public static void prepareTest(final String testFunctionName, final CallCPP callProxy) {
     Preconditions.checkArgument(!Strings.isNullOrEmpty(testFunctionName));
-    Preconditions.checkNotNull(proxy);
+    Preconditions.checkNotNull(callProxy);
 
     switch (testFunctionName) {
-    case CallCPP.TCAS_TEST_FUNCTION_NAME:
-      proxy.prepareStat();
+    case CallCPP.STAT_TEST_FUNCTION_NAME: // for Stat tests
+      callProxy.prepareStat();
       break;
     default:
       // do nothing

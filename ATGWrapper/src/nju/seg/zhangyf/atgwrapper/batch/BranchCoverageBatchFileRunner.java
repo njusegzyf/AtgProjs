@@ -26,7 +26,7 @@ import nju.seg.zhangyf.atgwrapper.config.batch.BranchCoverageBatchConfig.BranchC
 import nju.seg.zhangyf.atgwrapper.config.batch.BranchCoverageBatchConfig.TargetNodeConfig;
 import nju.seg.zhangyf.atgwrapper.coverage.BranchCoverage;
 import nju.seg.zhangyf.atgwrapper.outcome.BranchCoverageTestOutcome;
-import nju.seg.zhangyf.atgwrapper.outcome.CoverageResult;
+import nju.seg.zhangyf.atgwrapper.outcome.CoverageOutcome;
 import nju.seg.zhangyf.util.CdtUtil;
 
 /**
@@ -114,7 +114,7 @@ public final class BranchCoverageBatchFileRunner extends BatchFileRunnerBase<Bra
     try {
       // The `run` method and underlying methods are fixed to make the work cancelable.
       // They will check whether the thread is interrupted which means the task is cancelled, and throw `CancellationException` if interrupted.
-      final CoverageResult[] branchCoverages = branchCoverage.run(function, targetNodesProvider, Optional.empty(), targetPathsProvider, Optional.empty());
+      final CoverageOutcome[] branchCoverages = branchCoverage.run(function, targetNodesProvider, Optional.empty(), targetPathsProvider, Optional.empty());
 
       // build a outcome for the single test, which is a snapshot of current `TestBuilder`.
       return new BranchCoverageTestOutcome(functionSignature, branchCoverages);
