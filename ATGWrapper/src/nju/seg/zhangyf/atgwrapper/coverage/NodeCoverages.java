@@ -85,6 +85,9 @@ public final class NodeCoverages {
     Preconditions.checkArgument(!Strings.isNullOrEmpty(targetNodeName));
     Preconditions.checkNotNull(targetPathsProvider);
     Preconditions.checkNotNull(pathSorter);
+    Preconditions.checkNotNull(completedPaths);
+    Preconditions.checkNotNull(newCoveredPathHandler);
+    Preconditions.checkNotNull(executedPathHandler);
 
     // Note: We do not use `TestBuilder.targetNode` like `atg-tsc` in `PathCoverage`.
     // TestBuilder.targetNode = targetNodeName;

@@ -14,8 +14,8 @@
 #include <limits>
 #include <iomanip>
 #include <fstream>
-#include <cstring>
 #include <memory>
+#include <cstring>
 
 #include <jni.h>
 
@@ -32,6 +32,20 @@ static inline int instExpression(std::ofstream& bFile, const char* functionName,
       << expr << ' ' // output expr result
       << "expression@" << expressionId << '\n'; // output expression name
   return expr;
+}
+
+/**
+ * @author Zhang Yifan
+ */
+static inline void instNode(std::ofstream& bFile, const char* functionName, size_t nodeId) {
+  bFile << "node" << nodeId << '@' << functionName << '\n'; // output node name
+}
+
+/**
+ * @author Zhang Yifan
+ */
+static inline void instFunctionCall(std::ofstream& bFile, const char* functionName) {
+  // bFile << "call@" << functionName << '\n'; // output function call node name
 }
 
 char* jstringTostring(JNIEnv* env, jstring jstr) {
@@ -131,7 +145,7 @@ public:
     bFile << "node1@Non_Crossing_Biased_Climb\n";
 
     // upward_preferred = (Inhibit_Biased_Climb(bFile) > Down_Separation) ? 1 : 0;
-    bFile << "call@Non_Crossing_Biased_Climb\n";
+    instFunctionCall(bFile, "Non_Crossing_Biased_Climb");
     int temp0 = Inhibit_Biased_Climb(bFile);
     if (bFile << "node2@Non_Crossing_Biased_Climb " << temp0 - Down_Separation << " expression@52\n", temp0 > Down_Separation) {
       bFile << "node3@Non_Crossing_Biased_Climb\n";
@@ -150,11 +164,11 @@ public:
     //          (Own_Above_Threat() == 1 && (Cur_Vertical_Sep >= Const::MINSEP) && (Up_Separation >= ALIM())) ? 1 : 0;
     //    }
     if (instExpression(bFile, "Non_Crossing_Biased_Climb", 5, 54, upward_preferred) != 0) {
-      bFile << "call@Non_Crossing_Biased_Climb\n";
+      instFunctionCall(bFile, "Non_Crossing_Biased_Climb");
       int temp1 = Own_Below_Threat();
       if (instExpression(bFile, "Non_Crossing_Biased_Climb", 6, 56, temp1 - 1) == 0
           || (instExpression(bFile, "Non_Crossing_Biased_Climb", 6, 57, temp1 - 1) != 0
-              && instExpression(bFile, "Non_Crossing_Biased_Climb", 6, 58, Down_Separation - ALIM()) < 0)) {
+              && instExpression(bFile, "Non_Crossing_Biased_Climb", 6, 58, Down_Separation - Positive_RA_Alt_Thresh[Alt_Layer_Value]) < 0)) {
         bFile << "node7@Non_Crossing_Biased_Climb\n";
         result = 1;
       } else {
@@ -162,11 +176,11 @@ public:
         result = 0;
       }
     } else {
-      bFile << "call@Non_Crossing_Biased_Climb\n";
+      instFunctionCall(bFile, "Non_Crossing_Biased_Climb");
       int temp2 = Own_Above_Threat();
       if (instExpression(bFile, "Non_Crossing_Biased_Climb", 9, 63, temp2 - 1) == 0
           && instExpression(bFile, "Non_Crossing_Biased_Climb", 9, 64, Cur_Vertical_Sep - Const::MINSEP) >= 0
-          && instExpression(bFile, "Non_Crossing_Biased_Climb", 9, 65, Up_Separation - ALIM()) >= 0) {
+          && instExpression(bFile, "Non_Crossing_Biased_Climb", 9, 65, Up_Separation - Positive_RA_Alt_Thresh[Alt_Layer_Value]) >= 0) {
         bFile << "node10@Non_Crossing_Biased_Climb\n";
         result = 1;
       } else {
@@ -188,7 +202,7 @@ public:
     bFile << "node1@Non_Crossing_Biased_Descend\n";
 
     // upward_preferred = (Inhibit_Biased_Climb(bFile) > Down_Separation) ? 1 : 0;
-    bFile << "call@Non_Crossing_Biased_Descend\n";
+    instFunctionCall(bFile, "Non_Crossing_Biased_Descend");
     int temp0 = Inhibit_Biased_Climb(bFile) - Down_Separation;
     if (instExpression(bFile, "Non_Crossing_Biased_Descend", 2, 93, temp0) > 0) { // can be treat as `temp0 > 0`
       bFile << "node3@Non_Crossing_Biased_Descend\n";
@@ -207,11 +221,11 @@ public:
 //              || ((Own_Above_Threat() == 1) && (Up_Separation >= ALIM()))) ? 1 : 0;
 //    }
     if (instExpression(bFile, "Non_Crossing_Biased_Descend", 5, 95, upward_preferred) != 0) {
-      bFile << "call@Non_Crossing_Biased_Descend\n";
+      instFunctionCall(bFile, "Non_Crossing_Biased_Descend");
       int temp1 = Own_Below_Threat();
       if (instExpression(bFile, "Non_Crossing_Biased_Descend", 6, 97, temp1 - 1) == 0
           && instExpression(bFile, "Non_Crossing_Biased_Descend", 6, 98, Cur_Vertical_Sep - Const::MINSEP) >= 0
-          && instExpression(bFile, "Non_Crossing_Biased_Descend", 6, 99, Down_Separation - ALIM()) >= 0) {
+          && instExpression(bFile, "Non_Crossing_Biased_Descend", 6, 99, Down_Separation - Positive_RA_Alt_Thresh[Alt_Layer_Value]) >= 0) {
         bFile << "node7@Non_Crossing_Biased_Descend\n";
         result = 1;
       } else {
@@ -219,11 +233,11 @@ public:
         result = 0;
       }
     } else {
-      bFile << "call@Non_Crossing_Biased_Descend\n";
+      instFunctionCall(bFile, "Non_Crossing_Biased_Descend");
       int temp2 = Own_Above_Threat();
       if (instExpression(bFile, "Non_Crossing_Biased_Descend", 9, 104, temp2 - 1) != 0
           || (instExpression(bFile, "Non_Crossing_Biased_Descend", 9, 105, temp2 - 1) == 0
-              && instExpression(bFile, "Non_Crossing_Biased_Descend", 9, 106, Up_Separation - ALIM()) >= 0)) {
+              && instExpression(bFile, "Non_Crossing_Biased_Descend", 9, 106, Up_Separation - Positive_RA_Alt_Thresh[Alt_Layer_Value]) >= 0)) {
         bFile << "node10@Non_Crossing_Biased_Descend\n";
         result = 1;
       } else {
@@ -277,8 +291,8 @@ public:
     int enabled, tcas_equipped, intent_not_known;
     int alt_sep;
 
-    bFile << "entry@entry@alt_sep_test\n";
-    bFile << "node1@entry@alt_sep_test\n";
+    bFile << "entry@alt_sep_test\n";
+    bFile << "node1@alt_sep_test\n";
 
     // enabled = (High_Confidence == 1 && (Own_Tracked_Alt_Rate <= Const::OLEV) && (Cur_Vertical_Sep > Const::MAXALTDIFF)) ? 1 : 0;
     if (instExpression(bFile, "alt_sep_test", 2, 9, High_Confidence - 1) == 0
@@ -297,7 +311,7 @@ public:
       tcas_equipped = 1;
     } else {
       bFile << "node7@alt_sep_test\n";
-      tcas_equipped = 1;
+      tcas_equipped = 0;
     }
 
     // intent_not_known = (Two_of_Three_Reports_Valid == 1 && Other_RAC == Const::NO_INTENT) ? 1 : 0;
@@ -307,7 +321,7 @@ public:
       intent_not_known = 1;
     } else {
       bFile << "node10@alt_sep_test\n";
-      intent_not_known = 1;
+      intent_not_known = 0;
     }
 
     bFile << "node11@alt_sep_test\n";
@@ -334,9 +348,9 @@ public:
             || instExpression(bFile, "alt_sep_test", 12, 24, tcas_equipped) == 0)) {
 
       // need_upward_RA = (Non_Crossing_Biased_Climb(bFile) == 1 && Own_Below_Threat() == 1) ? 1 : 0;
-      bFile << "call@alt_sep_test\n";
+      instFunctionCall(bFile, "alt_sep_test");
       int temp0 = Non_Crossing_Biased_Climb(bFile) - 1;
-      bFile << "call@alt_sep_test\n";
+      instFunctionCall(bFile, "alt_sep_test");
       int temp1 = Own_Below_Threat() - 1;
       if (instExpression(bFile, "alt_sep_test", 13, 27, temp0) == 0
           && instExpression(bFile, "alt_sep_test", 13, 28, temp1) == 0) {
@@ -348,9 +362,9 @@ public:
       }
 
       // need_downward_RA = (Non_Crossing_Biased_Descend(bFile) == 1 && Own_Above_Threat() == 1) ? 1 : 0;
-      bFile << "call@alt_sep_test\n";
+      instFunctionCall(bFile, "alt_sep_test");
       temp0 = Non_Crossing_Biased_Descend(bFile) - 1;
-      bFile << "call@alt_sep_test\n";
+      instFunctionCall(bFile, "alt_sep_test");
       temp1 = Own_Above_Threat() - 1;
       if (instExpression(bFile, "alt_sep_test", 16, 31, temp0) == 0
           && instExpression(bFile, "alt_sep_test", 16, 32, temp1) == 0) {
@@ -406,14 +420,18 @@ public:
     Own_Tracked_Alt = own_tracked_alt;
     Own_Tracked_Alt_Rate = own_tracked_alt_rate;
     Other_Tracked_Alt = other_tracked_alt;
-    Alt_Layer_Value = alt_layer_value;
+
+    // `Alt_Layer_Value` is only allowed to be: 0, 1, 2, 3
+    if (alt_layer_value < 0 ) alt_layer_value = -alt_layer_value;
+    Alt_Layer_Value = alt_layer_value % 4;
+
     Up_Separation = up_separation;
     Down_Separation = down_separation;
     Other_RAC = other_rac;
     Other_Capability = other_capability;
     Climb_Inhibit = climb_inhibit;
 
-    bFile << "call@start_symbolic\n";
+    instFunctionCall(bFile, "start_symbolic");
     alt_sep_test(bFile); // cout << (alt_sep_test()) << endl;
 
     bFile << "exit@start_symbolic\n";
@@ -453,7 +471,7 @@ JNIEXPORT void JNICALL Java_cn_nju_seg_atg_callCPP_CallCPP_callTcasRun(JNIEnv *e
 
   bFile<<"node1@tcasRun\n";
 
-  bFile<<"call@tcasRun\n";
+  instFunctionCall(bFile, "tcasRun");
   Tcas::start_symbolic(cur_vertical_sep,high_confidence,two_of_three_reports_valid,
       own_tracked_alt,own_tracked_alt_rate,other_tracked_alt,alt_layer_value,
       up_separation,down_separation,other_rac,other_capability,climb_inhibit,

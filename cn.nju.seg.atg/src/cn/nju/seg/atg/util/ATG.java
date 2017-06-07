@@ -352,8 +352,11 @@ public abstract class ATG {
    * @since 0.1
    * @see #generateTestData(int)
    */
-  public int generateTestData(int pathIndex,
-                              Consumer<CFGPath> executedPathHandler) {
+  public int generateTestData(final int pathIndex,
+                              final Consumer<CFGPath> executedPathHandler) {
+    assert pathIndex >= 0;
+    assert executedPathHandler != null;
+    
     // @since 0.1 record time used for uncovered paths
     final long startTime = System.currentTimeMillis();
     // final long startFunctionTime = TestBuilder.function_time;

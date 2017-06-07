@@ -1,5 +1,7 @@
 package nju.seg.zhangyf.atgwrapper.batch;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.concurrent.CancellationException;
 import java.util.function.Predicate;
 import org.eclipse.cdt.core.model.IFunctionDeclaration;
@@ -12,6 +14,7 @@ import cn.nju.seg.atg.gui.AtgConsole;
 import cn.nju.seg.atg.util.ATG;
 import nju.seg.zhangyf.atgwrapper.config.batch.CollectBranchCoverageBatchConfig.CollectBranchCoverageBatchItemConfig;
 import nju.seg.zhangyf.atgwrapper.coverage.Coverages;
+import nju.seg.zhangyf.atg.AtgPluginSettings;
 import nju.seg.zhangyf.atgwrapper.AtgWrapperPluginSettings;
 import nju.seg.zhangyf.atgwrapper.config.batch.CollectBranchCoverageBatchConfig;
 import nju.seg.zhangyf.atgwrapper.outcome.CollectCoverageOutcome;
@@ -50,9 +53,12 @@ public final class CollectBranchCoverageBatchFileRunner
     AtgWrapperPluginSettings.doIfDebug(() -> {
       System.out.println("\nProcess function: " + functionSignature + ", use Branch Coverage.\n");
     });
+    
+    batchConfig.enalbeAtgConfigIfPresent();
 
+    final Path resultFilePath = Paths.get(AtgPluginSettings.resultFolderPathString).resolve(function.getElementName() + "-Coverage.txt");
     try {
-      final CollectCoverageOutcome outcome = Coverages.collectCoverageFromInputs(function, batchItem.inputs, batchItem.targetNodes.get(), ATG.callCPP);
+      final CollectCoverageOutcome outcome = Coverages.collectCoverageFromInputs(function, batchItem.inputs, batchItem.targetNodes.get(), resultFilePath, ATG.callCPP);
       AtgConsole.consoleStream.println("Collect coverage for fucntion: " + functionSignature);
       return outcome;
     } catch (final CancellationException ce) {

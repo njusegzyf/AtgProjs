@@ -32,6 +32,7 @@ import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.MessageBox;
 
 import com.google.common.base.Charsets;
@@ -147,7 +148,7 @@ public abstract class BatchFileRunnerBase<TBatchItem extends BatchItemConfigBase
       try {
         final IProject project = BatchFileRunnerBase.getProjectWithFallback(batchItem.project, fallbackProject);
 
-        // get the target batch file (cpp file, a translation unit)
+        // get the target batch file (a cpp file / a translation unit)
         final IFile batchFile = project.getFile(batchItem.batchFile);
         final ITranslationUnit tu = CoreModelUtil.findTranslationUnit(batchFile);
         if (tu == null) {
@@ -240,8 +241,6 @@ public abstract class BatchFileRunnerBase<TBatchItem extends BatchItemConfigBase
                   // it is error to let the two processes (i.e. check for function A and test for function B) interleave with each other.
                   final List<String> testErrors = BatchFileRunnerBase.this.checkTestConfig(function, batchConfig, batchItem);
                   if (testErrors.isEmpty()) { // if no error, run the test
-                    // first prepare for the test
-                    TestPreparations.prepareTest(function.getElementName(), ATG.callCPP);
                     // and then run the test, which is defined in sub classes
                     return BatchFileRunnerBase.this.runTest(function, batchConfig, batchItem);
                   } else {
@@ -252,8 +251,8 @@ public abstract class BatchFileRunnerBase<TBatchItem extends BatchItemConfigBase
                     Joiner.on(Util.LINE_SEPATATOR).appendTo(errorMessageBuilder, testErrors);
                     final String errorMessage = errorMessageBuilder.toString();
 
-                    SwtUtil.createErrorMessageBoxWithActiveShell(errorMessage)
-                           .open();
+                    // Note: As we are in non-UI thread, we must submit the display work to SWT UI thread.
+                    Display.getDefault().asyncExec(() -> SwtUtil.createErrorMessageBoxWithActiveShell(errorMessage).open());
                     throw new IllegalArgumentException(errorMessage);
                   }
                 });
@@ -373,7 +372,7 @@ public abstract class BatchFileRunnerBase<TBatchItem extends BatchItemConfigBase
       // write result to file
       oo.writeObject(batchFileOutcome);
     } catch (final IOException ex) {
-      SwtUtil.createErrorMessageBoxWithActiveShell( "Failed to write binary batch otucome to: " + resultBinaryFile.toString() + "\nwith exception: " + ex.toString())
+      SwtUtil.createErrorMessageBoxWithActiveShell("Failed to write binary batch otucome to: " + resultBinaryFile.toString() + "\nwith exception: " + ex.toString())
              .open();
     }
   }
@@ -482,8 +481,8 @@ public abstract class BatchFileRunnerBase<TBatchItem extends BatchItemConfigBase
   /**
    * Represents the outcome of a single test.
    * 
-   * @author Zhang Yifan
    * @param <TSingleTestOutcome>
+   * @author Zhang Yifan
    */
   public static class TaskOutcome<TSingleTestOutcome extends TestOutcome> implements Serializable {
     public final String testFunctionSignuature;

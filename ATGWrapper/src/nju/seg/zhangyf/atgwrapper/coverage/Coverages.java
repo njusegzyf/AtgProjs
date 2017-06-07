@@ -1,13 +1,16 @@
 package nju.seg.zhangyf.atgwrapper.coverage;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 
 import org.eclipse.cdt.core.model.CModelException;
 import org.eclipse.cdt.core.model.IFunctionDeclaration;
 
+import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
 
@@ -17,6 +20,7 @@ import cn.nju.seg.atg.util.ATG;
 import cn.nju.seg.atg.util.CFGPath;
 import cn.nju.seg.atg.util.CallFunction;
 import nju.seg.zhangyf.atg.AtgPluginSettings;
+import nju.seg.zhangyf.atg.util.NioUtil;
 import nju.seg.zhangyf.atgwrapper.config.batch.BranchCoverageBatchConfig.TargetNodeConfig;
 import nju.seg.zhangyf.atgwrapper.outcome.CollectCoverageOutcome;
 import nju.seg.zhangyf.atgwrapper.outcome.CoverageOutcome;
@@ -33,10 +37,18 @@ public final class Coverages {
   public static CollectCoverageOutcome collectCoverageFromInputs(final IFunctionDeclaration function,
                                                                  final List<double[]> inputs,
                                                                  final List<TargetNodeConfig> targetNodes,
+                                                                 final Path resultFile,
                                                                  final CallCPP callProxy) {
     Preconditions.checkNotNull(function);
     Preconditions.checkArgument(inputs != null && !inputs.isEmpty());
     Preconditions.checkArgument(targetNodes != null && !targetNodes.isEmpty());
+    // check that the result file is writable
+    Preconditions.checkNotNull(resultFile);
+    try {
+      Preconditions.checkArgument(Files.isWritable(NioUtil.createFileAndNonExistParentDirectories(resultFile)));
+    } catch (IOException ignored) {
+      throw new IllegalArgumentException("Can not write to resultFile: " + resultFile.toAbsolutePath().toString(), ignored);
+    }
     Preconditions.checkNotNull(callProxy);
 
     final String functionSignature;
@@ -54,6 +66,9 @@ public final class Coverages {
     }
     final String tempPathFileString = tempPathFile.toAbsolutePath().toString();
 
+    // the `StringBuilder` used to store result that will be written to `resultFile`
+    final StringBuilder result = new StringBuilder();
+
     final CallFunction callFunction = new CallFunction(null, tempPathFileString);
     // since `CallFunction` reads the function name from `ATG.callFunctionName`, we must set it here
     ATG.callFunctionName = function.getElementName();
@@ -68,11 +83,20 @@ public final class Coverages {
       callFunction.callFunction();
 
       // read path according to `PCATG#getPathCoveredCondition`
+      
       final CFGPath excutedPath = ZpathUtil.readPath_Z(0, tempPathFileString);
       for (final TargetNodeConfig targetNode : targetNodes) {
-        if (!coveredTargetNodes.contains(targetNode) && targetNode.isMatchPath(excutedPath)) {
+        // `!coveredTargetNodes.contains(targetNode)` is used to skip checking a target node is already covered by some input
+        if ( /* !coveredTargetNodes.contains(targetNode) && */ targetNode.isMatchPath(excutedPath)) {
+          // `targetNode` can be covered with `input`
           coveredTargetNodes.add(targetNode);
+          result.append("Cover node \"" + targetNode.name + "\" with input: " + Arrays.toString(input));
+          result.append('\n');
         }
+      }
+      if (excutedPath.getPath().size() > 20) {
+        @SuppressWarnings("unused") final long temp = System.currentTimeMillis();
+        
       }
     }
 
@@ -80,6 +104,12 @@ public final class Coverages {
 
     final String[] coveredTargetNodeNames = coveredTargetNodes.stream().map(node -> node.name)
                                                               .<String> toArray(num -> new String[num]);
+
+    // write result to `resultFile`
+    try {
+      com.google.common.io.Files.asCharSink(resultFile.toFile(), Charsets.US_ASCII)
+                                .write(result);
+    } catch (IOException ignored) {}
 
     return new CollectCoverageOutcome(functionSignature,
                                       functionTime,

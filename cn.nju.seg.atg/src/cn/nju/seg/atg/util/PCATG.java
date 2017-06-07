@@ -116,10 +116,10 @@ public class PCATG extends ATG {
         }
       }
     }
-    
+
     // @since 0.1 extra local var
     final CFGPath testPath = TestBuilder.allPaths.get(pathIndex);
-    
+
     // 返回结果
     if (isCoveredTargetPath) {
       testPath.setCovered(true);
@@ -187,14 +187,16 @@ public class PCATG extends ATG {
   }
 
   /**
-   * Adds a handler for processing executed paths. 
+   * Adds a handler for processing executed paths.
    * 
    * @since 0.1
    * @see #generateTestDataForParam(int, int, String, double[], int, int, int)
    */
   @Override
   protected int generateTestDataForParam(int pathIndex, int paramIndex, String pathFile, double[] seed, int round, int nextRoundSeedIndex, int max_num_of_predict_param,
-                                         Consumer<CFGPath> executedPathHandler) {
+                                         final Consumer<CFGPath> executedPathHandler) {
+    assert executedPathHandler != null;
+
     currentSearchParamIndex = paramIndex;
     // 初始化覆盖到的最长路径片段为空
     CFGPath maxPath = new CFGPath();
@@ -290,10 +292,10 @@ public class PCATG extends ATG {
         }
       }
     }
-    
+
     // @since 0.1 extra local var
     final CFGPath testPath = TestBuilder.allPaths.get(pathIndex);
-    
+
     // 返回结果
     if (isCoveredTargetPath) {
       testPath.setCovered(true);
@@ -360,7 +362,6 @@ public class PCATG extends ATG {
     }
   }
 
-  
   /**
    * 获取路径覆盖情况
    * 
@@ -378,10 +379,10 @@ public class PCATG extends ATG {
 
     // @since 0.1 record execution time in {@link cn.nju.seg.atg.parse.TestBuilder#totalIoTime}.
     final long startTime = System.currentTimeMillis();
-    
+
     // 读取路径
     CFGPath excutedPath = ZpathUtil.readPath_Z(parameters[paramIndex], pathFile);
-    
+
     TestBuilder.ioTime += System.currentTimeMillis() - startTime;
 
     // 计算目标路径被当前输入向量覆盖到的部分
@@ -404,14 +405,17 @@ public class PCATG extends ATG {
 
     return isCoveredTargetPath;
   }
-  
+
   /**
-   * Adds a handler for processing executed paths. 
+   * Adds a handler for processing executed paths.
    * 
    * @since 0.1
    * @see PCATG#getPathCoveredCondition(CFGPath, int, String)
    */
-  private static boolean getPathCoveredCondition(CFGPath maxPath, int paramIndex, String pathFile, Consumer<CFGPath> executedPathHandler) {
+  private static boolean getPathCoveredCondition(CFGPath maxPath, int paramIndex, String pathFile, 
+                                                 final Consumer<CFGPath> executedPathHandler) {
+    assert executedPathHandler != null;
+    
     // 执行程序
     CallFunction cf = new CallFunction(parameters, pathFile);
     cf.callFunction();
@@ -420,12 +424,12 @@ public class PCATG extends ATG {
 
     // @since 0.1 record execution time in {@link cn.nju.seg.atg.parse.TestBuilder#totalIoTime}.
     final long startTime = System.currentTimeMillis();
-    
+
     // 读取路径
     CFGPath excutedPath = ZpathUtil.readPath_Z(parameters[paramIndex], pathFile);
     // @since 0.1
     executedPathHandler.accept(excutedPath);
-    
+
     TestBuilder.ioTime += System.currentTimeMillis() - startTime;
 
     // 计算目标路径被当前输入向量覆盖到的部分

@@ -125,6 +125,13 @@ public:
     return Positive_RA_Alt_Thresh[Alt_Layer_Value];
   }
 
+  // Note: Since ZPath has problem when there are duplicate nodes like "entry@Inhibit_Biased_Climb\n",
+  // we only instruct first function call, and use methods like `XXX_NoInst` for other calls.
+
+  static int Inhibit_Biased_Climb_NoInst() {
+    return ((Climb_Inhibit == 1) ? Up_Separation + Const::MINSEP /* operand mutation NOZCROSS */ : Up_Separation);
+  }
+
   static int Inhibit_Biased_Climb(std::ofstream& bFile) {
     bFile << "entry@Inhibit_Biased_Climb\n";
     if (bFile << "node1@Inhibit_Biased_Climb " << Climb_Inhibit - 1 << " expression@72\n", Climb_Inhibit == 1) {
@@ -165,7 +172,7 @@ public:
     //    }
     if (instExpression(bFile, "Non_Crossing_Biased_Climb", 5, 54, upward_preferred) != 0) {
       instFunctionCall(bFile, "Non_Crossing_Biased_Climb");
-      int temp1 = Own_Below_Threat();
+      int temp1 = Own_Below_Threat_NoInst(); // Own_Below_Threat();
       if (instExpression(bFile, "Non_Crossing_Biased_Climb", 6, 56, temp1 - 1) == 0
           || (instExpression(bFile, "Non_Crossing_Biased_Climb", 6, 57, temp1 - 1) != 0
               && instExpression(bFile, "Non_Crossing_Biased_Climb", 6, 58, Down_Separation - Positive_RA_Alt_Thresh[Alt_Layer_Value]) < 0)) {
@@ -177,7 +184,7 @@ public:
       }
     } else {
       instFunctionCall(bFile, "Non_Crossing_Biased_Climb");
-      int temp2 = Own_Above_Threat();
+      int temp2 = Own_Above_Threat_NoInst(); // Own_Above_Threat();
       if (instExpression(bFile, "Non_Crossing_Biased_Climb", 9, 63, temp2 - 1) == 0
           && instExpression(bFile, "Non_Crossing_Biased_Climb", 9, 64, Cur_Vertical_Sep - Const::MINSEP) >= 0
           && instExpression(bFile, "Non_Crossing_Biased_Climb", 9, 65, Up_Separation - Positive_RA_Alt_Thresh[Alt_Layer_Value]) >= 0) {
@@ -203,7 +210,7 @@ public:
 
     // upward_preferred = (Inhibit_Biased_Climb(bFile) > Down_Separation) ? 1 : 0;
     instFunctionCall(bFile, "Non_Crossing_Biased_Descend");
-    int temp0 = Inhibit_Biased_Climb(bFile) - Down_Separation;
+    int temp0 = Inhibit_Biased_Climb_NoInst() - Down_Separation; // Inhibit_Biased_Climb(bFile) - Down_Separation;
     if (instExpression(bFile, "Non_Crossing_Biased_Descend", 2, 93, temp0) > 0) { // can be treat as `temp0 > 0`
       bFile << "node3@Non_Crossing_Biased_Descend\n";
       upward_preferred = 1;
@@ -222,7 +229,7 @@ public:
 //    }
     if (instExpression(bFile, "Non_Crossing_Biased_Descend", 5, 95, upward_preferred) != 0) {
       instFunctionCall(bFile, "Non_Crossing_Biased_Descend");
-      int temp1 = Own_Below_Threat();
+      int temp1 = Own_Below_Threat_NoInst(); // Own_Below_Threat();
       if (instExpression(bFile, "Non_Crossing_Biased_Descend", 6, 97, temp1 - 1) == 0
           && instExpression(bFile, "Non_Crossing_Biased_Descend", 6, 98, Cur_Vertical_Sep - Const::MINSEP) >= 0
           && instExpression(bFile, "Non_Crossing_Biased_Descend", 6, 99, Down_Separation - Positive_RA_Alt_Thresh[Alt_Layer_Value]) >= 0) {
@@ -234,7 +241,7 @@ public:
       }
     } else {
       instFunctionCall(bFile, "Non_Crossing_Biased_Descend");
-      int temp2 = Own_Above_Threat();
+      int temp2 = Own_Above_Threat_NoInst(); // Own_Above_Threat();
       if (instExpression(bFile, "Non_Crossing_Biased_Descend", 9, 104, temp2 - 1) != 0
           || (instExpression(bFile, "Non_Crossing_Biased_Descend", 9, 105, temp2 - 1) == 0
               && instExpression(bFile, "Non_Crossing_Biased_Descend", 9, 106, Up_Separation - Positive_RA_Alt_Thresh[Alt_Layer_Value]) >= 0)) {
@@ -248,6 +255,10 @@ public:
 
     bFile << "node12@Non_Crossing_Biased_Descend\n";
     return result;
+  }
+
+  static int Own_Below_Threat_NoInst() {
+    return ((Own_Tracked_Alt < Other_Tracked_Alt) ? 1 : 0);
   }
 
   static int Own_Below_Threat() {
@@ -264,6 +275,10 @@ public:
       bFile << "node3@Own_Below_Threat\n";
       return 0;
     }
+  }
+
+  static int Own_Above_Threat_NoInst() {
+    return ((Other_Tracked_Alt < Own_Tracked_Alt) ? 1 : 0);
   }
 
   static int Own_Above_Threat() {
@@ -311,7 +326,7 @@ public:
       tcas_equipped = 1;
     } else {
       bFile << "node7@alt_sep_test\n";
-      tcas_equipped = 1;
+      tcas_equipped = 0;
     }
 
     // intent_not_known = (Two_of_Three_Reports_Valid == 1 && Other_RAC == Const::NO_INTENT) ? 1 : 0;
@@ -321,7 +336,7 @@ public:
       intent_not_known = 1;
     } else {
       bFile << "node10@alt_sep_test\n";
-      intent_not_known = 1;
+      intent_not_known = 0;
     }
 
     bFile << "node11@alt_sep_test\n";

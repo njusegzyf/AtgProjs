@@ -9,11 +9,11 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.typesafe.config.Config;
 
+import cn.nju.seg.atg.parse.TestBuilder;
+import cn.nju.seg.atg.util.ATG;
 import nju.seg.zhangyf.atg.AtgPluginSettings;
 import nju.seg.zhangyf.atgwrapper.AtgWrapperPluginSettings;
 import nju.seg.zhangyf.util.ConfigUtil2;
-import cn.nju.seg.atg.util.ATG;
-import cn.nju.seg.atg.parse.TestBuilder;
 
 /**
  * Configuration for ATG.

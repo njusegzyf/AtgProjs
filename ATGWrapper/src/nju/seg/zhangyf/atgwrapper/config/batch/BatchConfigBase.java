@@ -28,6 +28,12 @@ public abstract class BatchConfigBase<TBatchItem extends BatchItemConfigBase> {
     this.atgConfig = atgConfig;
     this.executorConfig = executorConfig;
   }
+  
+  public final void enalbeAtgConfigIfPresent() {
+    if (this.atgConfig.isPresent()) {
+      AtgConfig.enableAtgConfig(this.atgConfig.get());
+    }
+  }
 
   public ExecutorService createExecutorService() {
     return this.executorConfig.map(config -> config.createExecutor())

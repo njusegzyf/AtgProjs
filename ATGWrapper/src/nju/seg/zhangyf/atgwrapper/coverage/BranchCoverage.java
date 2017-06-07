@@ -27,11 +27,13 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
+import cn.nju.seg.atg.callCPP.TestPreparations;
 import cn.nju.seg.atg.gui.AtgConsole;
 import cn.nju.seg.atg.model.SimpleCFGNode;
 import cn.nju.seg.atg.parse.CoverageCriteria;
 import cn.nju.seg.atg.parse.PathCoverage;
 import cn.nju.seg.atg.parse.TestBuilder;
+import cn.nju.seg.atg.util.ATG;
 import cn.nju.seg.atg.util.CFGPath;
 import nju.seg.zhangyf.atg.AtgPluginSettings;
 import nju.seg.zhangyf.atgwrapper.AtgWrapperPluginSettings;
@@ -94,13 +96,15 @@ public final class BranchCoverage extends CoverageCriteria {
   /**
    * Note: The framework of this function refers to {@link cn.nju.seg.atg.parse.PathCoverage#run(IFunctionDeclaration)}
    * 
+   * @apiNote This method relies on both inputs and settings in {@link cn.nju.seg.atg.parse.TestBuilder}.
+   * 
    * @return
    */
   public CoverageOutcome[] run(final IFunctionDeclaration function,
-                              final Function<IFunctionDeclaration, List<String>> targetNodesProvider,
-                              final Optional<Function<List<String>, List<String>>> targetNodeSorter,
-                              final BiFunction<IFunctionDeclaration, String, List<CFGPath>> targetPathsProvider,
-                              final Optional<Function<List<CFGPath>, List<CFGPath>>> pathSorter) {
+                               final Function<IFunctionDeclaration, List<String>> targetNodesProvider,
+                               final Optional<Function<List<String>, List<String>>> targetNodeSorter,
+                               final BiFunction<IFunctionDeclaration, String, List<CFGPath>> targetPathsProvider,
+                               final Optional<Function<List<CFGPath>, List<CFGPath>>> pathSorter) {
     Preconditions.checkNotNull(function);
     Preconditions.checkNotNull(targetNodesProvider);
     Preconditions.checkNotNull(targetNodeSorter);
@@ -137,6 +141,9 @@ public final class BranchCoverage extends CoverageCriteria {
 
     // Note: `indexOfRun` starts from 1
     for (int indexOfRun = 1; indexOfRun <= TestBuilder.repetitionNum; indexOfRun++) {
+      // first prepare for the test
+      TestPreparations.prepareTest(function.getElementName(), ATG.callCPP);
+      
       // record a map of target node -> covered paths
       // Note: `HashMultimap` behaves like a `Map<String, HashMap<CFGPath>>`
       final HashMultimap<String, CFGPath> coveredTargetNodesMap = HashMultimap.create();
@@ -165,14 +172,14 @@ public final class BranchCoverage extends CoverageCriteria {
 
           continue;
         }
-        
+
         final Consumer<CFGPath> executedPathHandler = cfgPath -> {
           // when we get an executed path, mark all its nodes as covered
           for (final SimpleCFGNode coveredNode : cfgPath.getPath()) {
             final String coveredNodeName = coveredNode.getName();
             // for an executed path, only add to the `coveredTargetNodesMap` it is not covered before,
             // otherwise we may add too much paths to the `coveredTargetNodesMap`
-            if (targetNodeNamesSet.contains(coveredNodeName) 
+            if (targetNodeNamesSet.contains(coveredNodeName)
                 && (!coveredTargetNodesMap.containsKey(coveredNodeName))) {
               coveredTargetNodesMap.put(coveredNodeName, cfgPath);
             }
@@ -232,16 +239,22 @@ public final class BranchCoverage extends CoverageCriteria {
 
         result.append("Target branch nodes: ");
         joinerOnComma.appendTo(result, targetNodeNames);
-        result.append('\n');
+        result.append("\n\n");
 
         result.append("Covered target branch nodes: ");
         // Joiner.on(',').appendTo(result, coveredTargetNodesMap.keySet());
         // do follow to make the output nodes in order
         final Set<String> coveredNodeNamesSet = coveredTargetNodesMap.keySet();
-        final List<String> coverdNodeNamesList = targetNodeNames.stream().filter(nodeName -> coveredNodeNamesSet.contains(nodeName))
+        final List<String> coverdNodeNamesList = targetNodeNames.stream().filter(coveredNodeNamesSet::contains)
                                                                 .collect(Collectors.toList());
         joinerOnComma.appendTo(result, coverdNodeNamesList);
-        result.append('\n');
+        result.append("\n\n");
+
+        result.append("Uncovered target branch nodes: ");
+        final List<String> uncoverdNodeNamesList = targetNodeNames.stream().filter(nodeName -> !coveredNodeNamesSet.contains(nodeName))
+                                                                  .collect(Collectors.toList());
+        joinerOnComma.appendTo(result, uncoverdNodeNamesList);
+        result.append("\n\n");
 
         result.append("Branch node coverage: ");
         branchCoverages[indexOfRun - 1] = new CoverageOutcome(coverdNodeNamesList.size(), totalBranchNum);

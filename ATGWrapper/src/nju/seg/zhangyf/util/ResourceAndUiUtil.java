@@ -21,10 +21,21 @@ import org.eclipse.ui.PlatformUI;
 import com.google.common.base.Preconditions;
 
 /**
+ * @apiNote Calling `getActiveXXX` methods will return empty if called from a non-UI thread.
+ * 
  * @author Zhang Yifan
  */
 public final class ResourceAndUiUtil {
 
+  public static Optional<IWorkbenchWindow> getFirstWorkbenchWindow() { 
+    final IWorkbenchWindow[] workbenchWindows = PlatformUI.getWorkbench().getWorkbenchWindows();
+    if (workbenchWindows.length > 0) {
+      return Optional.of(workbenchWindows[0]);
+    } else {
+      return Optional.empty();
+    }
+  }
+  
   public static Optional<IWorkbenchWindow> getActiveWorkbenchWindow() {
     return Optional.of(PlatformUI.getWorkbench().getActiveWorkbenchWindow());
   }
@@ -106,7 +117,7 @@ public final class ResourceAndUiUtil {
 
     return ResourceAndUiUtil.eclipseFileToJavaFile(file).toPath();
   }
-
+  
   @Deprecated
   private ResourceAndUiUtil() {}
 }
