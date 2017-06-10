@@ -2,7 +2,7 @@
  * Author: Zhang Yifan
  */
 
-#include "cn_nju_seg_atg_callCPP_CallCPP.h"
+#include "../n_nju_seg_atg_callCPP_CallCPP.h"
 
 #include <math.h>
 #include <malloc.h>

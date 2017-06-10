@@ -575,18 +575,34 @@ public final class CallFunction {
                                    (float) parameters[6], (float) parameters[7], (float) parameters[8], (float) parameters[9], (float) parameters[10], (float) parameters[11],
                                    (float) parameters[12], (float) parameters[13], (float) parameters[14], (float) parameters[15], (float) parameters[16], (float) parameters[17],
                                    (float) parameters[18],
-                                   (int) parameters[18], // ltype : int
-                                   (float) parameters[19], (float) parameters[20], (float) parameters[21], (float) parameters[22], (float) parameters[23], (float) parameters[24],
+                                   (int) parameters[19], // ltype : int
+                                   (float) parameters[20], (float) parameters[21], (float) parameters[22], (float) parameters[23], (float) parameters[24], (float) parameters[25],
                                    pathFile);
       break;
 
     case CallCPP.RAYTRACE_RAYTRACE_TEST_FUNCTION_NAME:
+      ATG.callCPP.callRayTrace((float) parameters[0], (float) parameters[1], (float) parameters[2], (float) parameters[3], (float) parameters[4],
+                               (float) parameters[5], (float) parameters[6], (float) parameters[7], (float) parameters[8], (float) parameters[9],
+                               pathFile);
       break;
 
     case CallCPP.RAYTRACE_SPHEREINTERSECT_TEST_FUNCTION_NAME:
+      ATG.callCPP.callSphereIntersect((float) parameters[0], (float) parameters[1], (float) parameters[2], (float) parameters[3], (float) parameters[4], (float) parameters[5],
+                                      (float) parameters[6], (float) parameters[7], (float) parameters[8], (float) parameters[9], (float) parameters[10], (float) parameters[11],
+                                      (float) parameters[12], (float) parameters[13], (float) parameters[14], (float) parameters[15], (float) parameters[16], (float) parameters[17],
+                                      (float) parameters[18], (float) parameters[19],
+                                      pathFile);
       break;
 
     case CallCPP.RAYTRACE_SPHERESHADE_TEST_FUNCTION_NAME:
+      ATG.callCPP.callSphereShade((float) parameters[0], (float) parameters[1], (float) parameters[2], (float) parameters[3], (float) parameters[4], (float) parameters[5],
+                                  (float) parameters[6], (float) parameters[7], (float) parameters[8], (float) parameters[9], (float) parameters[10], (float) parameters[11],
+                                  (float) parameters[12], (float) parameters[13], (float) parameters[14], (float) parameters[15], (float) parameters[16], (float) parameters[17],
+                                  (float) parameters[18], (float) parameters[19],  
+                                  (int) parameters[20], // ltype : int
+                                  (float) parameters[21], (float) parameters[22], (float) parameters[23], (float) parameters[24], (float) parameters[25], (float) parameters[26],
+                                  (float) parameters[27], (float) parameters[28], (float) parameters[29],
+                                  pathFile);
       break;
 
     // @since 0.1 throw for unknown methods

@@ -1,8 +1,8 @@
 /*
- * Raytrace.cpp
- *
- *  Author: Zhang Yifan
- */
+* Raytrace.cpp
+*
+*  Author: Zhang Yifan
+*/
 
 #include <malloc.h>
 
@@ -17,7 +17,6 @@
 
 // Code for raytrace
 
-// Note: The tool can not support unnamed (anonymous) namespace.
 // use unnamed (anonymous) namespace to avoid conflict
 // @see http://en.cppreference.com/w/cpp/language/namespace#Unnamed_namespaces
 // namespace {
@@ -32,7 +31,7 @@ public:
   float r_, g_, b_; // use tail underscore for class members
 
   Color(float r, float g, float b) :
-      r_(r), g_(g), b_(b) {
+    r_(r), g_(g), b_(b) {
     //    r_ = r;
     //    g_ = g;
     //    b_ = b;
@@ -56,15 +55,15 @@ public:
 
   // constructors
   Vector3D(float x, float y, float z) :
-      x_(x), y_(y), z_(z) {
+    x_(x), y_(y), z_(z) {
   }
 
   Vector3D() :
-      Vector3D(0.0, 0.0, 0.0) {
+    Vector3D(0.0, 0.0, 0.0) {
   }
 
   Vector3D(const Vector3D& v) :
-      Vector3D(v.x_, v.y_, v.z_) {
+    Vector3D(v.x_, v.y_, v.z_) {
   }
 
   // methods
@@ -93,7 +92,7 @@ public:
   }
 
   float length() const {
-    return (float) std::sqrt(x_ * x_ + y_ * y_ + z_ * z_);
+    return (float)std::sqrt(x_ * x_ + y_ * y_ + z_ * z_);
   }
 
   static float length(const Vector3D& a) {
@@ -104,7 +103,7 @@ public:
   void normalize() {
     float t = x_ * x_ + y_ * y_ + z_ * z_;
     if (t != 0 && t != 1) {
-      t = (float) (1.0 / std::sqrt(t));
+      t = (float)(1.0 / std::sqrt(t));
     } else {
       skip(); // `skip()` is added to empty else branches
     }
@@ -134,7 +133,7 @@ public:
 void Vector3D_Normalize(Vector3D& v) {
   float t = v.x_ * v.x_ + v.y_ * v.y_ + v.z_ * v.z_;
   if (t != 0 && t != 1) {
-    t = (float) (1.0 / std::sqrt(t));
+    t = (float)(1.0 / std::sqrt(t));
   } else {
     skip();
   }
@@ -157,7 +156,7 @@ public:
   float ir_, ig_, ib_;
 
   Light(int type, const Vector3D& v, float r, float g, float b) :
-      lightType_(type), ir_(r), ig_(g), ib_(b) {
+    lightType_(type), ir_(r), ig_(g), ib_(b) {
     if (type != AMBIENT) {
       lvec_ = v;
       if (type == DIRECTIONAL) {
@@ -218,7 +217,7 @@ public:
   float kt_, kr_, nt_;
 
   Surface(float rval, float gval, float bval, float a, float d, float s, float n, float r, float t, float index) :
-      ir_(rval), ig_(gval), ib_(bval), ka_(a), kd_(d), ks_(s), ns_(n), kr_(r * I255), kt_(t), nt_(index) {
+    ir_(rval), ig_(gval), ib_(bval), ka_(a), kd_(d), ks_(s), ns_(n), kr_(r * I255), kt_(t), nt_(index) {
   }
 
   Surface() {
@@ -235,7 +234,7 @@ public:
   float radSqr_;
 
   Sphere(const Surface& s, const Vector3D& c, float r) :
-      surface_(s), center_(c), radius_(r), radSqr_(r * r) {
+    surface_(s), center_(c), radius_(r), radSqr_(r * r) {
   }
 
   Sphere() {
@@ -274,7 +273,7 @@ public:
   Renderable object_;
 
   Ray(const Vector3D& eye, const Vector3D& dir) :
-      origin_(eye), direction_(dir) {
+    origin_(eye), direction_(dir) {
     direction_.normalize(); // direction = Vector3D.normalize(dir);
   }
 
@@ -406,7 +405,7 @@ Color Surface::Shade(const Vector3D& p, const Vector3D& n, const Vector3D& v, co
 
 // same as `Surface::Shade`
 static Color Surface_Shade(Surface& self,
-    const Vector3D& p, const Vector3D& n, const Vector3D& v, const std::vector<Light>& lights, const std::vector<Sphere>& objects, const Color& bgnd) {
+                           const Vector3D& p, const Vector3D& n, const Vector3D& v, const std::vector<Light>& lights, const std::vector<Sphere>& objects, const Color& bgnd) {
   float r = 0.0f;
   float g = 0.0f;
   float b = 0.0f;
@@ -540,7 +539,7 @@ bool Sphere::intersect(Ray& ray) const {
 
   // Test if the intersection is in the positive
   // ray direction and it is the closest so far
-  t = v - (float) std::sqrt(t);
+  t = v - (float)std::sqrt(t);
   if ((t > ray.t_) || (t < 0)) {
     return false;
   } else {
@@ -577,7 +576,7 @@ static bool Sphere_intersect(const Sphere& self, Ray& ray) {
 
   // Test if the intersection is in the positive
   // ray direction and it is the closest so far
-  t = v - (float) std::sqrt(t);
+  t = v - (float)std::sqrt(t);
   if ((t > ray.t_) || (t < 0)) {
     return false;
   } else {
@@ -670,7 +669,7 @@ static bool Ray_trace(Ray& self, const std::vector<Renderable>& objects) {
   self.t_ = Ray::kMaxT;
   for (const auto& obj : objects) {
     self.object_ = obj;
-    Sphere_intersect(self.object_, self);  // self.object_.intersect(self);
+    self.object_.intersect(self);
   }
   return true;
 
@@ -694,74 +693,4 @@ static void vector3DNormalize(float x, float y, float z) {
   // Vector3D(x, y, z).normalize();
   Vector3D v(x, y, z);
   Vector3D_Normalize(v);
-}
-
-static void surfaceShade(float rval, float gval, float bval, float a, float d, float s, float n, float r, float t,
-    float index, float pX, float pY, float pZ, float nX, float nY, float nZ, float vX, float vY, float vZ,
-    int lType, float lX, float lY, float lZ, float lR, float lG, float lB) {
-  Surface surface(rval, gval, bval, a, d, s, n, r, t, index);
-  Vector3D pVec(pX, pY, pZ);
-  Vector3D nVec(nX, nY, nZ);
-  Vector3D vVec(vX, vY, vZ);
-
-  std::vector<Light> lights;
-  // Light l(lType, Vector3D(lX, lY, lZ), lR, lG, lB);
-  // lights.push_back(l);
-  lights.emplace_back(lType, Vector3D(lX, lY, lZ), lR, lG, lB);
-
-  // surface.Shade(pVec, nVec, vVec, lights, std::vector<Renderable>(), Color(1, 1, 1));
-  Surface_Shade(surface, pVec, nVec, vVec, lights, std::vector<Renderable>(), Color(1, 1, 1));
-}
-
-static void rayTrace(float cX, float cY, float cZ, float r, float eyeX, float eyeY, float eyeZ, float dirX, float dirY, float dirZ) {
-
-  std::vector<Renderable> objects;
-  // Sphere.intersect() does not use the {@code surface} field.
-  // Sphere sphere(nullptr, Vector3D(cX, cY, cZ), r);
-  // objects.add(sphere);
-  objects.emplace_back(Surface(), Vector3D(cX, cY, cZ), r);
-
-  Vector3D eye(eyeX, eyeY, eyeZ);
-  Vector3D dir(dirX, dirY, dirZ);
-  // Ray(eye, dir).trace(objects);
-  Ray_trace(Ray(eye, dir), objects);
-}
-
-static void sphereIntersect(float rval, float gval, float bval, float a, float d, float s, float n, float r, float t,
-    float index, float x, float y, float z, float rad, float eyeX, float eyeY, float eyeZ, float dirX, float dirY, float dirZ) {
-  Vector3D eye(eyeX, eyeY, eyeZ);
-  Vector3D dir(dirX, dirY, dirZ);
-  Ray ray(eye, dir);
-
-  Surface surface(rval, gval, bval, a, d, s, n, r, t, index);
-  Vector3D center(x, y, z);
-  Sphere sphere(surface, center, rad);
-
-  Sphere_intersect(sphere, ray); // sphere.intersect(ray);
-}
-
-static void sphereShade(float rval, float gval, float bval, float a, float d, float s, float n, float r, float t,
-    float index, float x, float y, float z, float rad, float eyeX, float eyeY, float eyeZ,
-    float dirX, float dirY, float dirZ, int lType, float lX, float lY, float lZ, float lR, float lG, float lB, float bgR, float bgG, float bgB) {
-  Vector3D eye(eyeX, eyeY, eyeZ);
-  Vector3D dir(dirX, dirY, dirZ);
-  Ray ray(eye, dir);
-
-  Surface surface(rval, gval, bval, a, d, s, n, r, t, index);
-  Vector3D center(x, y, z);
-  std::vector<Renderable> objects;
-
-  // FIXME In Java, `sphere` and the one in `objects` points to a same instance, while in this C++ version they are two instance with same init value.
-  // Checks whether this makes a difference.
-  Sphere sphere(surface, center, rad);
-  objects.push_back(sphere);
-
-  std::vector<Light> lights;
-  // Light light(lType, Vector3D(lX, lY, lZ), lR, lG, lB);
-  // lights.add(light);
-  lights.emplace_back(lType, Vector3D(lX, lY, lZ), lR, lG, lB);
-
-  Color bgnd(bgR, bgG, bgB);
-  // sphere.Shade(ray, lights, objects, bgnd);
-  Sphere_Shade(sphere, ray, lights, objects, bgnd);
 }

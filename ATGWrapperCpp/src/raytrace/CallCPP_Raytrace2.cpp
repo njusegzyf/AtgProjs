@@ -1,5 +1,5 @@
 /*
- * CallCPP_Raytrace.cpp
+ * CallCPP_Raytrace.cpp for surfaceShade
  *
  * @author Zhang Yifan
  */

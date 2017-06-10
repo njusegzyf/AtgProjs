@@ -1,10 +1,10 @@
 /*
  * CallCPP.cpp
  *
- *  Created on: 20161103
- *      Author: jackzhang
+ *      Author: jackzhang, Zhang Yifan
  */
-#include "cn_nju_seg_atg_callCPP_CallCPP.h"
+#include "../cn_nju_seg_atg_callCPP_CallCPP.h"
+
 #include <math.h>
 #include <cmath>
 #include <limits>

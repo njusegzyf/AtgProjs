@@ -1,10 +1,8 @@
 /*
- * CallCPP_Raytrace.cpp for vector3DNormalize
+ * Raytrace.cpp
  *
- * @author Zhang Yifan
+ *  Author: Zhang Yifan
  */
-
-#include "../cn_nju_seg_atg_callCPP_CallCPP.h"
 
 #include <malloc.h>
 
@@ -17,59 +15,11 @@
 #include <cmath>
 #include <cfloat>
 
-#include <jni.h>
-
-using std::cout;
-
-static std::ofstream* bFilePtr = nullptr;
-static constexpr size_t kUnknowId = 0;
-
-/**
- * @author Zhang Yifan
- */
-static inline int instExpression(std::ofstream& bFile, const char* functionName, size_t nodeId, size_t expressionId, int expr) {
-  bFile << "node" << nodeId << '@' << functionName << ' ' // output node name
-      << expr << ' ' // output expr result
-      << "expression@" << expressionId << '\n'; // output expression name
-  return expr;
-}
-
-/**
- * @author Zhang Yifan
- */
-static inline void instNode(std::ofstream& bFile, const char* functionName, size_t nodeId) {
-  bFile << "node" << nodeId << '@' << functionName << '\n'; // output node name
-}
-
-/**
- * @author Zhang Yifan
- */
-static inline void instFunctionCall(std::ofstream& bFile, const char* functionName) {
-  // bFile << "call@" << functionName << '\n'; // output function call node name
-}
-
-char* jstringTostring(JNIEnv* env, jstring jstr) {
-  char* rtn = NULL;
-  jclass clsstring = env->FindClass("java/lang/String");
-  jstring strencode = env->NewStringUTF("utf-8");
-  jmethodID mid = env->GetMethodID(clsstring, "getBytes", "(Ljava/lang/String;)[B");
-  jbyteArray barr = (jbyteArray) env->CallObjectMethod(jstr, mid, strencode);
-  jsize alen = env->GetArrayLength(barr);
-  jbyte* ba = env->GetByteArrayElements(barr, JNI_FALSE);
-  if (alen > 0) {
-    rtn = (char*) malloc(alen + 1);
-    memcpy(rtn, ba, alen);
-    rtn[alen] = 0;
-  }
-  env->ReleaseByteArrayElements(barr, ba, 0);
-  return rtn;
-}
-
 // Code for raytrace
 
 // use unnamed (anonymous) namespace to avoid conflict
 // @see http://en.cppreference.com/w/cpp/language/namespace#Unnamed_namespaces
-namespace {
+// namespace {
 
 //void skip() {}
 #define skip()
@@ -181,23 +131,15 @@ public:
 // The following regular functions is converted from member or static function as the tool do not support class.
 // same as `Vector3D::Normalize`
 void Vector3D_Normalize(Vector3D& v) {
-  std::ofstream& bFile = *bFilePtr;
-  bFile << "node1@Vector3D_Normalize\n";
-
   float t = v.x_ * v.x_ + v.y_ * v.y_ + v.z_ * v.z_;
-  if (instExpression(bFile, "Vector3D_Normalize", 2, 3, t) != 0
-      && instExpression(bFile, "Vector3D_Normalize", 2, 4, t - 1) != 0) {
-    bFile << "node3@Vector3D_Normalize\n";
+  if (t != 0 && t != 1) {
     t = (float) (1.0 / std::sqrt(t));
   } else {
-    bFile << "node4@Vector3D_Normalize\n";
     skip();
   }
-  bFile << "node5@Vector3D_Normalize\n";
   v.x_ *= t;
   v.y_ *= t;
   v.z_ *= t;
-  bFile << "exit@Vector3D_Normalize\n";
 }
 
 // All the  variables here are ugly, but I wanted Lights and Surfaces to be "friends"
@@ -214,13 +156,7 @@ public:
   float ir_, ig_, ib_;
 
   Light(int type, const Vector3D& v, float r, float g, float b) :
-      ir_(r), ig_(g), ib_(b) {
-
-    // limit `lightType_` to `0, 1, 2`
-    if (type < 0)
-      type = -type;
-    lightType_ = type / 3;
-
+      lightType_(type), ir_(r), ig_(g), ib_(b) {
     if (type != AMBIENT) {
       lvec_ = v;
       if (type == DIRECTIONAL) {
@@ -725,16 +661,24 @@ bool Ray::trace(const std::vector<Renderable>& objects) {
 
 // same as "Ray::trace"
 static bool Ray_trace(Ray& self, const std::vector<Renderable>& objects) {
-  bool tempRes = objects.empty();
-  if (tempRes == true) {
-    return false;
-  }
+
+  // Since for `raytrace` test, the following code is always false, so we ignore it
+  //  bool tempRes = objects.empty();
+  //  if (tempRes == true) {
+  //    return false;
+  //  }
 
   self.t_ = Ray::kMaxT;
-  for (const auto& obj : objects) {
-    self.object_ = obj;
-    self.object_.intersect(self);
-  }
+
+  // Since for `raytrace` test, the `objects` will only contains one object, we expand the foreach loop here
+  const auto& obj = objects[0];
+  self.object_ = obj;
+  Sphere_intersect(self.object_, self);  // self.object_.intersect(self);
+  //  for (const auto& obj : objects) {
+  //    self.object_ = obj;
+  //    self.object_.intersect(self);
+  //  }
+
   return true;
 
   //Enumeration objList = objects.elements();
@@ -748,55 +692,21 @@ static bool Ray_trace(Ray& self, const std::vector<Renderable>& objects) {
 }
 
 #pragma endregion
-}
+
+// }
 
 // Code for raytrace test methods
 
-/*
- * Class:     cn_nju_seg_atg_callCPP_CallCPP
- * Method:    callVector3DNormalize
- * Signature: (FFFLjava/lang/String;)V
- */
-JNIEXPORT void JNICALL Java_cn_nju_seg_atg_callCPP_CallCPP_callVector3DNormalize
-(JNIEnv * env, jobject, jfloat x, jfloat y, jfloat z, jstring pathFile) {
+static void rayTrace(float cX, float cY, float cZ, float r, float eyeX, float eyeY, float eyeZ, float dirX, float dirY, float dirZ) {
 
-  char* path = jstringTostring(env, pathFile);
-  std::ofstream bFile(path);
-  bFilePtr = &bFile;
+  std::vector<Renderable> objects;
+  // Sphere.intersect() does not use the {@code surface} field.
+  // Sphere sphere(nullptr, Vector3D(cX, cY, cZ), r);
+  // objects.add(sphere);
+  objects.emplace_back(Surface(), Vector3D(cX, cY, cZ), r);
 
-  bFile << "node1@vector3DNormalize\n";
-
-  // Vector3D(x, y, z).normalize();
-  Vector3D v(x, y, z);
-  Vector3D_Normalize(v);
-
-  bFile << "exit@vector3DNormalize\n";
+  Vector3D eye(eyeX, eyeY, eyeZ);
+  Vector3D dir(dirX, dirY, dirZ);
+  // Ray(eye, dir).trace(objects);
+  Ray_trace(Ray(eye, dir), objects);
 }
-
-///*
-// * Class:     cn_nju_seg_atg_callCPP_CallCPP
-// * Method:    callTcasRun
-// * Signature: (IIIIIIIIIIIILjava/lang/String;)V
-// */
-//JNIEXPORT void JNICALL Java_cn_nju_seg_atg_callCPP_CallCPP_callTcasRun(JNIEnv *env, jobject,
-//    jint cur_vertical_sep, jint high_confidence, jint two_of_three_reports_valid, jint own_tracked_alt,
-//    jint own_tracked_alt_rate, jint other_tracked_alt, jint alt_layer_value, jint up_separation,
-//    jint down_separation, jint other_rac, jint other_capability, jint climb_inhibit,
-//    jstring pathFile) {
-//
-
-//
-//  instFunctionCall(bFile, "tcasRun");
-//  Tcas::start_symbolic(cur_vertical_sep,high_confidence,two_of_three_reports_valid,
-//      own_tracked_alt,own_tracked_alt_rate,other_tracked_alt,alt_layer_value,
-//      up_separation,down_separation,other_rac,other_capability,climb_inhibit,
-//      bFile);
-//
-//  bFile<<"exit@tcasRun\n";
-//
-//  delete []path;
-//  // bFile.close();
-//  bFilePtr = 0;
-//
-//  return;
-//}

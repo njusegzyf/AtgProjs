@@ -1,6 +1,8 @@
 package cn.nju.seg.atg.callCPP;
 
 /**
+ * @since 0.1
+ * 
  * @author Zhang Yifan
  */
 public class CallCPPLibLoader {
@@ -13,7 +15,9 @@ public class CallCPPLibLoader {
       "DartAndEtc",
       "BlindHashOpti",
       "Tcas",
-      "Raytrace1"
+      "Raytrace1",
+      // "Raytrace2"
+      "Raytrace3"
   };
 
   public static void loadLibs() {

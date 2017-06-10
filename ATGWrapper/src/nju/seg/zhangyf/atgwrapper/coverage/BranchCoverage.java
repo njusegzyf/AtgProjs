@@ -172,27 +172,36 @@ public final class BranchCoverage extends CoverageCriteria {
           continue;
         }
 
-        final Consumer<CFGPath> executedPathHandler = cfgPath -> {
-          // when we get an executed path, mark all its nodes as covered
-          for (final SimpleCFGNode coveredNode : cfgPath.getPath()) {
-            final String coveredNodeName = coveredNode.getName();
-            // for an executed path, only add to the `coveredTargetNodesMap` it is not covered before,
-            // otherwise we may add too much paths to the `coveredTargetNodesMap`
-            if (targetNodeNamesSet.contains(coveredNodeName)
-                && (!coveredTargetNodesMap.containsKey(coveredNodeName))) {
-              // since the optimal params array is shared, we must make a copy for later use
-              final double[] sharedOptimalParams = cfgPath.getOptimalParams();
-              cfgPath.setOptimalParams(Arrays.copyOf(sharedOptimalParams, sharedOptimalParams.length));
-              coveredTargetNodesMap.put(coveredNodeName, cfgPath);
+        final Consumer<CFGPath> executedPathHandler;
+        if (IS_CHECK_EXECUTED_PATH) {
+          // if we need to check every executed path
+          executedPathHandler = cfgPath -> {
+            // when we get an executed path, mark all its nodes as covered
+            for (final SimpleCFGNode coveredNode : cfgPath.getPath()) {
+              final String coveredNodeName = coveredNode.getName();
+              // for an executed path, only add to the `coveredTargetNodesMap` it is not covered before,
+              // otherwise we may add too much paths to the `coveredTargetNodesMap`
+              if (targetNodeNamesSet.contains(coveredNodeName)
+                  && (!coveredTargetNodesMap.containsKey(coveredNodeName))) {
+                // since the optimal params array is shared, we must make a copy for later use
+                final double[] sharedOptimalParams = cfgPath.getOptimalParams();
+                cfgPath.setOptimalParams(Arrays.copyOf(sharedOptimalParams, sharedOptimalParams.length));
+                coveredTargetNodesMap.put(coveredNodeName, cfgPath);
+              }
             }
-          }
-        };
+          };
+        } else {
+          executedPathHandler = cfgPath -> {};
+        }
 
         final Consumer<CFGPath> newCoveredPathHandler = cfgPath -> {
           // when a new path is covered, always mark all its nodes as covered
           for (final SimpleCFGNode coveredNode : cfgPath.getPath()) {
             final String coveredNodeName = coveredNode.getName();
             if (targetNodeNamesSet.contains(coveredNodeName)) {
+              // since the optimal params array is shared, we must make a copy for later use
+              final double[] sharedOptimalParams = cfgPath.getOptimalParams();
+              cfgPath.setOptimalParams(Arrays.copyOf(sharedOptimalParams, sharedOptimalParams.length));
               coveredTargetNodesMap.put(coveredNodeName, cfgPath);
             }
           }
@@ -283,6 +292,7 @@ public final class BranchCoverage extends CoverageCriteria {
             result.append("\nNodes in the path: ");
             joinerOnComma.appendTo(result, cfgPath.getPathNodeNames().collect(Collectors.toList()));
             result.append("\n\n");
+            ++pathIndex;
           }
         }
 
@@ -373,4 +383,6 @@ public final class BranchCoverage extends CoverageCriteria {
   }
 
   public static final String BRANCH_COVERAGE_ACTION_NAME = "atg-bc";
+
+  public static final boolean IS_CHECK_EXECUTED_PATH = true;
 }

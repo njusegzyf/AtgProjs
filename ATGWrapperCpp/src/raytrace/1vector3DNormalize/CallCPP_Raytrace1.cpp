@@ -1,8 +1,10 @@
 /*
- * Raytrace.cpp
+ * CallCPP_Raytrace.cpp for vector3DNormalize
  *
- *  Author: Zhang Yifan
+ * @author Zhang Yifan
  */
+
+#include "../../cn_nju_seg_atg_callCPP_CallCPP.h"
 
 #include <malloc.h>
 
@@ -15,12 +17,59 @@
 #include <cmath>
 #include <cfloat>
 
+#include <jni.h>
+
+using std::cout;
+
+static std::ofstream* bFilePtr = nullptr;
+static constexpr size_t kUnknowId = 0;
+
+/**
+ * @author Zhang Yifan
+ */
+static inline int instExpression(std::ofstream& bFile, const char* functionName, size_t nodeId, size_t expressionId, int expr) {
+  bFile << "node" << nodeId << '@' << functionName << ' ' // output node name
+      << expr << ' ' // output expr result
+      << "expression@" << expressionId << '\n'; // output expression name
+  return expr;
+}
+
+/**
+ * @author Zhang Yifan
+ */
+static inline void instNode(std::ofstream& bFile, const char* functionName, size_t nodeId) {
+  bFile << "node" << nodeId << '@' << functionName << '\n'; // output node name
+}
+
+/**
+ * @author Zhang Yifan
+ */
+static inline void instFunctionCall(std::ofstream& bFile, const char* functionName) {
+  // bFile << "call@" << functionName << '\n'; // output function call node name
+}
+
+static char* jstringTostring(JNIEnv* env, jstring jstr) {
+  char* rtn = NULL;
+  jclass clsstring = env->FindClass("java/lang/String");
+  jstring strencode = env->NewStringUTF("utf-8");
+  jmethodID mid = env->GetMethodID(clsstring, "getBytes", "(Ljava/lang/String;)[B");
+  jbyteArray barr = (jbyteArray) env->CallObjectMethod(jstr, mid, strencode);
+  jsize alen = env->GetArrayLength(barr);
+  jbyte* ba = env->GetByteArrayElements(barr, JNI_FALSE);
+  if (alen > 0) {
+    rtn = (char*) malloc(alen + 1);
+    memcpy(rtn, ba, alen);
+    rtn[alen] = 0;
+  }
+  env->ReleaseByteArrayElements(barr, ba, 0);
+  return rtn;
+}
+
 // Code for raytrace
 
-// Note: The tool can not support unnamed (anonymous) namespace.
 // use unnamed (anonymous) namespace to avoid conflict
 // @see http://en.cppreference.com/w/cpp/language/namespace#Unnamed_namespaces
-// namespace {
+namespace {
 
 //void skip() {}
 #define skip()
@@ -143,6 +192,28 @@ void Vector3D_Normalize(Vector3D& v) {
   v.z_ *= t;
 }
 
+static void Vector3D_Normalize_Inst1(Vector3D& v) {
+  std::ofstream& bFile = *bFilePtr;
+  bFile << "entry@Vector3D_Normalize\n";
+
+  bFile << "node1@Vector3D_Normalize\n";
+  float t = v.x_ * v.x_ + v.y_ * v.y_ + v.z_ * v.z_;
+
+  if (instExpression(bFile, "Vector3D_Normalize", 2, 3, t) != 0
+      && instExpression(bFile, "Vector3D_Normalize", 2, 4, t - 1) != 0) {
+    bFile << "node3@Vector3D_Normalize\n";
+    t = (float) (1.0 / std::sqrt(t));
+  } else {
+    bFile << "node4@Vector3D_Normalize\n";
+    skip();
+  }
+  bFile << "node5@Vector3D_Normalize\n";
+  v.x_ *= t;
+  v.y_ *= t;
+  v.z_ *= t;
+  bFile << "exit@Vector3D_Normalize\n";
+}
+
 // All the  variables here are ugly, but I wanted Lights and Surfaces to be "friends"
 class Light {
 public:
@@ -157,7 +228,13 @@ public:
   float ir_, ig_, ib_;
 
   Light(int type, const Vector3D& v, float r, float g, float b) :
-      lightType_(type), ir_(r), ig_(g), ib_(b) {
+      ir_(r), ig_(g), ib_(b) {
+
+    // limit `lightType_` to `0, 1, 2`
+    if (type < 0)
+      type = -type;
+    lightType_ = type / 3;
+
     if (type != AMBIENT) {
       lvec_ = v;
       if (type == DIRECTIONAL) {
@@ -662,6 +739,9 @@ bool Ray::trace(const std::vector<Renderable>& objects) {
 
 // same as "Ray::trace"
 static bool Ray_trace(Ray& self, const std::vector<Renderable>& objects) {
+  std::ofstream& bFile = *bFilePtr;
+  bFile << "node1@Vector3D_Normalize\n";
+
   bool tempRes = objects.empty();
   if (tempRes == true) {
     return false;
@@ -670,7 +750,7 @@ static bool Ray_trace(Ray& self, const std::vector<Renderable>& objects) {
   self.t_ = Ray::kMaxT;
   for (const auto& obj : objects) {
     self.object_ = obj;
-    Sphere_intersect(self.object_, self);  // self.object_.intersect(self);
+    self.object_.intersect(self);
   }
   return true;
 
@@ -685,83 +765,35 @@ static bool Ray_trace(Ray& self, const std::vector<Renderable>& objects) {
 }
 
 #pragma endregion
-
-// }
+}
 
 // Code for raytrace test methods
 
-static void vector3DNormalize(float x, float y, float z) {
+// Original test method:
+//
+//void vector3DNormalize(float x, float y, float z) {
+//  // Vector3D(x, y, z).normalize();
+//  Vector3D v(x, y, z);
+//  Vector3D_Normalize(v);
+//}
+
+/*
+ * Class:     cn_nju_seg_atg_callCPP_CallCPP
+ * Method:    callVector3DNormalize
+ * Signature: (FFFLjava/lang/String;)V
+ */
+JNIEXPORT void JNICALL Java_cn_nju_seg_atg_callCPP_CallCPP_callVector3DNormalize
+(JNIEnv * env, jobject, jfloat x, jfloat y, jfloat z, jstring pathFile) {
+
+  char* path = jstringTostring(env, pathFile);
+  std::ofstream bFile(path);
+  bFilePtr = &bFile;
+
+  bFile << "node1@vector3DNormalize\n";
+
   // Vector3D(x, y, z).normalize();
   Vector3D v(x, y, z);
-  Vector3D_Normalize(v);
-}
+  Vector3D_Normalize_Inst1(v);
 
-static void surfaceShade(float rval, float gval, float bval, float a, float d, float s, float n, float r, float t,
-    float index, float pX, float pY, float pZ, float nX, float nY, float nZ, float vX, float vY, float vZ,
-    int lType, float lX, float lY, float lZ, float lR, float lG, float lB) {
-  Surface surface(rval, gval, bval, a, d, s, n, r, t, index);
-  Vector3D pVec(pX, pY, pZ);
-  Vector3D nVec(nX, nY, nZ);
-  Vector3D vVec(vX, vY, vZ);
-
-  std::vector<Light> lights;
-  // Light l(lType, Vector3D(lX, lY, lZ), lR, lG, lB);
-  // lights.push_back(l);
-  lights.emplace_back(lType, Vector3D(lX, lY, lZ), lR, lG, lB);
-
-  // surface.Shade(pVec, nVec, vVec, lights, std::vector<Renderable>(), Color(1, 1, 1));
-  Surface_Shade(surface, pVec, nVec, vVec, lights, std::vector<Renderable>(), Color(1, 1, 1));
-}
-
-static void rayTrace(float cX, float cY, float cZ, float r, float eyeX, float eyeY, float eyeZ, float dirX, float dirY, float dirZ) {
-
-  std::vector<Renderable> objects;
-  // Sphere.intersect() does not use the {@code surface} field.
-  // Sphere sphere(nullptr, Vector3D(cX, cY, cZ), r);
-  // objects.add(sphere);
-  objects.emplace_back(Surface(), Vector3D(cX, cY, cZ), r);
-
-  Vector3D eye(eyeX, eyeY, eyeZ);
-  Vector3D dir(dirX, dirY, dirZ);
-  // Ray(eye, dir).trace(objects);
-  Ray_trace(Ray(eye, dir), objects);
-}
-
-static void sphereIntersect(float rval, float gval, float bval, float a, float d, float s, float n, float r, float t,
-    float index, float x, float y, float z, float rad, float eyeX, float eyeY, float eyeZ, float dirX, float dirY, float dirZ) {
-  Vector3D eye(eyeX, eyeY, eyeZ);
-  Vector3D dir(dirX, dirY, dirZ);
-  Ray ray(eye, dir);
-
-  Surface surface(rval, gval, bval, a, d, s, n, r, t, index);
-  Vector3D center(x, y, z);
-  Sphere sphere(surface, center, rad);
-
-  Sphere_intersect(sphere, ray); // sphere.intersect(ray);
-}
-
-static void sphereShade(float rval, float gval, float bval, float a, float d, float s, float n, float r, float t,
-    float index, float x, float y, float z, float rad, float eyeX, float eyeY, float eyeZ,
-    float dirX, float dirY, float dirZ, int lType, float lX, float lY, float lZ, float lR, float lG, float lB, float bgR, float bgG, float bgB) {
-  Vector3D eye(eyeX, eyeY, eyeZ);
-  Vector3D dir(dirX, dirY, dirZ);
-  Ray ray(eye, dir);
-
-  Surface surface(rval, gval, bval, a, d, s, n, r, t, index);
-  Vector3D center(x, y, z);
-  std::vector<Renderable> objects;
-
-  // FIXME In Java, `sphere` and the one in `objects` points to a same instance, while in this C++ version they are two instance with same init value.
-  // Checks whether this makes a difference.
-  Sphere sphere(surface, center, rad);
-  objects.push_back(sphere);
-
-  std::vector<Light> lights;
-  // Light light(lType, Vector3D(lX, lY, lZ), lR, lG, lB);
-  // lights.add(light);
-  lights.emplace_back(lType, Vector3D(lX, lY, lZ), lR, lG, lB);
-
-  Color bgnd(bgR, bgG, bgB);
-  // sphere.Shade(ray, lights, objects, bgnd);
-  Sphere_Shade(sphere, ray, lights, objects, bgnd);
+  bFile << "exit@vector3DNormalize\n";
 }

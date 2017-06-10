@@ -1,8 +1,10 @@
 /*
- * Raytrace.cpp
+ * CallCPP_Raytrace.cpp for rayTrace
  *
- *  Author: Zhang Yifan
+ * @author Zhang Yifan
  */
+
+#include "../../cn_nju_seg_atg_callCPP_CallCPP.h"
 
 #include <malloc.h>
 
@@ -15,12 +17,59 @@
 #include <cmath>
 #include <cfloat>
 
+#include <jni.h>
+
+using std::cout;
+
+static std::ofstream* bFilePtr = nullptr;
+static constexpr size_t kUnknowId = 0;
+
+/**
+ * @author Zhang Yifan
+ */
+static inline int instExpression(std::ofstream& bFile, const char* functionName, size_t nodeId, size_t expressionId, int expr) {
+  bFile << "node" << nodeId << '@' << functionName << ' ' // output node name
+      << expr << ' ' // output expr result
+      << "expression@" << expressionId << '\n'; // output expression name
+  return expr;
+}
+
+/**
+ * @author Zhang Yifan
+ */
+static inline void instNode(std::ofstream& bFile, const char* functionName, size_t nodeId) {
+  bFile << "node" << nodeId << '@' << functionName << '\n'; // output node name
+}
+
+/**
+ * @author Zhang Yifan
+ */
+static inline void instFunctionCall(std::ofstream& bFile, const char* functionName) {
+  // bFile << "call@" << functionName << '\n'; // output function call node name
+}
+
+static char* jstringTostring(JNIEnv* env, jstring jstr) {
+  char* rtn = NULL;
+  jclass clsstring = env->FindClass("java/lang/String");
+  jstring strencode = env->NewStringUTF("utf-8");
+  jmethodID mid = env->GetMethodID(clsstring, "getBytes", "(Ljava/lang/String;)[B");
+  jbyteArray barr = (jbyteArray) env->CallObjectMethod(jstr, mid, strencode);
+  jsize alen = env->GetArrayLength(barr);
+  jbyte* ba = env->GetByteArrayElements(barr, JNI_FALSE);
+  if (alen > 0) {
+    rtn = (char*) malloc(alen + 1);
+    memcpy(rtn, ba, alen);
+    rtn[alen] = 0;
+  }
+  env->ReleaseByteArrayElements(barr, ba, 0);
+  return rtn;
+}
+
 // Code for raytrace
 
-// Note: The tool can not support unnamed (anonymous) namespace.
 // use unnamed (anonymous) namespace to avoid conflict
 // @see http://en.cppreference.com/w/cpp/language/namespace#Unnamed_namespaces
-// namespace {
+namespace {
 
 //void skip() {}
 #define skip()
@@ -157,7 +206,13 @@ public:
   float ir_, ig_, ib_;
 
   Light(int type, const Vector3D& v, float r, float g, float b) :
-      lightType_(type), ir_(r), ig_(g), ib_(b) {
+      ir_(r), ig_(g), ib_(b) {
+
+    // limit `lightType_` to `0, 1, 2`
+    if (type < 0)
+      type = -type;
+    lightType_ = type / 3;
+
     if (type != AMBIENT) {
       lvec_ = v;
       if (type == DIRECTIONAL) {
@@ -553,7 +608,11 @@ bool Sphere::intersect(Ray& ray) const {
 }
 
 // same as `Sphere::intersect`
-static bool Sphere_intersect(const Sphere& self, Ray& ray) {
+static bool Sphere_intersect_Inst3(const Sphere& self, Ray& ray) {
+  std::ofstream& bFile = *bFilePtr;
+  bFile << "entry@Sphere_intersect\n";
+
+  bFile << "node1@Sphere_intersect\n";
   float dx = self.center_.x_ - ray.origin_.x_;
   float dy = self.center_.y_ - ray.origin_.y_;
   float dz = self.center_.z_ - ray.origin_.z_;
@@ -561,31 +620,42 @@ static bool Sphere_intersect(const Sphere& self, Ray& ray) {
 
   // Do the following quick check to see if there is even a chance
   // that an intersection here might be closer than a previous one
-  if (v - self.radius_ > ray.t_) {
+  if (instExpression(bFile, "Sphere_intersect", 2, 9, v - self.radius_ - ray.t_) > 0) {
+    bFile << "node3@Sphere_intersect\n";
     return false;
   } else {
+    bFile << "node4@Sphere_intersect\n";
     skip();
   }
 
+  bFile << "node5@Sphere_intersect\n";
   // Test if the ray actually intersects the sphere
   float t = self.radSqr_ + v * v - dx * dx - dy * dy - dz * dz;
-  if (t < 0) {
+  if (instExpression(bFile, "Sphere_intersect", 6, 13, t) < 0) {
+    bFile << "node7@Sphere_intersect\n";
     return false;
   } else {
+    bFile << "node8@Sphere_intersect\n";
     skip();
   }
 
+  bFile << "node9@Sphere_intersect\n";
   // Test if the intersection is in the positive
   // ray direction and it is the closest so far
   t = v - (float) std::sqrt(t);
-  if ((t > ray.t_) || (t < 0)) {
+  if (instExpression(bFile, "Sphere_intersect", 10, 18, t - ray.t_) > 0
+      || instExpression(bFile, "Sphere_intersect", 10, 19, t) < 0) {
+    bFile << "node11@Sphere_intersect\n";
     return false;
   } else {
+    bFile << "node12@Sphere_intersect\n";
     skip();
   }
 
+  bFile << "node13@Sphere_intersect\n";
   ray.t_ = t;
   ray.object_ = self;
+  bFile << "node14@Sphere_intersect\n";
   return true;
 }
 
@@ -661,59 +731,67 @@ bool Ray::trace(const std::vector<Renderable>& objects) {
 }
 
 // same as "Ray::trace"
-static bool Ray_trace(Ray& self, const std::vector<Renderable>& objects) {
-  bool tempRes = objects.empty();
-  if (tempRes == true) {
-    return false;
-  }
+static bool Ray_trace_Inst3(Ray& self, const std::vector<Renderable>& objects) {
+  std::ofstream& bFile = *bFilePtr;
+  bFile << "entry@Ray_trace\n";
+
+  bFile << "node1@Ray_trace\n";
+  // Since for `raytrace` test, the following code is always false, so we ignore it
+  //  bool tempRes = objects.empty();
+  //  if (tempRes == true) {
+  //    return false;
+  //  }
 
   self.t_ = Ray::kMaxT;
-  for (const auto& obj : objects) {
-    self.object_ = obj;
-    Sphere_intersect(self.object_, self);  // self.object_.intersect(self);
-  }
-  return true;
 
-  //Enumeration objList = objects.elements();
-  //t = MAX_T;
-  //object = null;
-  //while (objList.hasMoreElements()) {
-  //  Renderable object = (Renderable)objList.nextElement();
-  //  object.intersect(this);
-  //}
-  //return (object != null);
+  // Since for `raytrace` test, the `objects` will only contains one object, we expand the foreach loop here
+  const auto& obj = objects[0];
+  self.object_ = obj;
+  Sphere_intersect_Inst3(self.object_, self);  // self.object_.intersect(self);
+  //  for (const auto& obj : objects) {
+  //    self.object_ = obj;
+  //    self.object_.intersect(self);
+  //  }
+
+  bFile << "node2@Ray_trace\n";
+  return true;
 }
 
 #pragma endregion
-
-// }
+}
 
 // Code for raytrace test methods
 
-static void vector3DNormalize(float x, float y, float z) {
-  // Vector3D(x, y, z).normalize();
-  Vector3D v(x, y, z);
-  Vector3D_Normalize(v);
-}
+// Original test method:
+//
+//void rayTrace(float cX, float cY, float cZ, float r, float eyeX, float eyeY, float eyeZ, float dirX, float dirY, float dirZ) {
+//  // Sphere.intersect() does not use the {@code surface} field.
+//  std::vector<Renderable> objects;
+//  // Sphere sphere(nullptr, Vector3D(cX, cY, cZ), r);
+//  // objects.add(sphere);
+//  objects.emplace_back(Surface(), Vector3D(cX, cY, cZ), r);
+//
+//  Vector3D eye(eyeX, eyeY, eyeZ);
+//  Vector3D dir(dirX, dirY, dirZ);
+//  // Ray(eye, dir).trace(objects);
+//  Ray_trace(Ray(eye, dir), objects);
+//}
 
-static void surfaceShade(float rval, float gval, float bval, float a, float d, float s, float n, float r, float t,
-    float index, float pX, float pY, float pZ, float nX, float nY, float nZ, float vX, float vY, float vZ,
-    int lType, float lX, float lY, float lZ, float lR, float lG, float lB) {
-  Surface surface(rval, gval, bval, a, d, s, n, r, t, index);
-  Vector3D pVec(pX, pY, pZ);
-  Vector3D nVec(nX, nY, nZ);
-  Vector3D vVec(vX, vY, vZ);
+/*
+ * Class:     cn_nju_seg_atg_callCPP_CallCPP
+ * Method:    callRayTrace
+ * Signature: (FFFFFFFFFFLjava/lang/String;)V
+ */
+JNIEXPORT void JNICALL Java_cn_nju_seg_atg_callCPP_CallCPP_callRayTrace
+(JNIEnv* env, jobject,
+    jfloat cX, jfloat cY, jfloat cZ, jfloat r, jfloat eyeX, jfloat eyeY, jfloat eyeZ, jfloat dirX, jfloat dirY, jfloat dirZ,
+    jstring pathFile) {
 
-  std::vector<Light> lights;
-  // Light l(lType, Vector3D(lX, lY, lZ), lR, lG, lB);
-  // lights.push_back(l);
-  lights.emplace_back(lType, Vector3D(lX, lY, lZ), lR, lG, lB);
+  const char* path = jstringTostring(env, pathFile);
+  std::ofstream bFile(path);
+  bFilePtr = &bFile;
 
-  // surface.Shade(pVec, nVec, vVec, lights, std::vector<Renderable>(), Color(1, 1, 1));
-  Surface_Shade(surface, pVec, nVec, vVec, lights, std::vector<Renderable>(), Color(1, 1, 1));
-}
-
-static void rayTrace(float cX, float cY, float cZ, float r, float eyeX, float eyeY, float eyeZ, float dirX, float dirY, float dirZ) {
+  bFile << "node1@rayTrace\n";
 
   std::vector<Renderable> objects;
   // Sphere.intersect() does not use the {@code surface} field.
@@ -724,44 +802,8 @@ static void rayTrace(float cX, float cY, float cZ, float r, float eyeX, float ey
   Vector3D eye(eyeX, eyeY, eyeZ);
   Vector3D dir(dirX, dirY, dirZ);
   // Ray(eye, dir).trace(objects);
-  Ray_trace(Ray(eye, dir), objects);
-}
+  Ray rayInstance(eye, dir);
+  Ray_trace_Inst3(rayInstance, objects);
 
-static void sphereIntersect(float rval, float gval, float bval, float a, float d, float s, float n, float r, float t,
-    float index, float x, float y, float z, float rad, float eyeX, float eyeY, float eyeZ, float dirX, float dirY, float dirZ) {
-  Vector3D eye(eyeX, eyeY, eyeZ);
-  Vector3D dir(dirX, dirY, dirZ);
-  Ray ray(eye, dir);
-
-  Surface surface(rval, gval, bval, a, d, s, n, r, t, index);
-  Vector3D center(x, y, z);
-  Sphere sphere(surface, center, rad);
-
-  Sphere_intersect(sphere, ray); // sphere.intersect(ray);
-}
-
-static void sphereShade(float rval, float gval, float bval, float a, float d, float s, float n, float r, float t,
-    float index, float x, float y, float z, float rad, float eyeX, float eyeY, float eyeZ,
-    float dirX, float dirY, float dirZ, int lType, float lX, float lY, float lZ, float lR, float lG, float lB, float bgR, float bgG, float bgB) {
-  Vector3D eye(eyeX, eyeY, eyeZ);
-  Vector3D dir(dirX, dirY, dirZ);
-  Ray ray(eye, dir);
-
-  Surface surface(rval, gval, bval, a, d, s, n, r, t, index);
-  Vector3D center(x, y, z);
-  std::vector<Renderable> objects;
-
-  // FIXME In Java, `sphere` and the one in `objects` points to a same instance, while in this C++ version they are two instance with same init value.
-  // Checks whether this makes a difference.
-  Sphere sphere(surface, center, rad);
-  objects.push_back(sphere);
-
-  std::vector<Light> lights;
-  // Light light(lType, Vector3D(lX, lY, lZ), lR, lG, lB);
-  // lights.add(light);
-  lights.emplace_back(lType, Vector3D(lX, lY, lZ), lR, lG, lB);
-
-  Color bgnd(bgR, bgG, bgB);
-  // sphere.Shade(ray, lights, objects, bgnd);
-  Sphere_Shade(sphere, ray, lights, objects, bgnd);
+  bFile << "exit@rayTrace\n";
 }
