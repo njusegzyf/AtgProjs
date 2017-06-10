@@ -967,6 +967,46 @@ JNIEXPORT jint JNICALL Java_cn_nju_seg_atg_callCPP_CallCPP_callTest
 JNIEXPORT void JNICALL Java_cn_nju_seg_atg_callCPP_CallCPP_callTcasRun
   (JNIEnv *, jobject, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint, jstring);
 
+/*
+ * Class:     cn_nju_seg_atg_callCPP_CallCPP
+ * Method:    callVector3DNormalize
+ * Signature: (FFFLjava/lang/String;)V
+ */
+JNIEXPORT void JNICALL Java_cn_nju_seg_atg_callCPP_CallCPP_callVector3DNormalize
+  (JNIEnv *, jobject, jfloat, jfloat, jfloat, jstring);
+
+/*
+ * Class:     cn_nju_seg_atg_callCPP_CallCPP
+ * Method:    callSurfaceShade
+ * Signature: (FFFFFFFFFFFFFFFFFFFIFFFFFFLjava/lang/String;)V
+ */
+JNIEXPORT void JNICALL Java_cn_nju_seg_atg_callCPP_CallCPP_callSurfaceShade
+  (JNIEnv *, jobject, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jint, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jstring);
+
+/*
+ * Class:     cn_nju_seg_atg_callCPP_CallCPP
+ * Method:    callRayTrace
+ * Signature: (FFFFFFFFFFLjava/lang/String;)V
+ */
+JNIEXPORT void JNICALL Java_cn_nju_seg_atg_callCPP_CallCPP_callRayTrace
+  (JNIEnv *, jobject, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jstring);
+
+/*
+ * Class:     cn_nju_seg_atg_callCPP_CallCPP
+ * Method:    callSphereIntersect
+ * Signature: (FFFFFFFFFFFFFFFFFFFFLjava/lang/String;)V
+ */
+JNIEXPORT void JNICALL Java_cn_nju_seg_atg_callCPP_CallCPP_callSphereIntersect
+  (JNIEnv *, jobject, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jstring);
+
+/*
+ * Class:     cn_nju_seg_atg_callCPP_CallCPP
+ * Method:    callSphereShade
+ * Signature: (FFFFFFFFFFFFFFFFFFFFIFFFFFFFFFLjava/lang/String;)V
+ */
+JNIEXPORT void JNICALL Java_cn_nju_seg_atg_callCPP_CallCPP_callSphereShade
+  (JNIEnv *, jobject, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jint, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jstring);
+
 #ifdef __cplusplus
 }
 #endif

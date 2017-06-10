@@ -92,15 +92,15 @@ public final class PathCoverageBatchFileRunner extends BatchFileRunnerBase<PathC
     }
   }
 
-   @Override
-   protected List<String> checkTestConfig(final IFunctionDeclaration function, 
-                                          final PathCoverageBatchConfig batchConfig, 
-                                          final PathCoverageBatchItemConfig batchItem) {
-     assert function != null && batchConfig != null && batchItem != null;
-     
-     // TODO add check for path coverage config
-   return super.checkTestConfig(function, batchConfig, batchItem);
-   }
-  
-//  public 
+  @Override
+  protected List<String> checkTestConfig(final IFunctionDeclaration function,
+                                         final PathCoverageBatchConfig batchConfig,
+                                         final PathCoverageBatchItemConfig batchItem) {
+    assert function != null && batchConfig != null && batchItem != null;
+
+    // TODO add check for path coverage config
+    return super.checkTestConfig(function, batchConfig, batchItem);
+  }
+
+  // public
 }

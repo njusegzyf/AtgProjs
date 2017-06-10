@@ -97,7 +97,6 @@ public final class BranchCoverage extends CoverageCriteria {
    * Note: The framework of this function refers to {@link cn.nju.seg.atg.parse.PathCoverage#run(IFunctionDeclaration)}
    * 
    * @apiNote This method relies on both inputs and settings in {@link cn.nju.seg.atg.parse.TestBuilder}.
-   * 
    * @return
    */
   public CoverageOutcome[] run(final IFunctionDeclaration function,
@@ -143,7 +142,7 @@ public final class BranchCoverage extends CoverageCriteria {
     for (int indexOfRun = 1; indexOfRun <= TestBuilder.repetitionNum; indexOfRun++) {
       // first prepare for the test
       TestPreparations.prepareTest(function.getElementName(), ATG.callCPP);
-      
+
       // record a map of target node -> covered paths
       // Note: `HashMultimap` behaves like a `Map<String, HashMap<CFGPath>>`
       final HashMultimap<String, CFGPath> coveredTargetNodesMap = HashMultimap.create();
@@ -181,6 +180,9 @@ public final class BranchCoverage extends CoverageCriteria {
             // otherwise we may add too much paths to the `coveredTargetNodesMap`
             if (targetNodeNamesSet.contains(coveredNodeName)
                 && (!coveredTargetNodesMap.containsKey(coveredNodeName))) {
+              // since the optimal params array is shared, we must make a copy for later use
+              final double[] sharedOptimalParams = cfgPath.getOptimalParams();
+              cfgPath.setOptimalParams(Arrays.copyOf(sharedOptimalParams, sharedOptimalParams.length));
               coveredTargetNodesMap.put(coveredNodeName, cfgPath);
             }
           }
@@ -275,9 +277,12 @@ public final class BranchCoverage extends CoverageCriteria {
           Util.appendNewLine(result);
           Util.appendAllWithNewLine(result, "Covered target branch node: ", coveredNodeName, " with paths:");
 
+          int pathIndex = 0;
           for (final CFGPath cfgPath : coveredTargetNodesMap.get(coveredNodeName)) {
+            result.append("\nPath " + pathIndex + ", input: " + Arrays.toString(cfgPath.getOptimalParams()));
+            result.append("\nNodes in the path: ");
             joinerOnComma.appendTo(result, cfgPath.getPathNodeNames().collect(Collectors.toList()));
-            result.append('\n');
+            result.append("\n\n");
           }
         }
 

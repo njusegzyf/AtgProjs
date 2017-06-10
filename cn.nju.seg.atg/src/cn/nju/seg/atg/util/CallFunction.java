@@ -564,13 +564,38 @@ public final class CallFunction {
                               (int) parameters[6], (int) parameters[7], (int) parameters[8], (int) parameters[9], (int) parameters[10], (int) parameters[11], pathFile);
       break;
 
+    // @since 0.1 for raytrace
+    // TODO
+    case CallCPP.RAYTRACE_VECTOR3DNORMALIZE_TEST_FUNCTION_NAME:
+      ATG.callCPP.callVector3DNormalize((float) parameters[0], (float) parameters[1], (float) parameters[2], pathFile);
+      break;
+
+    case CallCPP.RAYTRACE_SURFACESHADE_TEST_FUNCTION_NAME:
+      ATG.callCPP.callSurfaceShade((float) parameters[0], (float) parameters[1], (float) parameters[2], (float) parameters[3], (float) parameters[4], (float) parameters[5],
+                                   (float) parameters[6], (float) parameters[7], (float) parameters[8], (float) parameters[9], (float) parameters[10], (float) parameters[11],
+                                   (float) parameters[12], (float) parameters[13], (float) parameters[14], (float) parameters[15], (float) parameters[16], (float) parameters[17],
+                                   (float) parameters[18],
+                                   (int) parameters[18], // ltype : int
+                                   (float) parameters[19], (float) parameters[20], (float) parameters[21], (float) parameters[22], (float) parameters[23], (float) parameters[24],
+                                   pathFile);
+      break;
+
+    case CallCPP.RAYTRACE_RAYTRACE_TEST_FUNCTION_NAME:
+      break;
+
+    case CallCPP.RAYTRACE_SPHEREINTERSECT_TEST_FUNCTION_NAME:
+      break;
+
+    case CallCPP.RAYTRACE_SPHERESHADE_TEST_FUNCTION_NAME:
+      break;
+
     // @since 0.1 throw for unknown methods
     default:
       throw new IllegalArgumentException();
     }
 
     // 结束计时
-    execute_time = System.currentTimeMillis() - start_time;
+    this.execute_time = System.currentTimeMillis() - start_time;
   }
 
   public double executeTime() {
@@ -583,7 +608,7 @@ public final class CallFunction {
    */
   public void setParameters(final double[] parameters) {
     Preconditions.checkNotNull(parameters);
-    
+
     this.parameters = parameters;
   }
 }

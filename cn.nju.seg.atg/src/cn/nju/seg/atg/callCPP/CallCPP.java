@@ -2,7 +2,6 @@ package cn.nju.seg.atg.callCPP;
 
 /**
  * @version 0.1 Add native methods for preparations for tests.
- * 
  * @author zy
  * @author Zhang Yifan
  */
@@ -355,6 +354,26 @@ public class CallCPP {
                                  int down_separation, int other_rac, int other_capability, int climb_inhibit,
                                  String pathFile);
 
+  // Tests for raytrace
+
+  public native void callVector3DNormalize(float x, float y, float z, String pathFile);
+
+  public native void callSurfaceShade(float rval, float gval, float bval, float a, float d, float s, float n, float r, float t, float index,
+                                      float pX, float pY, float pZ, float nX, float nY, float nZ, float vX, float vY, float vZ,
+                                      int lType, float lX, float lY, float lZ, float lR, float lG, float lB,
+                                      String pathFile);
+
+  public native void callRayTrace(float cX, float cY, float cZ, float r, float eyeX, float eyeY, float eyeZ, float dirX, float dirY, float dirZ, String pathFile);
+
+  public native void callSphereIntersect(float rval, float gval, float bval, float a, float d, float s, float n, float r, float t, float index,
+                                         float x, float y, float z, float rad, float eyeX, float eyeY, float eyeZ, float dirX, float dirY, float dirZ,
+                                         String pathFile);
+
+  public native void callSphereShade(float rval, float gval, float bval, float a, float d, float s, float n, float r, float t, float index,
+                                     float x, float y, float z, float rad, float eyeX, float eyeY, float eyeZ, float dirX, float dirY, float dirZ,
+                                     int lType, float lX, float lY, float lZ, float lR, float lG, float lB, float bgR, float bgG, float bgB,
+                                     String pathFile);
+
   static {
     // @since 0.1, use `CallCPPLibLoader` to load libraries
     CallCPPLibLoader.loadLibs();
@@ -373,11 +392,38 @@ public class CallCPP {
    * @since 0.1
    */
   public static final String STAT_TEST_FUNCTION_NAME = "stat";
-  
+
   /**
    * The test function name of Tcas.
    * 
    * @since 0.1
    */
   public static final String TCAS_TEST_FUNCTION_NAME = "tcasRun";
+  
+  // @since 0.1 Test function names for Raytrace. 
+  
+  /**
+   * @since 0.1
+   */
+  public static final String RAYTRACE_VECTOR3DNORMALIZE_TEST_FUNCTION_NAME = "vector3DNormalize";
+  
+  /**
+   * @since 0.1
+   */
+  public static final String RAYTRACE_SURFACESHADE_TEST_FUNCTION_NAME = "surfaceShade";
+  
+  /**
+   * @since 0.1
+   */
+  public static final String RAYTRACE_RAYTRACE_TEST_FUNCTION_NAME = "rayTrace";
+
+  /**
+   * @since 0.1
+   */
+  public static final String RAYTRACE_SPHEREINTERSECT_TEST_FUNCTION_NAME = "sphereIntersect";
+
+  /**
+   * @since 0.1
+   */
+  public static final String RAYTRACE_SPHERESHADE_TEST_FUNCTION_NAME = "sphereShade";
 }

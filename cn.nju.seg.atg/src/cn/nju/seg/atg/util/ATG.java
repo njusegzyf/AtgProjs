@@ -254,10 +254,12 @@ public abstract class ATG {
     // table = new TableData();
     // table.data_for_caldat();;
 
-    if (NUM_OF_PARAM > 6)
-      SEARCH_STRATEGY = ConstantValue.SEARCH_STRATEGY_ONE_BY_ONE;
-    else
-      SEARCH_STRATEGY = ConstantValue.SEARCH_STRATEGY_ALL;
+    // @since 0.1 use static method to determine search strategy
+    ATG.SEARCH_STRATEGY = ATG.getSearchStrategy(ATG.NUM_OF_PARAM);
+    // if (NUM_OF_PARAM > 6)
+    // SEARCH_STRATEGY = ConstantValue.SEARCH_STRATEGY_ONE_BY_ONE;
+    // else
+    // SEARCH_STRATEGY = ConstantValue.SEARCH_STRATEGY_ALL;
 
     if (SEARCH_STRATEGY == ConstantValue.SEARCH_STRATEGY_ALL) {
       int round = 0;
@@ -356,7 +358,7 @@ public abstract class ATG {
                               final Consumer<CFGPath> executedPathHandler) {
     assert pathIndex >= 0;
     assert executedPathHandler != null;
-    
+
     // @since 0.1 record time used for uncovered paths
     final long startTime = System.currentTimeMillis();
     // final long startFunctionTime = TestBuilder.function_time;
@@ -385,16 +387,18 @@ public abstract class ATG {
 
     int isCovered = -1;
 
-    parameters = new double[NUM_OF_PARAM];
-    NumOfCoveredNodes = new int[NUM_OF_PARAM];
+    parameters = new double[ATG.NUM_OF_PARAM];
+    NumOfCoveredNodes = new int[ATG.NUM_OF_PARAM];
     // 添加路径约束的变量相关性信息
     // table = new TableData();
     // table.data_for_caldat();;
 
-    if (NUM_OF_PARAM > 6)
-      SEARCH_STRATEGY = ConstantValue.SEARCH_STRATEGY_ONE_BY_ONE;
-    else
-      SEARCH_STRATEGY = ConstantValue.SEARCH_STRATEGY_ALL;
+    // @since 0.1 use static method to determine search strategy
+    ATG.SEARCH_STRATEGY = ATG.getSearchStrategy(ATG.NUM_OF_PARAM);
+    // if (NUM_OF_PARAM > 6)
+    // SEARCH_STRATEGY = ConstantValue.SEARCH_STRATEGY_ONE_BY_ONE;
+    // else
+    // SEARCH_STRATEGY = ConstantValue.SEARCH_STRATEGY_ALL;
 
     if (SEARCH_STRATEGY == ConstantValue.SEARCH_STRATEGY_ALL) {
       int round = 0;
@@ -497,7 +501,6 @@ public abstract class ATG {
 
   /**
    * @apiNote This method is optional.
-   * 
    * @since 0.1
    */
   @SuppressWarnings("unused")
@@ -656,5 +659,22 @@ public abstract class ATG {
       }
     }
     return false;
+  }
+
+  public static final boolean IS_FORCE_USE_SEARCH_STRATEGY_ALL = true;
+
+  /**
+   * @since 0.1
+   */
+  public static int getSearchStrategy(int paramNum) {
+    assert paramNum >= 0;
+
+    if (IS_FORCE_USE_SEARCH_STRATEGY_ALL) {
+      return ConstantValue.SEARCH_STRATEGY_ALL;
+    } else if (paramNum > 6) {
+      return ConstantValue.SEARCH_STRATEGY_ONE_BY_ONE;
+    } else {
+      return ConstantValue.SEARCH_STRATEGY_ALL;
+    }
   }
 }

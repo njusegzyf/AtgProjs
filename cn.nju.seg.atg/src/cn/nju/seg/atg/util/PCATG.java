@@ -427,7 +427,8 @@ public class PCATG extends ATG {
 
     // 读取路径
     CFGPath excutedPath = ZpathUtil.readPath_Z(parameters[paramIndex], pathFile);
-    // @since 0.1
+    // @since 0.1 record input parameters and invoke callback 
+    excutedPath.setOptimalParams(parameters);
     executedPathHandler.accept(excutedPath);
 
     TestBuilder.ioTime += System.currentTimeMillis() - startTime;

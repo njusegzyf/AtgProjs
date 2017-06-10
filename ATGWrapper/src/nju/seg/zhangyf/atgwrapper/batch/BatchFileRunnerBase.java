@@ -51,9 +51,7 @@ import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.SettableFuture;
 import com.typesafe.config.Config;
 
-import cn.nju.seg.atg.callCPP.TestPreparations;
 import cn.nju.seg.atg.parse.TestBuilder;
-import cn.nju.seg.atg.util.ATG;
 import nju.seg.zhangyf.atg.AtgPluginSettings;
 import nju.seg.zhangyf.atgwrapper.AtgWrapperPluginSettings;
 import nju.seg.zhangyf.atgwrapper.config.AtgConfig;

@@ -413,6 +413,9 @@ public class Function {
       return;
     } else {
       int index = node.getNodeNumber() - 1;
+      if (index < 0) {
+        System.out.println("xx");
+      }
       this.nodeOffset[index] = node.getOffset();
       this.nodeArray[index] = node;
       node.setFuncName(this.functionId);

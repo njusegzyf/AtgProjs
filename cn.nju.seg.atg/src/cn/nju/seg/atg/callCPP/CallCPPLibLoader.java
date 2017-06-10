@@ -12,7 +12,8 @@ public class CallCPPLibLoader {
       "Stat",
       "DartAndEtc",
       "BlindHashOpti",
-      "Tcas"
+      "Tcas",
+      "Raytrace1"
   };
 
   public static void loadLibs() {
