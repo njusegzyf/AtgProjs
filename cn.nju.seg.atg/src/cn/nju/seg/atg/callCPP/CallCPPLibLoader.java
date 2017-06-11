@@ -16,8 +16,10 @@ public class CallCPPLibLoader {
       "BlindHashOpti",
       "Tcas",
       "Raytrace1",
-      // "Raytrace2"
-      "Raytrace3"
+      "Raytrace2",
+      "Raytrace3",
+      "Raytrace4",
+      "Raytrace5"
   };
 
   public static void loadLibs() {
