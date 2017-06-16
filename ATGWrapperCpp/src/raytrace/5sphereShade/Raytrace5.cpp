@@ -690,6 +690,10 @@ static bool Ray_trace(Ray& self, const std::vector<Renderable>& objects) {
 
 // Code for raytrace test methods
 
+// Since `Surface_Shade` and `Vector3D_Normalize` is already tested in pervious tests,
+// and `Sphere_Shade` do not have any branches,
+// we can ignore this test for branch coverage.
+
 static void sphereShade(float rval, float gval, float bval, float a, float d, float s, float n, float r, float t,
     float index, float x, float y, float z, float rad, float eyeX, float eyeY, float eyeZ,
     float dirX, float dirY, float dirZ, int lType, float lX, float lY, float lZ, float lR, float lG, float lB, float bgR, float bgG, float bgB) {
@@ -707,9 +711,9 @@ static void sphereShade(float rval, float gval, float bval, float a, float d, fl
   objects.push_back(sphere);
 
   std::vector<Light> lights;
-  // Light light(lType, Vector3D(lX, lY, lZ), lR, lG, lB);
-  // lights.add(light);
-  lights.emplace_back(lType, Vector3D(lX, lY, lZ), lR, lG, lB);
+  Light l = Light_Ctor(lType, Vector3D(lX, lY, lZ), lR, lG, lB); // Light l(lType, Vector3D(lX, lY, lZ), lR, lG, lB);
+  lights.push_back(l);
+  // lights.emplace_back(lType, Vector3D(lX, lY, lZ), lR, lG, lB);
 
   Color bgnd(bgR, bgG, bgB);
   // sphere.Shade(ray, lights, objects, bgnd);

@@ -186,8 +186,8 @@ static Light Light_Ctor(int type, const Vector3D& v, float r, float g, float b) 
   if (type != Light::AMBIENT) {
     temp.lvec_ = v;
     if (type == Light::DIRECTIONAL) {
-      // temp.lvec_.normalize();
-      Vector3D_Normalize(temp.lvec_);
+      // Since `Vector3D_Normalize` is tested in another test, do not test it here
+      temp.lvec_.normalize(); // Vector3D_Normalize(temp.lvec_);
     } else {
       skip();
     }
@@ -411,58 +411,65 @@ static Color Surface_Shade(Surface& self,
   float g = 0.0f;
   float b = 0.0f;
 
-  for (const Light& light : lights) {
-    if (light.lightType_ == Light::AMBIENT) {
-      r += self.ka_ * self.ir_ * light.ir_;
-      g += self.ka_ * self.ig_ * light.ig_;
-      b += self.ka_ * self.ib_ * light.ib_;
+  // for this test, the `lights` will only contain one element, so we expand the foreach loop
+  // for (const Light& light : lights) { // begin of for each loop
+  const Light& light = lights[0];
+  if (light.lightType_ == Light::AMBIENT) {
+    r += self.ka_ * self.ir_ * light.ir_;
+    g += self.ka_ * self.ig_ * light.ig_;
+    b += self.ka_ * self.ib_ * light.ib_;
+  } else {
+    Vector3D l;
+    if (light.lightType_ == Light::POINT) {
+      l = Vector3D(light.lvec_.x_ - p.x_, light.lvec_.y_ - p.y_, light.lvec_.z_ - p.z_);
+      l.normalize();
     } else {
-      Vector3D l;
-      if (light.lightType_ == Light::POINT) {
-        l = Vector3D(light.lvec_.x_ - p.x_, light.lvec_.y_ - p.y_, light.lvec_.z_ - p.z_);
-        l.normalize();
-      } else {
-        l = Vector3D(-light.lvec_.x_, -light.lvec_.y_, -light.lvec_.z_);
-      }
+      l = Vector3D(-light.lvec_.x_, -light.lvec_.y_, -light.lvec_.z_);
+    }
 
-      // Check if the surface point is in shadow
-      Vector3D poffset(p.x_ + Surface::TINY * l.x_, p.y_ + Surface::TINY * l.y_, p.z_ + Surface::TINY * l.z_);
-      Ray shadowRay(poffset, l);
-      bool tempRes = shadowRay.trace(objects);
-      if (tempRes == true) {
-        break;
+    // Check if the surface point is in shadow
+    Vector3D poffset(p.x_ + Surface::TINY * l.x_, p.y_ + Surface::TINY * l.y_, p.z_ + Surface::TINY * l.z_);
+    Ray shadowRay(poffset, l);
+    bool tempRes = shadowRay.trace(objects);
+    if (tempRes == true) {
+      goto ForEachLoopEnd;
+      // break;
+    } else {
+      skip();
+    }
+
+    float lambert = Vector3D::dot(n, l);
+    if (lambert > 0) {
+      if (self.kd_ > 0) {
+        float diffuse = self.kd_ * lambert;
+        r += diffuse * self.ir_ * light.ir_;
+        g += diffuse * self.ig_ * light.ig_;
+        b += diffuse * self.ib_ * light.ib_;
       } else {
         skip();
       }
 
-      float lambert = Vector3D::dot(n, l);
-      if (lambert > 0) {
-        if (self.kd_ > 0) {
-          float diffuse = self.kd_ * lambert;
-          r += diffuse * self.ir_ * light.ir_;
-          g += diffuse * self.ig_ * light.ig_;
-          b += diffuse * self.ib_ * light.ib_;
+      if (self.ks_ > 0) {
+        lambert *= 2;
+        float spec = v.dot(lambert * n.x_ - l.x_, lambert * n.y_ - l.y_, lambert * n.z_ - l.z_);
+        if (spec > 0) {
+          spec = self.ks_ * std::pow(spec, self.ns_);
+          r += spec * light.ir_;
+          g += spec * light.ig_;
+          b += spec * light.ib_;
         } else {
           skip();
         }
-
-        if (self.ks_ > 0) {
-          lambert *= 2;
-          float spec = v.dot(lambert * n.x_ - l.x_, lambert * n.y_ - l.y_, lambert * n.z_ - l.z_);
-          if (spec > 0) {
-            spec = self.ks_ * std::pow(spec, self.ns_);
-            r += spec * light.ir_;
-            g += spec * light.ig_;
-            b += spec * light.ib_;
-          } else {
-            skip();
-          }
-        } else {
-          skip();
-        }
+      } else {
+        skip();
       }
+    } else {
+      skip();
     }
   }
+  //  } // End of the foreach loop
+  // Note: the tool do not support statement label and will ignore the statement after the label, so insert a nop.
+  ForEachLoopEnd: skip();
 
   // Compute illumination due to reflection
   if (self.kr_ > 0) {
@@ -699,9 +706,9 @@ static void surfaceShade(float rval, float gval, float bval, float a, float d, f
   Vector3D vVec(vX, vY, vZ);
 
   std::vector<Light> lights;
-  // Light l(lType, Vector3D(lX, lY, lZ), lR, lG, lB);
-  // lights.push_back(l);
-  lights.emplace_back(lType, Vector3D(lX, lY, lZ), lR, lG, lB);
+  Light l = Light_Ctor(lType, Vector3D(lX, lY, lZ), lR, lG, lB); // Light l(lType, Vector3D(lX, lY, lZ), lR, lG, lB);
+  lights.push_back(l);
+  // lights.emplace_back(lType, Vector3D(lX, lY, lZ), lR, lG, lB);
 
   // surface.Shade(pVec, nVec, vVec, lights, std::vector<Renderable>(), Color(1, 1, 1));
   Surface_Shade(surface, pVec, nVec, vVec, lights, std::vector<Renderable>(), Color(1, 1, 1));

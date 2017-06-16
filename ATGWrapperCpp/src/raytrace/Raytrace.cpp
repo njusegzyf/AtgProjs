@@ -353,6 +353,8 @@ Color Surface::Shade(const Vector3D& p, const Vector3D& n, const Vector3D& v, co
         } else {
           skip();
         }
+      } else {
+        skip();
       }
     }
   }

@@ -19,51 +19,11 @@
 
 #include <jni.h>
 
+#include "../../inst_helper.h"
+
 using std::cout;
 
 static std::ofstream* bFilePtr = nullptr;
-static constexpr size_t kUnknowId = 0;
-
-/**
- * @author Zhang Yifan
- */
-static inline int instExpression(std::ofstream& bFile, const char* functionName, size_t nodeId, size_t expressionId, int expr) {
-  bFile << "node" << nodeId << '@' << functionName << ' ' // output node name
-      << expr << ' ' // output expr result
-      << "expression@" << expressionId << '\n'; // output expression name
-  return expr;
-}
-
-/**
- * @author Zhang Yifan
- */
-static inline void instNode(std::ofstream& bFile, const char* functionName, size_t nodeId) {
-  bFile << "node" << nodeId << '@' << functionName << '\n'; // output node name
-}
-
-/**
- * @author Zhang Yifan
- */
-static inline void instFunctionCall(std::ofstream& bFile, const char* functionName) {
-  // bFile << "call@" << functionName << '\n'; // output function call node name
-}
-
-static char* jstringTostring(JNIEnv* env, jstring jstr) {
-  char* rtn = NULL;
-  jclass clsstring = env->FindClass("java/lang/String");
-  jstring strencode = env->NewStringUTF("utf-8");
-  jmethodID mid = env->GetMethodID(clsstring, "getBytes", "(Ljava/lang/String;)[B");
-  jbyteArray barr = (jbyteArray) env->CallObjectMethod(jstr, mid, strencode);
-  jsize alen = env->GetArrayLength(barr);
-  jbyte* ba = env->GetByteArrayElements(barr, JNI_FALSE);
-  if (alen > 0) {
-    rtn = (char*) malloc(alen + 1);
-    memcpy(rtn, ba, alen);
-    rtn[alen] = 0;
-  }
-  env->ReleaseByteArrayElements(barr, ba, 0);
-  return rtn;
-}
 
 // Code for raytrace
 
@@ -192,28 +152,6 @@ void Vector3D_Normalize(Vector3D& v) {
   v.z_ *= t;
 }
 
-static void Vector3D_Normalize_Inst1(Vector3D& v) {
-  std::ofstream& bFile = *bFilePtr;
-  bFile << "entry@Vector3D_Normalize\n";
-
-  bFile << "node1@Vector3D_Normalize\n";
-  float t = v.x_ * v.x_ + v.y_ * v.y_ + v.z_ * v.z_;
-
-  if (instExpression(bFile, "Vector3D_Normalize", 2, 3, t) != 0
-      && instExpression(bFile, "Vector3D_Normalize", 2, 4, t - 1) != 0) {
-    bFile << "node3@Vector3D_Normalize\n";
-    t = (float) (1.0 / std::sqrt(t));
-  } else {
-    bFile << "node4@Vector3D_Normalize\n";
-    skip();
-  }
-  bFile << "node5@Vector3D_Normalize\n";
-  v.x_ *= t;
-  v.y_ *= t;
-  v.z_ *= t;
-  bFile << "exit@Vector3D_Normalize\n";
-}
-
 // All the  variables here are ugly, but I wanted Lights and Surfaces to be "friends"
 class Light {
 public:
@@ -263,14 +201,43 @@ static Light Light_Ctor(int type, const Vector3D& v, float r, float g, float b) 
   if (type != Light::AMBIENT) {
     temp.lvec_ = v;
     if (type == Light::DIRECTIONAL) {
-      // temp.lvec_.normalize();
-      Vector3D_Normalize(temp.lvec_);
+      temp.lvec_.normalize(); // Vector3D_Normalize(temp.lvec_);
     } else {
       skip();
     }
   } else {
     skip();
   }
+  return temp;
+}
+
+// same as `Light`'s constructor
+static Light Light_Ctor_Inst2(int type, const Vector3D& v, float r, float g, float b) {
+  std::ofstream& bFile = *bFilePtr;
+  bFile << "entry@Light_Ctor\n";
+
+  bFile << "node1@Light_Ctor\n";
+  Light temp;
+  temp.lightType_ = type;
+  temp.ir_ = r;
+  temp.ig_ = g;
+  temp.ib_ = b;
+
+  if (instExpression(bFile, "Light_Ctor", 2, 4, type - Light::AMBIENT) != 0) {
+    bFile << "node3@Light_Ctor\n";
+    temp.lvec_ = v;
+    if (instExpression(bFile, "Light_Ctor", 4, 6, type - Light::DIRECTIONAL) == 0) {
+      bFile << "node5@Light_Ctor\n";
+      temp.lvec_.normalize(); // Vector3D_Normalize(temp.lvec_);
+    } else {
+      bFile << "node6@Light_Ctor\n";
+      skip();
+    }
+  } else {
+    bFile << "node7@Light_Ctor\n";
+    skip();
+  }
+  bFile << "node8@Light_Ctor\n";
   return temp;
 }
 
@@ -430,6 +397,8 @@ Color Surface::Shade(const Vector3D& p, const Vector3D& n, const Vector3D& v, co
         } else {
           skip();
         }
+      } else {
+        skip();
       }
     }
   }
@@ -488,58 +457,65 @@ static Color Surface_Shade(Surface& self,
   float g = 0.0f;
   float b = 0.0f;
 
-  for (const Light& light : lights) {
-    if (light.lightType_ == Light::AMBIENT) {
-      r += self.ka_ * self.ir_ * light.ir_;
-      g += self.ka_ * self.ig_ * light.ig_;
-      b += self.ka_ * self.ib_ * light.ib_;
+  // for this test, the `lights` will only contain one element, so we expand the foreach loop
+  // for (const Light& light : lights) { // begin of for each loop
+  const Light& light = lights[0];
+  if (light.lightType_ == Light::AMBIENT) {
+    r += self.ka_ * self.ir_ * light.ir_;
+    g += self.ka_ * self.ig_ * light.ig_;
+    b += self.ka_ * self.ib_ * light.ib_;
+  } else {
+    Vector3D l;
+    if (light.lightType_ == Light::POINT) {
+      l = Vector3D(light.lvec_.x_ - p.x_, light.lvec_.y_ - p.y_, light.lvec_.z_ - p.z_);
+      l.normalize();
     } else {
-      Vector3D l;
-      if (light.lightType_ == Light::POINT) {
-        l = Vector3D(light.lvec_.x_ - p.x_, light.lvec_.y_ - p.y_, light.lvec_.z_ - p.z_);
-        l.normalize();
-      } else {
-        l = Vector3D(-light.lvec_.x_, -light.lvec_.y_, -light.lvec_.z_);
-      }
+      l = Vector3D(-light.lvec_.x_, -light.lvec_.y_, -light.lvec_.z_);
+    }
 
-      // Check if the surface point is in shadow
-      Vector3D poffset(p.x_ + Surface::TINY * l.x_, p.y_ + Surface::TINY * l.y_, p.z_ + Surface::TINY * l.z_);
-      Ray shadowRay(poffset, l);
-      bool tempRes = shadowRay.trace(objects);
-      if (tempRes == true) {
-        break;
+    // Check if the surface point is in shadow
+    Vector3D poffset(p.x_ + Surface::TINY * l.x_, p.y_ + Surface::TINY * l.y_, p.z_ + Surface::TINY * l.z_);
+    Ray shadowRay(poffset, l);
+    bool tempRes = shadowRay.trace(objects);
+    if (tempRes == true) {
+      goto ForEachLoopEnd;
+      // break;
+    } else {
+      skip();
+    }
+
+    float lambert = Vector3D::dot(n, l);
+    if (lambert > 0) {
+      if (self.kd_ > 0) {
+        float diffuse = self.kd_ * lambert;
+        r += diffuse * self.ir_ * light.ir_;
+        g += diffuse * self.ig_ * light.ig_;
+        b += diffuse * self.ib_ * light.ib_;
       } else {
         skip();
       }
 
-      float lambert = Vector3D::dot(n, l);
-      if (lambert > 0) {
-        if (self.kd_ > 0) {
-          float diffuse = self.kd_ * lambert;
-          r += diffuse * self.ir_ * light.ir_;
-          g += diffuse * self.ig_ * light.ig_;
-          b += diffuse * self.ib_ * light.ib_;
+      if (self.ks_ > 0) {
+        lambert *= 2;
+        float spec = v.dot(lambert * n.x_ - l.x_, lambert * n.y_ - l.y_, lambert * n.z_ - l.z_);
+        if (spec > 0) {
+          spec = self.ks_ * std::pow(spec, self.ns_);
+          r += spec * light.ir_;
+          g += spec * light.ig_;
+          b += spec * light.ib_;
         } else {
           skip();
         }
-
-        if (self.ks_ > 0) {
-          lambert *= 2;
-          float spec = v.dot(lambert * n.x_ - l.x_, lambert * n.y_ - l.y_, lambert * n.z_ - l.z_);
-          if (spec > 0) {
-            spec = self.ks_ * std::pow(spec, self.ns_);
-            r += spec * light.ir_;
-            g += spec * light.ig_;
-            b += spec * light.ib_;
-          } else {
-            skip();
-          }
-        } else {
-          skip();
-        }
+      } else {
+        skip();
       }
+    } else {
+      skip();
     }
   }
+  //  } // End of the foreach loop
+  // Note: the tool do not support statement label and will ignore the statement after the label, so insert a nop.
+  ForEachLoopEnd: skip();
 
   // Compute illumination due to reflection
   if (self.kr_ > 0) {
@@ -586,6 +562,154 @@ static Color Surface_Shade(Surface& self,
   } else {
     skip(); // b = b;
   }
+  return Color(r, g, b);
+}
+
+// same as `Surface::Shade`
+static Color Surface_Shade_Inst2(Surface& self,
+    const Vector3D& p, const Vector3D& n, const Vector3D& v, const std::vector<Light>& lights, const std::vector<Sphere>& objects, const Color& bgnd) {
+  std::ofstream& bFile = *bFilePtr;
+  bFile << "entry@Surface_Shade\n";
+
+  bFile << "node1@Surface_Shade\n";
+  float r = 0.0f;
+  float g = 0.0f;
+  float b = 0.0f;
+
+  // for this test, the `lights` will only contain one element, so we expand the foreach loop
+  // for (const Light& light : lights) { // begin of for each loop
+  const Light& light = lights[0];
+  if (instExpression(bFile, "Surface_Shade", 2, 15, light.lightType_ - Light::AMBIENT) == 0) {
+    bFile << "node3@Surface_Shade\n";
+    r += self.ka_ * self.ir_ * light.ir_;
+    g += self.ka_ * self.ig_ * light.ig_;
+    b += self.ka_ * self.ib_ * light.ib_;
+  } else {
+    bFile << "node4@Surface_Shade\n";
+    Vector3D l;
+    if (instExpression(bFile, "Surface_Shade", 5, 29, light.lightType_ - Light::POINT) == 0) {
+      bFile << "node6@Surface_Shade\n";
+      l = Vector3D(light.lvec_.x_ - p.x_, light.lvec_.y_ - p.y_, light.lvec_.z_ - p.z_);
+      l.normalize();
+    } else {
+      bFile << "node7@Surface_Shade\n";
+      l = Vector3D(-light.lvec_.x_, -light.lvec_.y_, -light.lvec_.z_);
+    }
+
+    // Check if the surface point is in shadow
+    bFile << "node8@Surface_Shade\n";
+    Vector3D poffset(p.x_ + Surface::TINY * l.x_, p.y_ + Surface::TINY * l.y_, p.z_ + Surface::TINY * l.z_);
+    Ray shadowRay(poffset, l);
+    int tempRes = shadowRay.trace(objects) ? 1 : 0;
+    if (instExpression(bFile, "Surface_Shade", 9, 32, tempRes - 1) == 0) {
+      bFile << "node10@Surface_Shade\n";
+      goto ForEachLoopEnd;
+      // break;
+    } else {
+      bFile << "node11@Surface_Shade\n";
+      skip();
+    }
+
+    bFile << "node12@Surface_Shade\n";
+    float lambert = Vector3D::dot(n, l);
+    if (instExpression(bFile, "Surface_Shade", 13, 35, lambert) > 0) {
+      if (instExpression(bFile, "Surface_Shade", 14, 36, self.kd_) > 0) {
+        bFile << "node15@Surface_Shade\n";
+        float diffuse = self.kd_ * lambert;
+        r += diffuse * self.ir_ * light.ir_;
+        g += diffuse * self.ig_ * light.ig_;
+        b += diffuse * self.ib_ * light.ib_;
+      } else {
+        bFile << "node16@Surface_Shade\n";
+        skip();
+      }
+
+      if (instExpression(bFile, "Surface_Shade", 17, 38, self.ks_) > 0) {
+        bFile << "node18@Surface_Shade\n";
+        lambert *= 2;
+        float spec = v.dot(lambert * n.x_ - l.x_, lambert * n.y_ - l.y_, lambert * n.z_ - l.z_);
+        if (instExpression(bFile, "Surface_Shade", 19, 40, spec) > 0) {
+          bFile << "node20@Surface_Shade\n";
+          spec = self.ks_ * std::pow(spec, self.ns_);
+          r += spec * light.ir_;
+          g += spec * light.ig_;
+          b += spec * light.ib_;
+        } else {
+          bFile << "node21@Surface_Shade\n";
+          skip();
+        }
+      } else {
+        bFile << "node22@Surface_Shade\n";
+        skip();
+      }
+    } else {
+      bFile << "node23@Surface_Shade\n";
+      skip();
+    }
+  }
+  //  } // End of the foreach loop
+  bFile << "node24@Surface_Shade\n";
+  // Note: the tool do not support statement label and will ignore the statement after the label, so insert a nop.
+  ForEachLoopEnd: // skip();
+
+  // Compute illumination due to reflection
+  if (instExpression(bFile, "Surface_Shade", 25, 18, self.kr_) > 0) {
+    bFile << "node26@Surface_Shade\n";
+    float t = v.dot(n);
+    if (instExpression(bFile, "Surface_Shade", 27, 20, t) > 0) {
+      bFile << "node28@Surface_Shade\n";
+      t *= 2;
+      Vector3D reflect(t * n.x_ - v.x_, t * n.y_ - v.y_, t * n.z_ - v.z_);
+      Vector3D poffset(p.x_ + Surface::TINY * reflect.x_, p.y_ + Surface::TINY * reflect.y_, p.z_ + Surface::TINY * reflect.z_);
+      Ray reflectedRay(poffset, reflect);
+      int tempRes = reflectedRay.trace(objects) ? 1 : 0;
+      if (instExpression(bFile, "Surface_Shade", 29, 22, tempRes - 1) == 0) {
+        bFile << "node30@Surface_Shade\n";
+        Color rcolor = reflectedRay.Shade(lights, objects, bgnd);
+        r += self.kr_ * rcolor.getRed();
+        g += self.kr_ * rcolor.getGreen();
+        b += self.kr_ * rcolor.getBlue();
+      } else {
+        bFile << "node31@Surface_Shade\n";
+        r += self.kr_ * bgnd.getRed();
+        g += self.kr_ * bgnd.getGreen();
+        b += self.kr_ * bgnd.getBlue();
+      }
+    } else {
+      bFile << "node32@Surface_Shade\n";
+      skip();
+    }
+  } else {
+    bFile << "node33@Surface_Shade\n";
+    skip();
+  }
+
+  // Add code for refraction here
+  //r = (r > 1.0f) ? 1.0f : r;
+  //g = (g > 1.0f) ? 1.0f : g;
+  //b = (b > 1.0f) ? 1.0f : b;
+  if (instExpression(bFile, "Surface_Shade", 34, 24, r - 1.0f) > 0.0f) {
+    bFile << "node35@Surface_Shade\n";
+    r = 1.0f;
+  } else {
+    bFile << "node36@Surface_Shade\n";
+    skip(); // r = r;
+  }
+  if (instExpression(bFile, "Surface_Shade", 37, 26, g - 1.0f) > 0.0f) {
+    bFile << "node38@Surface_Shade\n";
+    g = 1.0f;
+  } else {
+    bFile << "node39@Surface_Shade\n";
+    skip(); // g = g;
+  }
+  if (instExpression(bFile, "Surface_Shade", 40, 28, b - 1.0f) > 0.0f) {
+    bFile << "node41@Surface_Shade\n";
+    b = 1.0f;
+  } else {
+    bFile << "node42@Surface_Shade\n";
+    skip(); // b = b;
+  }
+  bFile << "node43@Surface_Shade\n";
   return Color(r, g, b);
 }
 
@@ -780,9 +904,9 @@ static bool Ray_trace(Ray& self, const std::vector<Renderable>& objects) {
 //  Vector3D vVec(vX, vY, vZ);
 //
 //  std::vector<Light> lights;
-//  // Light l(lType, Vector3D(lX, lY, lZ), lR, lG, lB);
-//  // lights.push_back(l);
-//  lights.emplace_back(lType, Vector3D(lX, lY, lZ), lR, lG, lB);
+//  Light l = Light_Ctor(lType, Vector3D(lX, lY, lZ), lR, lG, lB); // Light l(lType, Vector3D(lX, lY, lZ), lR, lG, lB);
+//  lights.push_back(l);
+//  // lights.emplace_back(lType, Vector3D(lX, lY, lZ), lR, lG, lB);
 //
 //  // surface.Shade(pVec, nVec, vVec, lights, std::vector<Renderable>(), Color(1, 1, 1));
 //  Surface_Shade(surface, pVec, nVec, vVec, lights, std::vector<Renderable>(), Color(1, 1, 1));
@@ -794,6 +918,30 @@ static bool Ray_trace(Ray& self, const std::vector<Renderable>& objects) {
  * Signature: (FFFFFFFFFFFFFFFFFFFIFFFFFFLjava/lang/String;)V
  */
 JNIEXPORT void JNICALL Java_cn_nju_seg_atg_callCPP_CallCPP_callSurfaceShade
-  (JNIEnv *, jobject, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jint, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jstring) {
+(JNIEnv* env, jobject,
+    jfloat rval, jfloat gval, jfloat bval, jfloat a, jfloat d, jfloat s, jfloat n, jfloat r, jfloat t,
+    jfloat index, jfloat pX, jfloat pY, jfloat pZ, jfloat nX, jfloat nY, jfloat nZ, jfloat vX, jfloat vY, jfloat vZ,
+    jint lType, jfloat lX, jfloat lY, jfloat lZ, jfloat lR, jfloat lG, jfloat lB,
+    jstring pathFile) {
 
+  char* path = jstringTostring(env, pathFile);
+  std::ofstream bFile(path);
+  bFilePtr = &bFile;
+
+  bFile << "node1@surfaceShade\n";
+
+  Surface surface(rval, gval, bval, a, d, s, n, r, t, index);
+  Vector3D pVec(pX, pY, pZ);
+  Vector3D nVec(nX, nY, nZ);
+  Vector3D vVec(vX, vY, vZ);
+
+  std::vector<Light> lights;
+  Light l = Light_Ctor_Inst2(lType, Vector3D(lX, lY, lZ), lR, lG, lB); // Light l(lType, Vector3D(lX, lY, lZ), lR, lG, lB);
+  lights.push_back(l);
+  // lights.emplace_back(lType, Vector3D(lX, lY, lZ), lR, lG, lB);
+
+  // surface.Shade(pVec, nVec, vVec, lights, std::vector<Renderable>(), Color(1, 1, 1));
+  Surface_Shade_Inst2(surface, pVec, nVec, vVec, lights, std::vector<Renderable>(), Color(1, 1, 1));
+
+  bFile << "exit@surfaceShade\n";
 }
