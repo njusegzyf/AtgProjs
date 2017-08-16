@@ -6,6 +6,7 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.eclipse.cdt.core.model.CModelException;
 import org.eclipse.cdt.core.model.IFunctionDeclaration;
@@ -13,6 +14,7 @@ import org.eclipse.cdt.core.model.IFunctionDeclaration;
 import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
+import com.google.common.io.FileWriteMode;
 
 import cn.nju.seg.atg.callCPP.CallCPP;
 import cn.nju.seg.atg.pathParse.ZpathUtil;
@@ -83,7 +85,7 @@ public final class Coverages {
       callFunction.callFunction();
 
       // read path according to `PCATG#getPathCoveredCondition`
-      
+
       final CFGPath excutedPath = ZpathUtil.readPath_Z(0, tempPathFileString);
       for (final TargetNodeConfig targetNode : targetNodes) {
         // `!coveredTargetNodes.contains(targetNode)` is used to skip checking a target node is already covered by some input
@@ -94,20 +96,28 @@ public final class Coverages {
           result.append('\n');
         }
       }
-      if (excutedPath.getPath().size() > 20) {
-        @SuppressWarnings("unused") final long temp = System.currentTimeMillis();
-        
-      }
     }
 
     final long functionTime = System.currentTimeMillis() - functionTimeStart;
 
-    final String[] coveredTargetNodeNames = coveredTargetNodes.stream().map(node -> node.name)
+    final String[] coveredTargetNodeNames = coveredTargetNodes.stream()
+                                                              .map(node -> node.name)
                                                               .<String> toArray(num -> new String[num]);
 
     // write result to `resultFile`
     try {
       com.google.common.io.Files.asCharSink(resultFile.toFile(), Charsets.US_ASCII)
+                                .write("Covered nodes: " + Arrays.toString(coveredTargetNodeNames) + "\n\n");
+
+      final String[] uncoveredTargetNodeNames = targetNodes.stream()
+                                                           .filter(node -> !coveredTargetNodes.contains(node))
+                                                           .map(node -> node.name)
+                                                           .<String> toArray(num -> new String[num]);
+
+      com.google.common.io.Files.asCharSink(resultFile.toFile(), Charsets.US_ASCII, FileWriteMode.APPEND)
+                                .write("Uncovered nodes: " + Arrays.toString(uncoveredTargetNodeNames) + "\n\n");
+
+      com.google.common.io.Files.asCharSink(resultFile.toFile(), Charsets.US_ASCII, FileWriteMode.APPEND)
                                 .write(result);
     } catch (IOException ignored) {}
 

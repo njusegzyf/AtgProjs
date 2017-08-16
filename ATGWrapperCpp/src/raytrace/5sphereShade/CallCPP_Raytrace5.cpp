@@ -763,6 +763,19 @@ static bool Ray_trace(Ray& self, const std::vector<Renderable>& objects) {
  * Signature: (FFFFFFFFFFFFFFFFFFFFIFFFFFFFFFLjava/lang/String;)V
  */
 JNIEXPORT void JNICALL Java_cn_nju_seg_atg_callCPP_CallCPP_callSphereShade
-  (JNIEnv *, jobject, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jint, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jstring){
+  (JNIEnv* env, jobject, 
+  jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jint, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat, jfloat,
+  jstring pathFile){
 
+  char* path = jstringTostring(env, pathFile);
+  std::ofstream bFile(path);
+  bFilePtr = &bFile;
+
+  bFile << "node1@sphereShade\n";
+
+  // TODO
+
+  bFile << "exit@sphereShade\n";
+
+  delete[] path;
 }

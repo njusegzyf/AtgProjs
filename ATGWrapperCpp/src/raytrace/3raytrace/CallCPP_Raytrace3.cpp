@@ -766,4 +766,6 @@ JNIEXPORT void JNICALL Java_cn_nju_seg_atg_callCPP_CallCPP_callRayTrace
   Ray_trace_Inst3(rayInstance, objects);
 
   bFile << "exit@rayTrace\n";
+
+  delete[] path;
 }

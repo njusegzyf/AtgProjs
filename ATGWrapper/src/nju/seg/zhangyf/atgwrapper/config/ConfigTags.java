@@ -7,9 +7,13 @@ package nju.seg.zhangyf.atgwrapper.config;
  */
 public final class ConfigTags {
 
+  // common tags
+
   public static final String NAME_TAG = "Name";
   public static final String TYPE_TAG = "Type";
   public static final String ARG_TAG = "Arg";
+
+  // tags for batch config
 
   public static final String LIBRARIES_TAG = "Libraries";
   public static final String LIBRARY_NAME_TAG = "LibraryName";
@@ -27,8 +31,8 @@ public final class ConfigTags {
   public static final String TARGET_NODES_TAG = "TargetNodes";
   public static final String TARGET_PATHS_TAG = "TargetPaths";
   public static final String PATH_TAG = "Path";
-  public static final String TARGET_PATH_FRAGMENTS_TAG =  "TargetPathFragments";
-  public static final String PATH_FRAGMENT_TAG =  "PathFragment";  
+  public static final String TARGET_PATH_FRAGMENTS_TAG = "TargetPathFragments";
+  public static final String PATH_FRAGMENT_TAG = "PathFragment";
 
   // tags for `StorageConfig`
 
@@ -46,7 +50,7 @@ public final class ConfigTags {
   public static final String MAX_STEP_TAG = "MaxStep";
   public static final String START_POINT_TAG = "StartPoint";
   public static final String CUSTOMIZED_PARAMS_TAG = "CustomizedParams";
-  
+
   // tags for `ExecutorConfig`
 
   public static final String EXECUTOR_TAG = "Executor";
@@ -59,14 +63,17 @@ public final class ConfigTags {
   public static final String SINGLE_FUNCTION_TIMEOUT_TAG = "SingleFunctionTimeout";
 
   // tags for compute coverage with inputs
+
   public static final String INPUTS_TAG = "Inputs";
   public static final String INPUT_TAG = "Input";
   public static final String COLLECT_BRANCH_COVERAGE_TAG = "CollectBranchCoverage";
-      
-  
+
   // paths
+
   public static final String ATG_ACTION_PATH = ATG_CONFIG_TAG + "." + ACTION_TAG;
-  
+
   @Deprecated
-  private ConfigTags() {}
+  private ConfigTags() {
+    throw new UnsupportedOperationException();
+  }
 }

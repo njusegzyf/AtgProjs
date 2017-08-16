@@ -59,7 +59,7 @@ public final class BranchCoverage extends CoverageCriteria {
     super(actionName);
   }
 
-  // FIXME A`lastBuiltFunction` just record the last built function use `buildCfgAndPaths` method,
+  // FIXME `lastBuiltFunction` just record the last built function use `buildCfgAndPaths` method,
   // but other sub classes of `CoverageCriteria` also can build CFG, it will be wrong if we run BC and other coverage together.
   Optional<IFunctionDeclaration> lastBuiltFunction = Optional.empty();
 
@@ -160,7 +160,7 @@ public final class BranchCoverage extends CoverageCriteria {
         assert !Strings.isNullOrEmpty(targetNodeName);
 
         if (coveredTargetNodesMap.containsKey(targetNodeName)) {
-          // if we have covered the target node in previous runs
+          // if we have covered the target node in previous runs, skip this node
           testedNodeNum.incrementAndGet();
 
           // print progress for debug
@@ -181,8 +181,7 @@ public final class BranchCoverage extends CoverageCriteria {
               final String coveredNodeName = coveredNode.getName();
               // for an executed path, only add to the `coveredTargetNodesMap` it is not covered before,
               // otherwise we may add too much paths to the `coveredTargetNodesMap`
-              if (targetNodeNamesSet.contains(coveredNodeName)
-                  && (!coveredTargetNodesMap.containsKey(coveredNodeName))) {
+              if (targetNodeNamesSet.contains(coveredNodeName) && (!coveredTargetNodesMap.containsKey(coveredNodeName))) {
                 // since the optimal params array is shared, we must make a copy for later use
                 final double[] sharedOptimalParams = cfgPath.getOptimalParams();
                 cfgPath.setOptimalParams(Arrays.copyOf(sharedOptimalParams, sharedOptimalParams.length));

@@ -801,4 +801,6 @@ JNIEXPORT void JNICALL Java_cn_nju_seg_atg_callCPP_CallCPP_callSphereIntersect
   Sphere_intersect_Inst4(sphere, ray); // sphere.intersect(ray);
 
   bFile << "exit@sphereIntersect\n";
+
+  delete[] path;
 }

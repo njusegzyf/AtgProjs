@@ -18,6 +18,7 @@ import nju.seg.zhangyf.util.ConfigUtil2;
 /**
  * Configuration for ATG.
  * 
+ * @version 0.1
  * @see cn.nju.seg.atg.util.ATG
  * @author Zhang Yifan
  */

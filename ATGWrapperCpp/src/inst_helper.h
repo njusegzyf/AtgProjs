@@ -1,8 +1,13 @@
+#ifndef _INST_HELPER_H
+#define _INST_HELPER_H
+
 #include <iostream>
 
 using std::cout;
 
 static constexpr size_t kUnknowId = 0;
+
+#define OMIT_FUNCTION_CALL
 
 /**
  * @author Zhang Yifan
@@ -45,9 +50,12 @@ static inline void instNode(std::ofstream& bFile, const char* functionName, size
  * @author Zhang Yifan
  */
 static inline void instFunctionCall(std::ofstream& bFile, const char* functionName) {
-  // bFile << "call@" << functionName << '\n'; // output function call node name
+#ifndef OMIT_FUNCTION_CALL
+  bFile << "call@" << functionName << '\n'; // output function call node name
+#endif
 }
 
+//@see http://blog.csdn.net/xlxxcc/article/details/51106721
 static inline char* jstringTostring(JNIEnv* env, jstring jstr) {
   char* rtn = NULL;
   jclass clsstring = env->FindClass("java/lang/String");
@@ -64,3 +72,5 @@ static inline char* jstringTostring(JNIEnv* env, jstring jstr) {
   env->ReleaseByteArrayElements(barr, ba, 0);
   return rtn;
 }
+
+#endif

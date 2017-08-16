@@ -38,8 +38,10 @@ char* jstringTostring(JNIEnv* env, jstring jstr) {
 }
 
 class StatCalculator {
-  public :static vector<int> values;
-  private:static double sum;
+public:
+  static vector<int> values;
+  private:
+  static double sum;
   static double sumOfSquares;
   static double mean;
   static double deviation;
@@ -253,10 +255,13 @@ static void skip() {
  * Method:    callStat
  * Signature: (ILjava/lang/String;)V
  */
-JNIEXPORT void JNICALL Java_cn_nju_seg_atg_callCPP_CallCPP_callStat
-(JNIEnv *env, jobject, jint val, jstring pathFile) {
+JNIEXPORT void JNICALL Java_cn_nju_seg_atg_callCPP_CallCPP_callStat(JNIEnv *env, jobject,
+    jint val,
+    jstring pathFile) {
+
   char* path = jstringTostring(env, pathFile);
   ofstream bFile(path);
+
   bFile<<"node1@stat\n";
   printf("adding value %d\n", val);
   // bFile<<"call@stat\n";
@@ -283,7 +288,8 @@ JNIEXPORT void JNICALL Java_cn_nju_seg_atg_callCPP_CallCPP_callStat
     printf("std deviation not found\n");
   }
   bFile<<"exit@stat\n";
-  
+
+  delete[] path;
 }
 
 /*

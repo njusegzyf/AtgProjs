@@ -917,8 +917,7 @@ static bool Ray_trace(Ray& self, const std::vector<Renderable>& objects) {
  * Method:    callSurfaceShade
  * Signature: (FFFFFFFFFFFFFFFFFFFIFFFFFFLjava/lang/String;)V
  */
-JNIEXPORT void JNICALL Java_cn_nju_seg_atg_callCPP_CallCPP_callSurfaceShade
-(JNIEnv* env, jobject,
+JNIEXPORT void JNICALL Java_cn_nju_seg_atg_callCPP_CallCPP_callSurfaceShade(JNIEnv* env, jobject,
     jfloat rval, jfloat gval, jfloat bval, jfloat a, jfloat d, jfloat s, jfloat n, jfloat r, jfloat t,
     jfloat index, jfloat pX, jfloat pY, jfloat pZ, jfloat nX, jfloat nY, jfloat nZ, jfloat vX, jfloat vY, jfloat vZ,
     jint lType, jfloat lX, jfloat lY, jfloat lZ, jfloat lR, jfloat lG, jfloat lB,
@@ -944,4 +943,6 @@ JNIEXPORT void JNICALL Java_cn_nju_seg_atg_callCPP_CallCPP_callSurfaceShade
   Surface_Shade_Inst2(surface, pVec, nVec, vVec, lights, std::vector<Renderable>(), Color(1, 1, 1));
 
   bFile << "exit@surfaceShade\n";
+
+  delete[] path;
 }

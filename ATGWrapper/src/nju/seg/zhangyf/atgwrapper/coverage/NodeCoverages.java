@@ -156,5 +156,7 @@ public final class NodeCoverages {
   }
 
   @Deprecated
-  private NodeCoverages() {}
+  private NodeCoverages() {
+    throw new UnsupportedOperationException();
+  }
 }

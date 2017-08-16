@@ -756,4 +756,6 @@ JNIEXPORT void JNICALL Java_cn_nju_seg_atg_callCPP_CallCPP_callVector3DNormalize
   Vector3D_Normalize_Inst1(v);
 
   bFile << "exit@vector3DNormalize\n";
+
+  delete[] path;
 }
