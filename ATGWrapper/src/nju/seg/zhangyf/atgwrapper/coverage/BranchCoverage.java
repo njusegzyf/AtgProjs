@@ -290,7 +290,7 @@ public final class BranchCoverage extends CoverageCriteria {
             result.append("\nPath " + pathIndex + ", input: " + Arrays.toString(cfgPath.getOptimalParams()));
             result.append("\nNodes in the path: ");
             joinerOnComma.appendTo(result, cfgPath.getPathNodeNames().collect(Collectors.toList()));
-            result.append("\n\n");
+            result.append('\n');
             ++pathIndex;
           }
         }

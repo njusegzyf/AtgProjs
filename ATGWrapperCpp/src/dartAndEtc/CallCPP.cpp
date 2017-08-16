@@ -204,7 +204,8 @@ double normAngle(double angle) {
  * Signature: (DDDDDDDDLjava/lang/String;)D
  */
 // JNIEXPORT jdouble JNICALL Java_cn_nju_seg_atg_callCPP_CallCPP_callTurnLogic(JNIEnv *env, jobject, jdouble x0, jdouble y0, jdouble gspeed, jdouble x1, jdouble y1, jdouble x2, jdouble y2, jdouble dt, jstring pathFile) {
-JNIEXPORT jdouble JNICALL Java_cn_nju_seg_atg_callCPP_CallCPP_callTurnLogic(JNIEnv *env, jobject, jdouble x0, jdouble x1, jdouble y0, jdouble y1, jdouble gspeed, jdouble x2, jdouble y2, jdouble dt,
+JNIEXPORT jdouble JNICALL Java_cn_nju_seg_atg_callCPP_CallCPP_callTurnLogic(JNIEnv *env, jobject,
+    jdouble x0, jdouble y0, jdouble gspeed, jdouble x1, jdouble y1, jdouble x2, jdouble y2, jdouble dt,
     jstring pathFile) {
   char* path = jstringTostring(env, pathFile);
   ofstream bFile(path);
